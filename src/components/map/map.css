@@ -1,0 +1,251 @@
+.map-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* The map is drawn on the user's paper color, not the app theme, so it looks the same when exported. */
+.map-root .canvas-root {
+  background-color: var(--map-paper);
+}
+.map-root.is-dropping .canvas-root {
+  box-shadow: inset 0 0 0 3px var(--accent);
+}
+
+.map-empty-hint,
+.map-drop-hint {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 380px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+}
+
+/* Tool options, floating just above the shared bottom toolbar */
+.map-subbar {
+  position: absolute;
+  bottom: 62px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 20px);
+  padding: 4px 6px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  z-index: 3;
+}
+.map-stamp-btn {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: var(--map-paper);
+  cursor: pointer;
+}
+.map-stamp-btn:hover {
+  border-color: var(--border);
+}
+.map-stamp-btn.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+.map-select {
+  width: auto;
+  padding: 4px 6px;
+}
+.map-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+.map-chip:hover {
+  background: var(--bg-hover);
+}
+.map-chip.is-active {
+  border-color: var(--accent);
+}
+.map-street-sample {
+  display: inline-block;
+  width: 22px;
+  height: 0;
+  border-top-width: 3px;
+  border-top-style: solid;
+}
+.map-street-road {
+  border-top: 4px solid #d9c08a;
+  box-shadow: 0 0 0 1px #6e5131;
+}
+.map-street-path {
+  border-top: 2px dashed #7b5a36;
+}
+.map-street-river {
+  border-top: 4px solid #4a86c5;
+  border-radius: 2px;
+}
+.map-street-border {
+  border-top: 2px dashed #9b3b4a;
+}
+
+/* Side panels */
+.map-panel,
+.map-settings {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 270px;
+  max-width: calc(100% - 20px);
+  max-height: calc(100% - 84px);
+  padding: 12px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  z-index: 4;
+}
+.map-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.map-field {
+  display: grid;
+  gap: 6px;
+}
+.map-field > span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.map-textarea {
+  resize: vertical;
+  font-family: var(--font);
+}
+.map-segmented {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.map-segmented button {
+  flex: 1;
+  padding: 5px 4px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.map-segmented button + button {
+  border-left: 1px solid var(--border);
+}
+.map-segmented button.is-active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.map-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.map-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.map-swatch[aria-checked='true'] {
+  box-shadow: 0 0 0 2px var(--bg-elevated), 0 0 0 4px var(--accent);
+}
+.map-panel-foot {
+  display: grid;
+  gap: 4px;
+  margin-top: auto;
+}
+.map-panel-foot small {
+  color: var(--text-muted);
+}
+.map-missing {
+  display: grid;
+  gap: 8px;
+}
+.map-missing p {
+  margin: 0;
+  color: var(--danger);
+}
+.map-layer-row,
+.map-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.map-layer-row .is-muted {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+.map-range {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* New city popup, in screen space next to the click */
+.map-popup {
+  position: absolute;
+  display: grid;
+  gap: 8px;
+  width: 280px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  z-index: 5;
+}
+.map-popup-row {
+  display: flex;
+  gap: 6px;
+}
+.map-popup-row .input {
+  flex: 1;
+  min-width: 0;
+}
+.map-popup-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+.map-popup-foot small {
+  color: var(--text-muted);
+}
