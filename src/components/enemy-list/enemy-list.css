@@ -1,0 +1,65 @@
+/* Enemy List (spec 8.13). Classes are prefixed with `enemy-`; the list frame uses `elist-`. */
+
+.enemy-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.enemy-num {
+  width: 80px;
+}
+.enemy-growth-row {
+  grid-template-columns: minmax(70px, 1fr) 90px minmax(90px, 1fr) auto;
+}
+.enemy-res-row {
+  grid-template-columns: minmax(80px, 1fr) 80px 64px auto;
+}
+.enemy-drop-row {
+  grid-template-columns: minmax(100px, 1fr) 56px 56px 72px auto auto;
+}
+.enemy-drop-head {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.enemy-preview {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+}
+.enemy-preview-stats,
+.enemy-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.enemy-res-tag {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.enemy-res-weak {
+  color: var(--danger);
+}
+.enemy-res-resists,
+.enemy-res-immune,
+.enemy-res-heals {
+  color: var(--accent);
+}
+.enemy-town {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 2px 1px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 13px;
+}
+.enemy-town.missing {
+  color: var(--text-muted);
+  font-style: italic;
+}
+.enemy-town .icon-btn {
+  padding: 2px;
+}
