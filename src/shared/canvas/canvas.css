@@ -1,0 +1,112 @@
+.canvas-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--bg-sunken);
+  outline: none;
+  touch-action: none;
+}
+.canvas-root:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus);
+}
+
+.canvas-stage {
+  position: absolute;
+  inset: 0;
+}
+
+/* World-space HTML (audio cards, inline editors); children opt in to pointer events. */
+.canvas-html {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 0;
+  height: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+
+.canvas-text-editor {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: 1px dashed var(--accent);
+  outline-offset: 2px;
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  transform-origin: 0 0;
+  font-family: var(--font);
+  z-index: 2;
+}
+
+.canvas-toolbar {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100% - 24px);
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  z-index: 3;
+  opacity: 0.92;
+  scrollbar-width: none;
+}
+.canvas-toolbar:hover,
+.canvas-toolbar:focus-within {
+  opacity: 1;
+}
+
+.canvas-toolbar-btn,
+.canvas-toolbar-zoom {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.canvas-toolbar-btn:hover:not(:disabled),
+.canvas-toolbar-zoom:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+.canvas-toolbar-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.canvas-toolbar-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.canvas-toolbar-zoom {
+  min-width: 52px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.canvas-toolbar-text {
+  font-size: 12px;
+}
+.canvas-toolbar-sep {
+  flex: none;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--border);
+}
