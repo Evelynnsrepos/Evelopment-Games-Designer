@@ -18,3 +18,4 @@ export {
 } from './doc'
 export { combineRefProviders, findRefByLabel, rankRefItems, useEntityRefProvider } from './refs'
 export type { ImagePicker, RefItem, RefProvider, RefTarget, RichTextDoc } from './types'
+export { projectImagePaths, useProjectImages, type ProjectImages } from './projectImages'
