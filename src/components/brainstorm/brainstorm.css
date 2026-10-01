@@ -1,0 +1,91 @@
+.brainstorm-root {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.brainstorm-root.is-dropping .canvas-root {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.brainstorm-drop,
+.brainstorm-message {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 4;
+}
+.brainstorm-drop {
+  top: 14px;
+}
+.brainstorm-message {
+  bottom: 64px;
+}
+
+.brainstorm-swatches {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 2px;
+}
+.brainstorm-swatch {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+.brainstorm-swatch.is-auto {
+  background: conic-gradient(#e5484d, #e8b923, #30a46c, #3e8ef7, #8e6cf0, #e5484d);
+}
+.brainstorm-swatch.is-active {
+  border-color: var(--text);
+}
+.brainstorm-swatch:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+.brainstorm-recording {
+  gap: 5px;
+  grid-auto-flow: column;
+  color: var(--danger) !important;
+}
+.brainstorm-rec-time {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Audio card player: world-space HTML placed over the canvas card. */
+.brainstorm-audio {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
+}
+.brainstorm-audio audio {
+  width: 100%;
+  height: 100%;
+}
+.brainstorm-audio-missing {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--placeholder);
+  color: #fff;
+  font-size: 12px;
+  text-shadow: 0 1px 2px #000;
+}
