@@ -1,0 +1,84 @@
+/* Shared pieces of the Damage, Level and Resource Calculators. */
+
+.calc-number {
+  width: 110px;
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.calc-header-kind {
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.calc-header-title {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 17px;
+  font-weight: 600;
+}
+.calc-header-title:hover,
+.calc-header-title:focus {
+  border-color: var(--border);
+  background: var(--bg-sunken);
+}
+
+.calc-chart {
+  display: grid;
+  gap: 6px;
+}
+.calc-chart svg {
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+  background: var(--bg-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.calc-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.calc-chart-cursor {
+  stroke: var(--text-muted);
+  stroke-dasharray: 3 3;
+}
+.calc-chart-tick {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+.calc-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  min-height: 18px;
+}
+.calc-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.calc-chart-legend i {
+  width: 10px;
+  height: 3px;
+  border-radius: 2px;
+}
+.calc-chart-hover {
+  color: var(--text);
+  font-weight: 600;
+}
