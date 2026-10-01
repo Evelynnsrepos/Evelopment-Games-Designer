@@ -7,7 +7,7 @@ import type { RefProvider } from '@/shared/richtext'
 import { isUrlLink, STORY_COLORS, type StoryLink, type StoryNode } from './model'
 import { STORY_NODE_UI } from './storyNodeType'
 
-export const DETAILS_UI = {
+const DETAILS_UI = {
   heading: 'Node',
   title: 'Title',
   body: 'Text',
@@ -50,10 +50,12 @@ export interface NodeDetailsProps {
   onGoTo(id: Id): void
   onDelete(): void
   onClose(): void
+  /** Esc in the panel: hand the keyboard back to the canvas so tool keys work again. */
+  onEscape(): void
 }
 
 /** Side panel for the selected node: text, color, image and link (SW-1, SW-2). */
-export function NodeDetails({ node, nodes, refs, onPatch, onColor, onPickImage, onGoTo, onDelete, onClose }: NodeDetailsProps) {
+export function NodeDetails({ node, nodes, refs, onPatch, onColor, onPickImage, onGoTo, onDelete, onClose, onEscape }: NodeDetailsProps) {
   // One undo step per field edit: the first keystroke records, the rest replace it.
   const editing = useRef(false)
   const typed = (patch: Partial<StoryNode>) => {
@@ -77,7 +79,14 @@ export function NodeDetails({ node, nodes, refs, onPatch, onColor, onPickImage, 
   }
 
   return (
-    <aside className="story-details" aria-label={DETAILS_UI.heading} onKeyDown={(e) => e.stopPropagation()}>
+    <aside className="story-details" aria-label={DETAILS_UI.heading} onKeyDown={(e) => {
+        e.stopPropagation()
+        if (e.key === 'Escape' && !e.defaultPrevented) {
+          e.preventDefault() // keep Layout Mode closed (ED-7)
+          onEscape()
+        }
+      }}
+    >
       <header className="story-details-head">
         <span>{DETAILS_UI.heading}</span>
         <button className="icon-btn" title={DETAILS_UI.close} aria-label={DETAILS_UI.close} onClick={onClose}>

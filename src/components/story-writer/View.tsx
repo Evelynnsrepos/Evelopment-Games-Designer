@@ -33,10 +33,13 @@ export default function View({ documentId, active }: PanelProps) {
   const [colorOfferId, setColorOfferId] = useState<Id | null>(null)
   const [showDetails, setShowDetails] = useState(true)
 
+  // The color offer belongs to the node just created; it goes away once that node is no longer selected.
+  const offerId = colorOfferId && canvas.selection.includes(colorOfferId) ? colorOfferId : null
+
   // Tools are created once and read current view state through refs.
-  const live = useRef({ lastId, pendingId, colorOfferId })
+  const live = useRef({ lastId, pendingId, colorOfferId: offerId })
   useLayoutEffect(() => {
-    live.current = { lastId, pendingId, colorOfferId }
+    live.current = { lastId, pendingId, colorOfferId: offerId }
   })
   const tools = useMemo<CanvasTool<StoryItem>[]>(() => {
     const host: StoryToolHost = {
@@ -85,8 +88,6 @@ export default function View({ documentId, active }: PanelProps) {
 
   if (!doc.data || !scene) return null
   const binding = sceneBinding(doc)
-  // The color offer belongs to the node just created; it goes away once that node is no longer selected.
-  const offerId = colorOfferId && canvas.selection.includes(colorOfferId) ? colorOfferId : null
 
   const selected = canvas.selection.length === 1 ? scene.nodes.find((n) => n.id === canvas.selection[0]) : undefined
   const selectedNode = isStoryNode(selected) ? selected : undefined
@@ -113,55 +114,57 @@ export default function View({ documentId, active }: PanelProps) {
   }
 
   return (
-    <div className="story-root" ref={wrapRef}>
-      <CanvasEditor<StoryItem>
-        scene={scene}
-        {...binding}
-        active={active}
-        tools={tools}
-        nodeTypes={nodeTypes}
-        canvas={canvas}
-        apiRef={apiRef}
-        resolveImageSrc={resolveImageSrc}
-        ariaLabel={UI.canvas}
-        toolbarExtra={
-          <button
-            className={'canvas-toolbar-btn' + (showDetails ? ' is-active' : '')}
-            title={UI.details}
-            aria-label={UI.details}
-            aria-pressed={showDetails}
-            onClick={() => setShowDetails((v) => !v)}
-          >
-            <PanelRight size={17} strokeWidth={1.8} />
-          </button>
-        }
-        html={(api) => {
-          if (!offerId) return null
-          const b = api.getWorldBounds(offerId)
-          if (!b) return null
-          return (
-            <div className="story-color-offer" style={{ left: b.x, top: b.y + b.height + 10 }} role="radiogroup" aria-label={UI.pickColor}>
-              <span>{UI.pickColor}</span>
-              {STORY_COLORS.map((c) => (
-                <button
-                  key={c}
-                  role="radio"
-                  aria-label={c}
-                  aria-checked={nodes.find((n) => n.id === offerId)?.fillColor === c}
-                  className="story-swatch"
-                  style={{ background: c }}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onClick={() => {
-                    recolor(offerId, c)
-                    setColorOfferId(null)
-                  }}
-                />
-              ))}
-            </div>
-          )
-        }}
-      />
-      {nodes.length === 0 && <p className="story-empty-hint">{UI.emptyHint}</p>}
+    <div className="story-root">
+      <div className="story-canvas" ref={wrapRef}>
+        <CanvasEditor<StoryItem>
+          scene={scene}
+          {...binding}
+          active={active}
+          tools={tools}
+          nodeTypes={nodeTypes}
+          canvas={canvas}
+          apiRef={apiRef}
+          resolveImageSrc={resolveImageSrc}
+          ariaLabel={UI.canvas}
+          toolbarExtra={
+            <button
+              className={'canvas-toolbar-btn' + (showDetails ? ' is-active' : '')}
+              title={UI.details}
+              aria-label={UI.details}
+              aria-pressed={showDetails}
+              onClick={() => setShowDetails((v) => !v)}
+            >
+              <PanelRight size={17} strokeWidth={1.8} />
+            </button>
+          }
+          html={(api) => {
+            if (!offerId) return null
+            const b = api.getWorldBounds(offerId)
+            if (!b) return null
+            return (
+              <div className="story-color-offer" style={{ left: b.x, top: b.y + b.height + 10 }} role="radiogroup" aria-label={UI.pickColor}>
+                <span>{UI.pickColor}</span>
+                {STORY_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    role="radio"
+                    aria-label={c}
+                    aria-checked={nodes.find((n) => n.id === offerId)?.fillColor === c}
+                    className="story-swatch"
+                    style={{ background: c }}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onClick={() => {
+                      recolor(offerId, c)
+                      setColorOfferId(null)
+                    }}
+                  />
+                ))}
+              </div>
+            )
+          }}
+        />
+        {nodes.length === 0 && <p className="story-empty-hint">{UI.emptyHint}</p>}
+      </div>
       {/* Details belong to the Select tool (SW-8), so they never cover the canvas while creating or linking. */}
       {selectedNode && showDetails && canvas.toolId === 'select' && (
         <NodeDetails
@@ -178,6 +181,7 @@ export default function View({ documentId, active }: PanelProps) {
             canvas.setSelection([])
           }}
           onClose={() => setShowDetails(false)}
+          onEscape={() => wrapRef.current?.querySelector<HTMLElement>('.canvas-root')?.focus()}
         />
       )}
     </div>
