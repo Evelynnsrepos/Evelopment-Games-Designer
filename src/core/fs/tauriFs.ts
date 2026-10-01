@@ -1,6 +1,7 @@
 import { appDataDir, dirname, documentDir, join } from '@tauri-apps/api/path'
 import { open } from '@tauri-apps/plugin-dialog'
 import * as fs from '@tauri-apps/plugin-fs'
+import { revealItemInDir } from '@tauri-apps/plugin-opener'
 import type { DirEntry, FileSystem } from './types'
 
 /** Real disk access through Tauri's fs/dialog plugins (desktop build). */
@@ -44,6 +45,9 @@ export class TauriFs implements FileSystem {
   async pickFolder(title: string) {
     const result = await open({ directory: true, multiple: false, title })
     return typeof result === 'string' ? result : null
+  }
+  revealInFolder(path: string) {
+    return revealItemInDir(path)
   }
   async pickFiles(title: string, extensions: string[]) {
     const result = await open({ multiple: true, title, filters: [{ name: 'Files', extensions }] })

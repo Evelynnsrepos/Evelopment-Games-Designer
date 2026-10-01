@@ -70,6 +70,9 @@ export class MemoryFs implements FileSystem {
   async pickFolder(title: string) {
     return typeof window !== 'undefined' ? window.prompt(`${title}\n(folder path)`) : null
   }
+  async revealInFolder(path: string) {
+    if (typeof window !== 'undefined') window.alert(`Project folder (browser dev mode):\n${path}`)
+  }
   async pickFiles() {
     return []
   }

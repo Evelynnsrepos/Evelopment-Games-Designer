@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { create } from 'zustand'
 import type { ComponentType, Id } from '../model'
 import { readDocument, writeDocument } from '../project'
@@ -64,9 +64,13 @@ export function useDocument<T>(type: ComponentType, id: Id, createDefault: () =>
   const key = root ? keyOf(root, type, id) : ''
   const data = useDocs((s) => (key ? (s.docs[key] as T | undefined) : undefined))
 
+  // createDefault only matters for the first load, so keep the latest one in a ref.
+  const createDefaultRef = useRef(createDefault)
   useEffect(() => {
-    if (root) void ensureLoaded(root, type, id, createDefault)
-    // createDefault is intentionally not a dependency; it only matters for the first load.
+    createDefaultRef.current = createDefault
+  })
+  useEffect(() => {
+    if (root) void ensureLoaded(root, type, id, createDefaultRef.current)
   }, [root, type, id])
 
   const update = useCallback(

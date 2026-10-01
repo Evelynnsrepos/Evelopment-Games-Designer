@@ -25,6 +25,7 @@ export function setFs(fs: FileSystem) {
 /** Strip characters Windows forbids in folder names (spec 2, platform rules). */
 export function safeFolderName(name: string): string {
   const cleaned = name
+    // oxlint-disable-next-line no-control-regex -- control characters are invalid in file names
     .replace(/[<>:"/\\|?*\u0000-\u001f]/g, '')
     .replace(/[. ]+$/, '')
     .trim()

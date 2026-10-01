@@ -23,6 +23,8 @@ export interface FileSystem {
   copyFile(from: string, to: string): Promise<void>
   /** Ask the user to choose a folder; null if cancelled. */
   pickFolder(title: string): Promise<string | null>
+  /** Open the OS file manager at this path (PM-7). */
+  revealInFolder(path: string): Promise<void>
   /** Ask the user to choose files to import (images, audio). */
   pickFiles(title: string, extensions: string[]): Promise<string[]>
 }
