@@ -50,6 +50,14 @@ const articles: RefProvider = {
 
 ## Images
 
-`pickImage` returns `{ src, alt }`; the default asks for a path or URL until the asset helper (F2) exists.
-Store project-relative paths (`assets/images/<id>.png`) and pass `resolveImageSrc` to turn them into displayable URLs.
+`pickImage` returns `{ src, alt }`; on its own the editor asks for a path or URL.
+To store images in the project (F2), use `useProjectImages(body)`: its picker copies the file into `assets/images/`
+and its `resolveImageSrc` shows it. Mount the editor once `ready` is true (stored paths are resolved first).
+
+```tsx
+const images = useProjectImages(doc.data?.body)
+if (!doc.data || !images.ready) return null
+<RichTextEditor pickImage={images.pickImage} resolveImageSrc={images.resolveImageSrc} ... />
+```
+
 Missing or broken images show the pink/black placeholder.

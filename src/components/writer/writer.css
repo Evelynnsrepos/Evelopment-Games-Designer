@@ -1,0 +1,86 @@
+/* Regular Writer (spec 8.6). Classes are prefixed with `writer-`. */
+
+.writer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.writer-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.writer-title {
+  flex: 1;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+}
+.writer-title:hover {
+  border-color: var(--border);
+}
+.writer-title:focus {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--bg-sunken);
+}
+.writer-words {
+  flex: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.writer-export {
+  position: relative;
+  flex: none;
+}
+.writer-export-btn {
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.writer-menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  min-width: 170px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+.writer-menu-item {
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+.writer-menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.writer-page {
+  flex: 1;
+  min-height: 0;
+}
+
+.writer-empty {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  color: var(--text-muted);
+}
