@@ -54,6 +54,8 @@ interface ProjectState {
   updateEntity<T extends EntityType>(type: T, id: Id, patch: Partial<EntityOf<T>>): void
   removeEntity(type: EntityType, id: Id): void
   getEntity<T extends EntityType>(type: T, id: Id): EntityOf<T> | undefined
+  /** Replace a whole collection at once, e.g. to restore an undo snapshot. */
+  setEntities<T extends EntityType>(type: T, list: EntityOf<T>[]): void
 
   setCategories(categories: Category[]): void
 }
@@ -171,6 +173,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
 
     getEntity(type, id) {
       return (get().entities[type] as Entity[]).find((e) => e.id === id) as EntityOf<typeof type> | undefined
+    },
+
+    setEntities(type, list) {
+      set({ entities: { ...get().entities, [type]: list } })
+      saveCollectionSoon(type)
     },
 
     setCategories(categories) {
