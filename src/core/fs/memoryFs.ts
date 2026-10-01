@@ -28,6 +28,13 @@ export class MemoryFs implements FileSystem {
     if (text === undefined) throw new Error(`File not found: ${path}`)
     return text
   }
+  async readBinary(path: string) {
+    const text = await this.readText(path)
+    return text.startsWith(BINARY_PREFIX) ? fromBase64(text.slice(BINARY_PREFIX.length)) : new TextEncoder().encode(text)
+  }
+  async writeBinaryAtomic(path: string, bytes: Uint8Array) {
+    await this.writeTextAtomic(path, BINARY_PREFIX + toBase64(bytes))
+  }
   async writeTextAtomic(path: string, text: string) {
     const p = normalize(path)
     await this.mkdir(parent(p))
@@ -79,6 +86,22 @@ export class MemoryFs implements FileSystem {
 
   /** Hook for subclasses that persist state. */
   protected changed() {}
+}
+
+/** Binary files are kept as base64 text so the whole fs stays one string map (and fits localStorage). */
+const BINARY_PREFIX = '\u0000base64:'
+
+function toBase64(bytes: Uint8Array) {
+  let binary = ''
+  for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000))
+  return btoa(binary)
+}
+
+function fromBase64(text: string) {
+  const binary = atob(text)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i)
+  return bytes
 }
 
 function normalize(path: string) {
