@@ -17,3 +17,12 @@ describe('node transforms', () => {
     expect(w.y).toBeCloseTo(10)
   })
 })
+
+describe('fitWithin', () => {
+  it('scales the longer side down and keeps small images', async () => {
+    const { fitWithin } = await import('./imageSize')
+    expect(fitWithin(1000, 500, 360)).toEqual({ width: 360, height: 180 })
+    expect(fitWithin(100, 50, 360)).toEqual({ width: 100, height: 50 })
+    expect(fitWithin(0, 50, 360)).toBeNull()
+  })
+})
