@@ -1,0 +1,131 @@
+/* Damage Calculator (spec 8.3). Classes are prefixed with `dmg-`; common pieces come from shared/calculators. */
+
+.dmg-body {
+  container: dmg / inline-size;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.dmg-library {
+  flex: 0 0 240px;
+  overflow: auto;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  background: var(--bg-sunken);
+}
+.dmg-body > .calc-scroll {
+  flex: 1;
+  min-width: 0;
+}
+@container dmg (max-width: 620px) {
+  .dmg-body {
+    flex-direction: column;
+  }
+  .dmg-library {
+    flex: 0 0 auto;
+    max-height: 34%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+}
+
+.dmg-group {
+  margin-bottom: 14px;
+}
+.dmg-group h4 {
+  margin: 0;
+  font-size: 13px;
+}
+.dmg-group p {
+  margin: 1px 0 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.dmg-formula {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+.dmg-formula:hover {
+  background: var(--bg-hover);
+}
+.dmg-formula.on {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.dmg-expression {
+  font-family: var(--mono);
+  resize: vertical;
+}
+.dmg-desc {
+  margin: 0;
+}
+.dmg-help summary {
+  cursor: pointer;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.dmg-help ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  columns: 2 260px;
+  font-size: 12px;
+}
+
+.dmg-inputs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px 16px;
+}
+.dmg-input {
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+}
+.dmg-input-label {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.dmg-input-label code {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.dmg-input-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dmg-input-help {
+  font-size: 11px;
+}
+
+.dmg-enemy {
+  display: grid;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.dmg-enemy p {
+  margin: 0;
+}
+.dmg-enemy-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dmg-result p {
+  margin: 0;
+}
