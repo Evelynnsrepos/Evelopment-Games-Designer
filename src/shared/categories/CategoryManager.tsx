@@ -1,6 +1,6 @@
 import { Plus, Trash2, X } from 'lucide-react'
 import { useState } from 'react'
-import { ENTITY_TYPES, type Category, type EntityType, type Id } from '@/core/model'
+import { ENTITY_TYPES, newId, type Category, type EntityType, type Id } from '@/core/model'
 import { useProjectStore } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import { Modal } from '@/shared/ui'
@@ -160,7 +160,14 @@ function CategoryEditor({
       </label>
       <label className="cat-form-row">
         <span>Type</span>
-        <KindSelect value={kind} onChange={setKind} />
+        <KindSelect
+          value={kind}
+          onChange={(k) => {
+            setKind(k)
+            // A fresh dropdown starts with one empty option to type into.
+            if (k === 'dropdown' && rows.length === 0) setRows([{ key: newId(), original: null, value: '' }])
+          }}
+        />
       </label>
       {kind !== category.kind && valueCount > 0 && (
         <div className="cat-hint">Values that do not fit the new type are hidden, not deleted. Switch back to see them again.</div>
@@ -171,7 +178,7 @@ function CategoryEditor({
           <OptionsEditor rows={rows} onChange={setRows} />
         </div>
       )}
-      {(nameError || optionsError) && <div className="cat-error">{nameError ?? optionsError}</div>}
+      {dirty && (nameError || optionsError) && <div className="cat-error">{nameError ?? optionsError}</div>}
       <div className="cat-form-actions">
         {category.builtIn && <span className="cat-badge">Built-in</span>}
         <button type="button" className="btn btn-ghost cat-delete" onClick={() => void remove()}>

@@ -1,16 +1,17 @@
 import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useState } from 'react'
 import { newId, type Category, type CategoryKind, type EntityType } from '@/core/model'
 import { cleanOptions, ENTITY_LABELS, findByName, KIND_LABELS, KINDS, newCategory, validateCategoryName } from './logic'
 import type { OptionRow } from './optionRows'
 
 /** Ordered list of dropdown options with add, remove and reorder (order drives sorting, e.g. Common < Rare). */
 export function OptionsEditor({ rows, onChange }: { rows: OptionRow[]; onChange: (rows: OptionRow[]) => void }) {
-  const listRef = useRef<HTMLDivElement>(null)
+  // The row added last gets focus when it mounts, so the user can keep typing.
+  const [focusKey, setFocusKey] = useState<string | null>(null)
   const add = () => {
-    onChange([...rows, { key: newId(), original: null, value: '' }])
-    // Focus the new row once it renders.
-    requestAnimationFrame(() => listRef.current?.querySelector<HTMLInputElement>('.cat-option:last-child input')?.focus())
+    const key = newId()
+    setFocusKey(key)
+    onChange([...rows, { key, original: null, value: '' }])
   }
   const move = (i: number, by: number) => {
     const j = i + by
@@ -20,19 +21,25 @@ export function OptionsEditor({ rows, onChange }: { rows: OptionRow[]; onChange:
     onChange(next)
   }
   return (
-    <div className="cat-options" ref={listRef}>
+    <div className="cat-options">
       {rows.map((r, i) => (
         <div className="cat-option" key={r.key}>
           <input
             className="input cat-input"
             aria-label={`Option ${i + 1}`}
             placeholder="Option"
+            autoFocus={r.key === focusKey}
             value={r.value}
             onChange={(e) => onChange(rows.map((x) => (x.key === r.key ? { ...x, value: e.target.value } : x)))}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
-                if (i === rows.length - 1) add()
+                if (i === rows.length - 1) {
+                  if (r.value.trim()) add()
+                } else {
+                  setFocusKey(null)
+                  ;(e.currentTarget.closest('.cat-option')?.nextElementSibling?.querySelector('input') as HTMLInputElement | null)?.focus()
+                }
               }
             }}
           />

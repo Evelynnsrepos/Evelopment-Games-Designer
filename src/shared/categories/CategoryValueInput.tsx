@@ -10,19 +10,21 @@ export function CategoryValueInput({
   value,
   onChange,
   id,
+  ariaLabel,
 }: {
   category: Category
   /** The raw stored value; converted for display. */
   value: CategoryValue | undefined
   onChange: (value: CategoryValue) => void
   id?: string
+  ariaLabel?: string
 }) {
   const current = coerceValue(category.kind, value, category.options)
 
   switch (category.kind) {
     case 'dropdown':
       return (
-        <select id={id} className="input cat-input" value={current === null ? '' : String(current)} onChange={(e) => onChange(e.target.value || null)}>
+        <select id={id} aria-label={ariaLabel} className="input cat-input" value={current === null ? '' : String(current)} onChange={(e) => onChange(e.target.value || null)}>
           <option value="">{EMPTY_LABEL}</option>
           {category.options.map((o) => (
             <option key={o} value={o}>
@@ -35,6 +37,7 @@ export function CategoryValueInput({
       return (
         <select
           id={id}
+          aria-label={ariaLabel}
           className="input cat-input"
           value={current === null ? '' : current ? 'yes' : 'no'}
           onChange={(e) => onChange(e.target.value === '' ? null : e.target.value === 'yes')}
@@ -45,11 +48,12 @@ export function CategoryValueInput({
         </select>
       )
     case 'number':
-      return <NumberInput id={id} value={current as number | null} onChange={onChange} />
+      return <NumberInput id={id} ariaLabel={ariaLabel} value={current as number | null} onChange={onChange} />
     case 'text':
       return (
         <input
           id={id}
+          aria-label={ariaLabel}
           className="input cat-input"
           value={current === null ? '' : String(current)}
           onChange={(e) => onChange(e.target.value === '' ? null : e.target.value)}
