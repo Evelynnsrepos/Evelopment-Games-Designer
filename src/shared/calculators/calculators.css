@@ -82,3 +82,129 @@
   color: var(--text);
   font-weight: 600;
 }
+
+/* Common calculator layout: a scrolling page of sections with label/input fields and result tables. */
+.calc-root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.calc-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 14px 16px 40px;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.calc-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.calc-section > h3 {
+  margin: 0;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.calc-section > h3 .calc-spacer {
+  flex: 1;
+}
+.calc-muted {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.calc-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+.calc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+.calc-field {
+  display: grid;
+  gap: 3px;
+  font-size: 13px;
+}
+.calc-field > span {
+  color: var(--text-muted);
+}
+.calc-select {
+  width: auto;
+  max-width: 260px;
+  padding: 5px 8px;
+}
+.calc-segmented {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.calc-segmented button {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.calc-segmented button.on {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.calc-table-wrap {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.calc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.calc-table th,
+.calc-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: right;
+  white-space: nowrap;
+}
+.calc-table th:first-child,
+.calc-table td:first-child {
+  text-align: left;
+}
+.calc-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-sunken);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.calc-table td.calc-left,
+.calc-table th.calc-left {
+  text-align: left;
+}
+.calc-big {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.calc-code {
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-sunken);
+  overflow-wrap: anywhere;
+}

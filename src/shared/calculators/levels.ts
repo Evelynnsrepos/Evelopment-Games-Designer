@@ -146,3 +146,17 @@ export function levelUpCosts(costs: readonly CostRow[], from: number, to: number
   }
   return { totals, errors }
 }
+
+/**
+ * Formula variables that describe the target being hit (LV-5, EN-8). Only these are taken from an enemy,
+ * so an enemy's own ATK never replaces the attacker's ATK.
+ */
+export const TARGET_VARIABLES: readonly string[] = ['DEF', 'HP', 'RES', 'EnemyLevel']
+
+/** Target values of an enemy at a level: its grown DEF, HP and RES (when it has them) and `EnemyLevel`. */
+export function enemyTargetValues(enemy: Pick<Enemy, 'stats' | 'growth'>, level: number): Record<string, number> {
+  const stats = enemyStatsAtLevel(enemy, level)
+  const out: Record<string, number> = { EnemyLevel: level }
+  for (const name of TARGET_VARIABLES) if (name in stats) out[name] = stats[name]
+  return out
+}

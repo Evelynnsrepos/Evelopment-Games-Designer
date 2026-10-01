@@ -81,3 +81,11 @@ describe('normalize', () => {
     expect(d.xp).toEqual(createLevelPresetDoc().xp)
   })
 })
+
+describe('enemy targets', () => {
+  it('takes only defensive stats and the level from an enemy', async () => {
+    const { enemyTargetValues } = await import('./levels')
+    const v = enemyTargetValues({ stats: { ATK: 999, DEF: 50, HP: 100 }, growth: [{ stat: 'DEF', mode: 'flat', perLevel: 5 }] }, 3)
+    expect(v).toEqual({ EnemyLevel: 3, DEF: 60, HP: 100 })
+  })
+})
