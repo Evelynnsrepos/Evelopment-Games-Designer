@@ -1,0 +1,224 @@
+/* Shared category editor (spec 3.4). Classes are prefixed with `cat-`. */
+
+.cat-input {
+  padding: 5px 8px;
+  min-width: 0;
+}
+
+.cat-fields {
+  display: grid;
+  gap: 6px;
+}
+.cat-field {
+  display: grid;
+  grid-template-columns: minmax(90px, 35%) 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+.cat-field label {
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cat-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+.cat-add-row select {
+  flex: 1;
+}
+.cat-empty {
+  color: var(--text-muted);
+  font-size: 13px;
+  padding: 2px 0;
+}
+.cat-hint {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.cat-error {
+  color: var(--danger);
+  font-size: 13px;
+}
+.cat-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+
+.cat-form {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.cat-manager .cat-form {
+  border: none;
+  padding: 0;
+  background: none;
+}
+.cat-form-title {
+  font-weight: 600;
+}
+.cat-form-row {
+  display: grid;
+  grid-template-columns: 90px 1fr;
+  align-items: start;
+  gap: 8px;
+}
+.cat-form-row > span:first-child {
+  padding-top: 5px;
+  color: var(--text-muted);
+}
+.cat-form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.cat-radio-group {
+  display: grid;
+  gap: 4px;
+  padding-top: 5px;
+}
+.cat-radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cat-options {
+  display: grid;
+  gap: 4px;
+}
+.cat-option {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  align-items: center;
+  gap: 2px;
+}
+.cat-option .icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.cat-add-option {
+  justify-self: start;
+  padding: 4px 8px;
+}
+
+/* Manager modal */
+.modal:has(.cat-manager) {
+  width: min(760px, calc(100vw - 32px));
+  padding: 0;
+}
+.cat-manager {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  max-height: min(640px, calc(100vh - 64px));
+}
+.cat-manager-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.cat-manager-body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 0;
+}
+.cat-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  overflow: auto;
+}
+.cat-new-btn {
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.cat-list-heading {
+  margin: 8px 6px 2px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.cat-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.cat-list-item:hover {
+  background: var(--bg-hover);
+}
+.cat-list-item.selected {
+  background: var(--bg-hover);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.cat-list-item small {
+  color: var(--text-muted);
+  flex: none;
+}
+.cat-detail {
+  padding: 16px;
+  overflow: auto;
+}
+.cat-scope {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.cat-scope-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cat-scope-row select {
+  width: auto;
+}
+.cat-scope-row small {
+  color: var(--text-muted);
+}
+.cat-delete {
+  color: var(--danger);
+}
+
+@media (max-width: 640px) {
+  .cat-manager-body {
+    grid-template-columns: 1fr;
+  }
+  .cat-list {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 180px;
+  }
+}
+.cat-existing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.cat-existing .btn {
+  padding: 3px 10px;
+}
