@@ -151,3 +151,23 @@
   white-space: nowrap;
   font-family: var(--mono);
 }
+
+/* Backups dialog (spec 3.5) */
+.launcher-backups {
+  display: grid;
+  gap: 6px;
+  max-height: 50vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.launcher-backups li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}

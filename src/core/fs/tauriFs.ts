@@ -29,6 +29,15 @@ export class TauriFs implements FileSystem {
     await fs.writeTextFile(tmp, text)
     await fs.rename(tmp, path)
   }
+  readBinary(path: string) {
+    return fs.readFile(path)
+  }
+  async writeBinaryAtomic(path: string, bytes: Uint8Array) {
+    await fs.mkdir(await dirname(path), { recursive: true })
+    const tmp = `${path}.tmp`
+    await fs.writeFile(tmp, bytes)
+    await fs.rename(tmp, path)
+  }
   mkdir(path: string) {
     return fs.mkdir(path, { recursive: true })
   }

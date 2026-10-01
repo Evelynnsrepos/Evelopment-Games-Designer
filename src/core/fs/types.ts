@@ -17,6 +17,10 @@ export interface FileSystem {
   readText(path: string): Promise<string>
   /** Writes to `<path>.tmp` and renames over the target, so a crash never leaves half a file (spec 11). */
   writeTextAtomic(path: string, text: string): Promise<void>
+  /** Raw bytes, for images and audio in `assets/`. */
+  readBinary(path: string): Promise<Uint8Array>
+  /** Atomic like writeTextAtomic. */
+  writeBinaryAtomic(path: string, bytes: Uint8Array): Promise<void>
   mkdir(path: string): Promise<void>
   list(path: string): Promise<DirEntry[]>
   remove(path: string): Promise<void>
