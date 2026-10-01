@@ -1,0 +1,220 @@
+.moodboard-root {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+}
+.moodboard-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+.moodboard-canvas.is-dropping .canvas-root {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.moodboard-drop,
+.moodboard-message {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 4;
+}
+.moodboard-drop {
+  top: 14px;
+}
+.moodboard-message {
+  bottom: 64px;
+}
+
+.moodboard-cut-kinds,
+.moodboard-swatches {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.moodboard-swatches {
+  gap: 3px;
+  padding: 0 2px;
+}
+.moodboard-swatch {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgb(127 127 127 / 0.5);
+}
+.moodboard-swatch.is-auto {
+  background: linear-gradient(135deg, var(--text) 50%, var(--bg) 50%);
+}
+.moodboard-swatch.is-active {
+  border-color: var(--accent);
+}
+.moodboard-swatch:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 1px;
+}
+
+/* Layers panel (MB-5) */
+.moodboard-layers {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 240px;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elevated);
+  font-size: 13px;
+  min-height: 0;
+}
+.moodboard-layers-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 6px 6px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.moodboard-layers-head > span {
+  flex: 1;
+}
+.moodboard-layers-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0 12px;
+}
+.moodboard-layer + .moodboard-layer {
+  margin-top: 6px;
+}
+.moodboard-layer-row,
+.moodboard-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 4px 0 10px;
+  cursor: default;
+  user-select: none;
+}
+.moodboard-layer-row {
+  font-weight: 600;
+  color: var(--text);
+}
+.moodboard-layer-row.is-active {
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+.moodboard-layer-row.is-drop {
+  background: var(--bg-hover);
+  outline: 1px dashed var(--accent);
+  outline-offset: -2px;
+}
+.moodboard-layer-badge {
+  flex: none;
+  color: var(--accent);
+}
+.moodboard-item {
+  padding-left: 22px;
+  color: var(--text-muted);
+  cursor: grab;
+}
+.moodboard-layer-row:hover,
+.moodboard-item:hover {
+  background: var(--bg-hover);
+}
+.moodboard-item.is-selected {
+  background: var(--bg-hover);
+  color: var(--text);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+.moodboard-item.is-hidden,
+.moodboard-layer.is-hidden .moodboard-item,
+.moodboard-layer.is-hidden .moodboard-layer-name {
+  opacity: 0.5;
+}
+.moodboard-item.drop-above::before,
+.moodboard-item.drop-below::after {
+  content: '';
+  position: absolute;
+  left: 16px;
+  right: 6px;
+  height: 2px;
+  background: var(--accent);
+}
+.moodboard-item.drop-above::before {
+  top: 0;
+}
+.moodboard-item.drop-below::after {
+  bottom: 0;
+}
+.moodboard-item-icon {
+  flex: none;
+}
+.moodboard-layer-name,
+.moodboard-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.moodboard-item-empty {
+  padding: 2px 22px 4px;
+  color: var(--text-muted);
+  font-style: italic;
+  opacity: 0.7;
+}
+.moodboard-row-actions {
+  display: none;
+  flex: none;
+  gap: 0;
+}
+.moodboard-layer-row:hover .moodboard-row-actions,
+.moodboard-item:hover .moodboard-row-actions,
+.moodboard-layer-row:focus-within .moodboard-row-actions,
+.moodboard-item:focus-within .moodboard-row-actions,
+.moodboard-row-actions:has(.is-on) {
+  display: flex;
+}
+.moodboard-icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.moodboard-icon-btn:hover:not(:disabled) {
+  background: var(--bg);
+  color: var(--text);
+}
+.moodboard-icon-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.moodboard-icon-btn.is-on {
+  color: var(--accent);
+}
+.moodboard-icon-btn:focus-visible {
+  outline: 2px solid var(--focus);
+}
+.moodboard-layer-row:focus-visible,
+.moodboard-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: -2px;
+}
