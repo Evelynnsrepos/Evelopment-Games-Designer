@@ -1,0 +1,127 @@
+.story-root {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+/* The canvas shrinks when the details panel is docked beside it, so the panel never covers what you click. */
+.story-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+}
+
+.story-empty-hint {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 360px;
+  margin: 0;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+/* Side panel for the selected node */
+.story-details {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 12px;
+  width: 260px;
+  max-width: 45%;
+  height: 100%;
+  padding: 12px;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.story-details-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.story-field {
+  display: grid;
+  gap: 6px;
+}
+.story-field > span {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.story-body {
+  resize: vertical;
+  font-family: var(--font);
+}
+.story-image-row,
+.story-link-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.story-link-row .input {
+  flex: 1;
+  min-width: 0;
+}
+.story-ref-chip {
+  display: inline-flex;
+  flex: 1;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+}
+.story-ref-chip small {
+  color: var(--text-muted);
+}
+.story-missing {
+  flex: 1;
+  color: var(--danger);
+  font-size: 12px;
+}
+.story-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.story-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.story-swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  outline-offset: 2px;
+}
+.story-swatch.is-active,
+.story-swatch[aria-checked='true'] {
+  border-color: var(--text);
+}
+
+/* Color choice shown under a new branch's node (SW-3); lives in world space */
+.story-color-offer {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: auto;
+}
