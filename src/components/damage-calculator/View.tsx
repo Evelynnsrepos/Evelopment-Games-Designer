@@ -54,7 +54,7 @@ export default function View({ documentId, active }: PanelProps) {
   return <DamageCalculator documentId={documentId!} doc={doc} />
 }
 
-function DamageCalculator({ documentId, doc: raw }: { documentId: Id; doc: UseDocumentResult<DamagePresetDoc> }) {
+export function DamageCalculator({ documentId, doc: raw }: { documentId: Id; doc: UseDocumentResult<DamagePresetDoc> }) {
   const data = useMemo(() => normalizeDamagePresetDoc(raw.data), [raw.data])
   const update = (fn: (d: DamagePresetDoc) => DamagePresetDoc, options?: { undoable?: boolean }) =>
     raw.update((d) => fn(normalizeDamagePresetDoc(d)), options)
