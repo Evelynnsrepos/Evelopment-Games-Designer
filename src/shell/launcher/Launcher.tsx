@@ -6,6 +6,7 @@ import { deleteProject, isProjectFolder, loadProject, readRecents, removeRecent,
 import { useAppStore, useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { toggleTheme, useTheme } from '../theme'
+import { BackupsDialog } from './BackupsDialog'
 import './launcher.css'
 
 /** Project list shown on startup (spec 4, PM-1..PM-8). */
@@ -90,6 +91,7 @@ export function Launcher() {
 
 function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentProject; missing: boolean; onOpen: () => void; onChanged: () => void }) {
   const [menu, setMenu] = useState(false)
+  const [showBackups, setShowBackups] = useState(false)
 
   const editMeta = async (field: 'name' | 'description') => {
     const value = await promptDialog(field === 'name' ? 'Rename project' : 'Edit description', project[field])
@@ -153,6 +155,14 @@ function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentP
               <button onClick={() => void editMeta('name')}>Rename</button>
               <button onClick={() => void editMeta('description')}>Edit description</button>
               <button onClick={() => void getFs().revealInFolder(project.path)}>Show in folder</button>
+              <button
+                onClick={() => {
+                  setMenu(false)
+                  setShowBackups(true)
+                }}
+              >
+                Restore a backup…
+              </button>
               <button className="danger" onClick={() => void remove()}>
                 Delete
               </button>
@@ -160,6 +170,7 @@ function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentP
           )}
         </div>
       )}
+      {showBackups && <BackupsDialog project={project} onClose={() => setShowBackups(false)} onRestored={onChanged} />}
     </div>
   )
 }
