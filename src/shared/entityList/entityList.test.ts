@@ -5,7 +5,7 @@ import { useProjectStore } from '@/core/state'
 import { cloneFields, createEntityActions } from './actions'
 import { enemyStatsAtLevel, statAtLevel } from './growth'
 import { backlinksTo } from './links'
-import { requestEntityFocus, takeEntityFocus, requestWikiArticle, takeWikiArticleRequest } from './navigation'
+import { requestEntityFocus, takeEntityFocus } from './navigation'
 import { DEFAULT_QUERY, queryEntities } from './query'
 
 const store = () => useProjectStore.getState()
@@ -117,11 +117,5 @@ describe('navigation requests', () => {
     expect(takeEntityFocus('character')).toBeNull()
     expect(takeEntityFocus('town')?.id).toBe('t1')
     expect(takeEntityFocus('town')).toBeNull()
-  })
-
-  it('queues a wiki article request', () => {
-    requestWikiArticle('enemy', 'e1')
-    expect(takeWikiArticleRequest()).toMatchObject({ type: 'enemy', id: 'e1' })
-    expect(takeWikiArticleRequest()).toBeNull()
   })
 })

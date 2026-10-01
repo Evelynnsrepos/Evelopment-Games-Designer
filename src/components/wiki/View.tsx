@@ -4,7 +4,7 @@ import { newId, type Entity, type EntityType, type Id } from '@/core/model'
 import { deleteDocument } from '@/core/project'
 import type { PanelProps } from '@/core/registry'
 import { flushDocument, useDocument, useIntentHandler, useProjectStore, type Intent } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
+import { openEntity } from '@/shared/entityList'
 import { confirmDialog } from '@/shared/dialogs'
 import { combineRefProviders, useEntityRefProvider, type RefProvider, type RefTarget } from '@/shared/richtext'
 import {
@@ -110,7 +110,7 @@ export default function View(_props: PanelProps) {
       (t: RefTarget) => {
         const art = index && articleForEntity(index, t.kind as EntityType, t.id)
         if (art) open(art.id)
-        else openComponent(`${t.kind}-list` as 'item-list')
+        else openEntity(t.kind as EntityType, t.id)
       },
       [index, open],
     ),

@@ -1,8 +1,8 @@
 import { ExternalLink } from 'lucide-react'
 import type { Entity, EntityType, Id } from '@/core/model'
 import { useProjectStore } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
 import { AssetImage } from '@/shared/AssetImage'
+import { openEntity } from '@/shared/entityList'
 import { categoriesFor, ENTITY_LABELS, formatValue } from '@/shared/categories'
 
 const UI = {
@@ -15,12 +15,6 @@ const UI = {
   missing: 'missing',
 }
 
-const LIST_OF: Record<EntityType, 'item-list' | 'character-list' | 'town-list' | 'enemy-list'> = {
-  item: 'item-list',
-  character: 'character-list',
-  town: 'town-list',
-  enemy: 'enemy-list',
-}
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const LIST_NAME: Record<EntityType, string> = { item: 'Item List', character: 'Character List', town: 'Town List', enemy: 'Enemy List' }
 
@@ -89,7 +83,7 @@ export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) 
           </dl>
         </>
       )}
-      <button className="btn btn-ghost wiki-infobox-open" onClick={() => openComponent(LIST_OF[kind])}>
+      <button className="btn btn-ghost wiki-infobox-open" onClick={() => openEntity(kind, entityId)}>
         <ExternalLink size={13} /> {UI.openList(LIST_NAME[kind])}
       </button>
     </aside>

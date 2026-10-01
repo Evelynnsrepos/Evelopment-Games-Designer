@@ -4,7 +4,7 @@ import { assetUrl, dragHasFiles, importAssetsFromDataTransfer, pickAndImportAsse
 import { newId, type Id, type Town } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
+import { openEntity } from '@/shared/entityList'
 import {
   addNodes,
   CanvasEditor,
@@ -375,7 +375,7 @@ export default function View({ documentId, active }: PanelProps) {
           onTownChange={(p) => updateEntity('town', selectedCity.townId, p as Partial<Town>)}
           onCategoriesChange={setCategories}
           onRecreate={() => patchCity(selectedCity.id, { townId: addEntity('town').id })}
-          onOpenTownList={() => openComponent('town-list')}
+          onOpenTownList={() => openEntity('town', selectedCity.townId)}
           onRemove={() => {
             binding.onChange((s) => deleteNodes(s, [selectedCity.id]))
             canvas.setSelection([])

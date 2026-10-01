@@ -1,15 +1,15 @@
 import { create } from 'zustand'
 import type { ComponentType, EntityType, Id } from '@/core/model'
+import { openComponent } from '@/shell/editor/actions'
 
 /**
  * Cross-component requests about entities, so lists and the Wiki can hand each
  * other work without importing one another (AGENTS.md rule 3):
  *
  * - focus: "show this entity" — the list of that type selects it and opens its page.
- * - wiki:  "create a wiki article for this entity" (CH-6, EN-7, WK-2) — the Wiki takes
- *   it with `takeWikiArticleRequest()` when it opens.
  *
- * Callers set the request, then open the target with `openComponent(ENTITY_COMPONENT[type])`.
+ * Use `openEntity(type, id)` to do both in one call. For "create a wiki article for this
+ * entity" (CH-6, EN-7, WK-2) use `openWikiArticleForEntity` from `@/shared/wiki`.
  */
 export interface EntityRequest {
   type: EntityType
@@ -20,10 +20,9 @@ export interface EntityRequest {
 
 interface NavigationState {
   focus: EntityRequest | null
-  wiki: EntityRequest | null
 }
 
-export const useEntityNavigation = create<NavigationState>()(() => ({ focus: null, wiki: null }))
+export const useEntityNavigation = create<NavigationState>()(() => ({ focus: null }))
 
 let seq = 0
 
@@ -47,13 +46,8 @@ export function takeEntityFocus(type: EntityType): EntityRequest | null {
   return focus
 }
 
-export function requestWikiArticle(type: EntityType, id: Id) {
-  useEntityNavigation.setState({ wiki: { type, id, seq: ++seq } })
-}
-
-/** For the Wiki: take the pending "create article for entity" request, if any. */
-export function takeWikiArticleRequest(): EntityRequest | null {
-  const wiki = useEntityNavigation.getState().wiki
-  if (wiki) useEntityNavigation.setState({ wiki: null })
-  return wiki
+/** Open the list for `type` with this entity selected. */
+export function openEntity(type: EntityType, id: Id) {
+  requestEntityFocus(type, id)
+  openComponent(ENTITY_COMPONENT[type])
 }
