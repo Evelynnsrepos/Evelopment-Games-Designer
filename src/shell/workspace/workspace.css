@@ -1,0 +1,195 @@
+.workspace {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  padding: 4px;
+  background: var(--bg-sunken);
+}
+.workspace-empty {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+.workspace-empty.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -8px;
+}
+
+.split {
+  flex: 1;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+.split-row {
+  flex-direction: row;
+}
+.split-column {
+  flex-direction: column;
+}
+.split-child {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-grow: 0;
+  flex-shrink: 1;
+}
+
+.divider {
+  flex: none;
+  background: transparent;
+  transition: background 0.15s;
+}
+.divider-row {
+  width: 4px;
+  cursor: col-resize;
+}
+.divider-column {
+  height: 4px;
+  cursor: row-resize;
+}
+.divider:hover {
+  background: var(--accent);
+}
+
+.panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  overflow: hidden;
+}
+.panel:focus {
+  outline: none;
+}
+.panel.active {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+}
+
+/* ED-4: the header fades to very low opacity until hovered. */
+.panel-header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  opacity: 0.25;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.panel:hover .panel-header,
+.panel.active .panel-header {
+  opacity: 1;
+}
+.panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.panel-loading {
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.drop-zone {
+  position: absolute;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  border: 2px solid var(--accent);
+  border-radius: var(--radius);
+  pointer-events: none;
+}
+.drop-left {
+  inset: 0 50% 0 0;
+}
+.drop-right {
+  inset: 0 0 0 50%;
+}
+.drop-top {
+  inset: 0 0 50% 0;
+}
+.drop-bottom {
+  inset: 50% 0 0 0;
+}
+
+/* ED-5: Layout Mode overlay with a giant X and arrows. */
+.layout-overlay {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--bg-sunken) 75%, transparent);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+}
+.layout-close {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  display: grid;
+  place-items: center;
+  width: 110px;
+  height: 110px;
+  border: 2px solid var(--danger);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--danger);
+  cursor: pointer;
+}
+.layout-close:hover {
+  background: var(--danger);
+  color: #fff;
+}
+.layout-arrow {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  cursor: pointer;
+}
+.layout-arrow:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.arrow-up {
+  top: 16px;
+  left: 50%;
+  translate: -50% 0;
+}
+.arrow-down {
+  bottom: 16px;
+  left: 50%;
+  translate: -50% 0;
+}
+.arrow-left {
+  left: 16px;
+  top: 50%;
+  translate: 0 -50%;
+}
+.arrow-right {
+  right: 16px;
+  top: 50%;
+  translate: 0 -50%;
+}
+.layout-name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 70px);
+  text-align: center;
+  color: var(--text-muted);
+  pointer-events: none;
+}
