@@ -17,9 +17,11 @@
     "@tauri-apps/plugin-dialog": "^2.8.1",
     "@tauri-apps/plugin-fs": "^2.6.0",
     "@tauri-apps/plugin-opener": "^2.7.0",
+    "konva": "^10.7.0",
     "lucide-react": "^1.49.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
+    "react-konva": "^19.3.0",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
