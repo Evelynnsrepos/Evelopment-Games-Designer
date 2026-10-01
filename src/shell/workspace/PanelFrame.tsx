@@ -27,20 +27,18 @@ export function PanelFrame({ panel }: { panel: Panel }) {
       onDragOver={(e) => {
         if (!e.dataTransfer.types.includes(DRAG_MIME)) return
         e.preventDefault()
-        const box = e.currentTarget.getBoundingClientRect()
-        setDrop(sideFromPoint((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height))
+        setDrop(dropSide(e))
       }}
       onDragLeave={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrop(null)
       }}
       onDrop={(e) => {
         const raw = e.dataTransfer.getData(DRAG_MIME)
-        const side = drop
         setDrop(null)
-        if (!raw || !side) return
+        if (!raw) return
         e.preventDefault()
         const p = JSON.parse(raw) as DragPayload
-        openComponent(p.type, p.documentId, { targetId: panel.id, side })
+        openComponent(p.type, p.documentId, { targetId: panel.id, side: dropSide(e) })
       }}
     >
       <header className="panel-header">
@@ -74,6 +72,12 @@ export function PanelFrame({ panel }: { panel: Panel }) {
       )}
     </section>
   )
+}
+
+/** Which half of the panel the pointer is over (ED-3). */
+function dropSide(e: React.DragEvent<HTMLElement>): DropSide {
+  const box = e.currentTarget.getBoundingClientRect()
+  return sideFromPoint((e.clientX - box.left) / box.width, (e.clientY - box.top) / box.height)
 }
 
 /** A crashing component must not take down the whole editor. */
