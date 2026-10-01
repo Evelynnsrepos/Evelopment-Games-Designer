@@ -10,3 +10,4 @@ export { CanvasEditor, useCanvasState, sceneBinding, type CanvasEditorProps, typ
 export { CanvasToolbar, type CanvasToolbarProps } from './CanvasToolbar'
 export { BUILTIN_NODE_TYPES, CanvasImage, NOTE_COLORS, connectorPoints, measureTextHeight, placeholderPattern, useLoadedImage } from './nodeTypes'
 export { useCanvasTheme, readCanvasTheme } from './theme'
+export { localToWorld, worldToLocal, type NodeTransform } from './transform'
