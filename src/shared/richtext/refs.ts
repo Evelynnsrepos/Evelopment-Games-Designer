@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { ENTITY_TYPES, type Entity, type EntityType } from '@/core/model'
 import { allEntities, useProjectStore } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
+import { openEntity } from '@/shared/entityList/navigation'
 import type { RefItem, RefProvider, RefTarget } from './types'
 
 export const MAX_REF_RESULTS = 20
@@ -50,12 +50,6 @@ export function combineRefProviders(...providers: RefProvider[]): RefProvider {
 }
 
 const ENTITY_HINT: Record<EntityType, string> = { item: 'Item', character: 'Character', town: 'Town', enemy: 'Enemy' }
-const ENTITY_LIST: Record<EntityType, 'item-list' | 'character-list' | 'town-list' | 'enemy-list'> = {
-  item: 'item-list',
-  character: 'character-list',
-  town: 'town-list',
-  enemy: 'enemy-list',
-}
 
 const isEntityType = (kind: string): kind is EntityType => (ENTITY_TYPES as readonly string[]).includes(kind)
 const toItem = (e: Entity): RefItem => ({ kind: e.type, id: e.id, label: e.name || 'Untitled', hint: ENTITY_HINT[e.type] })
@@ -73,7 +67,7 @@ export function useEntityRefProvider(options?: { open?: (target: RefTarget) => v
         const hit = (entities[target.kind] as Entity[]).find((e) => e.id === target.id)
         return hit && toItem(hit)
       },
-      open: open ?? ((target) => isEntityType(target.kind) && openComponent(ENTITY_LIST[target.kind])),
+      open: open ?? ((target) => isEntityType(target.kind) && openEntity(target.kind, target.id)),
     }
   }, [entities, open])
 }

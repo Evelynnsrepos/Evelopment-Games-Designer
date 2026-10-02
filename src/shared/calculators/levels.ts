@@ -1,4 +1,4 @@
-import type { Enemy, Id, StatBlock, StatGrowth } from '@/core/model'
+import type { Enemy, Id } from '@/core/model'
 import { compile, getFormula, type CompiledFormula } from '@/shared/formulas'
 import type { CostRow, GrowthRow, LevelPresetDoc } from './docs'
 
@@ -11,24 +11,9 @@ export function levelRange(doc: Pick<LevelPresetDoc, 'levelFrom' | 'levelTo'>): 
   return Array.from({ length: to - from + 1 }, (_, i) => from + i)
 }
 
-/**
- * Stat growth per level, the same rule the Enemy List uses (EN-3): `base` is the level 1 value.
- * flat: base + perLevel × (level − 1); percent: base × (1 + perLevel%)^(level − 1).
- */
-export function statAtLevel(base: number, growth: Pick<StatGrowth, 'mode' | 'perLevel'> | undefined, level: number): number {
-  if (!growth) return base
-  const steps = Math.max(0, level - 1)
-  return growth.mode === 'percent' ? base * (1 + growth.perLevel / 100) ** steps : base + growth.perLevel * steps
-}
-
-/** Every stat of an enemy at a level. Enemy stats are stored as their level 1 values. */
-export function enemyStatsAtLevel(enemy: Pick<Enemy, 'stats' | 'growth'>, level: number): StatBlock {
-  const out: StatBlock = {}
-  for (const [name, base] of Object.entries(enemy.stats ?? {})) {
-    out[name] = statAtLevel(base, (enemy.growth ?? []).find((g) => g.stat === name), level)
-  }
-  return out
-}
+// Stat growth per level is shared with the Enemy List (EN-3, LV-3); one implementation lives there.
+import { enemyStatsAtLevel, statAtLevel } from '@/shared/entityList/growth'
+export { enemyStatsAtLevel, statAtLevel }
 
 const compiled = new Map<string, CompiledFormula | Error>()
 function cachedCompile(source: string): CompiledFormula {

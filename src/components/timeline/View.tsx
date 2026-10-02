@@ -16,7 +16,8 @@ import {
   type CanvasTool,
   type SceneRecipe,
 } from '@/shared/canvas'
-import { useEntityRefProvider } from '@/shared/richtext'
+import { combineRefProviders, useEntityRefProvider } from '@/shared/richtext'
+import { useArticleRefProvider } from '@/shared/wiki'
 import { Details } from './Details'
 import { createDefaultTimeline, events, layoutCards, mainLine, normalizeTimeline, yearAxis, type TimelineItem } from './model'
 import { makeTimelineTypes } from './timelineTypes'
@@ -64,7 +65,9 @@ function YearInput({ label, value, onChange }: { label: string; value: number | 
 export default function View({ documentId, active }: PanelProps) {
   const doc = useDocument('timeline', documentId!, createDefaultTimeline)
   const root = useProjectStore((s) => s.root)
-  const refs = useEntityRefProvider()
+  const entityRefs = useEntityRefProvider()
+  const articleRefs = useArticleRefProvider()
+  const refs = useMemo(() => combineRefProviders(articleRefs, entityRefs), [articleRefs, entityRefs])
   const canvas = useCanvasState({ toolId: 'event' })
   const { font } = useCanvasTheme()
   const [showDetails, setShowDetails] = useState(true)

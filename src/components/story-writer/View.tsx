@@ -5,7 +5,8 @@ import type { Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore } from '@/core/state'
 import { CanvasEditor, deleteNodes, handTool, rectCenter, sceneBinding, selectTool, useCanvasState, type CanvasApi, type CanvasTool } from '@/shared/canvas'
-import { useEntityRefProvider } from '@/shared/richtext'
+import { combineRefProviders, useEntityRefProvider } from '@/shared/richtext'
+import { useArticleRefProvider } from '@/shared/wiki'
 import { createDefaultStory, isStoryNode, isUrlLink, patchStoryNode, setNodeColor, STORY_COLORS, storyNodes, type StoryItem, type StoryLink } from './model'
 import { NodeDetails } from './NodeDetails'
 import { makeStoryNodeTypes, STORY_NODE_UI } from './storyNodeType'
@@ -22,7 +23,9 @@ const UI = {
 export default function View({ documentId, active }: PanelProps) {
   const doc = useDocument('story-writer', documentId!, createDefaultStory)
   const root = useProjectStore((s) => s.root)
-  const refs = useEntityRefProvider()
+  const entityRefs = useEntityRefProvider()
+  const articleRefs = useArticleRefProvider()
+  const refs = useMemo(() => combineRefProviders(articleRefs, entityRefs), [articleRefs, entityRefs])
   const canvas = useCanvasState({ toolId: 'create' })
   const apiRef = useRef<CanvasApi<StoryItem> | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
