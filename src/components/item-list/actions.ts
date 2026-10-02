@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { Category, CategoryValue, Id, Item } from '@/core/model'
-import { History, useProjectStore } from '@/core/state'
+import { collabNames, getCollabBinding, History, useProjectStore } from '@/core/state'
 import { applyToEntity, forgetEntity, removeFromEntity, renameOptionValues, type CategoryChange } from '@/shared/categories'
 
 /**
@@ -53,14 +53,30 @@ export function change(group: string | null, fn: () => void) {
   const t = track()
   if (!t) return
   const now = Date.now()
-  if (!(group && t.lastGroup === group && now - t.lastAt < GROUP_MS)) t.history.record(snapshot())
+  const sameGroup = group && t.lastGroup === group && now - t.lastAt < GROUP_MS
+  // In a shared project undo only covers this device's changes (core/collab).
+  const collab = getCollabBinding(useProjectStore.getState().root)
+  if (collab) {
+    if (!sameGroup) collab.boundary(collabNames.project)
+  } else if (!sameGroup) t.history.record(snapshot())
   t.lastGroup = group
   t.lastAt = now
   fn()
   bump()
 }
 
+function collabStep(dir: 'undo' | 'redo'): boolean {
+  const collab = getCollabBinding(useProjectStore.getState().root)
+  if (!collab) return false
+  collab[dir](collabNames.project)
+  const t = track()
+  if (t) t.lastGroup = null
+  bump()
+  return true
+}
+
 export function undo() {
+  if (collabStep('undo')) return
   const t = track()
   const prev = t?.history.undo(snapshot())
   if (!t || !prev) return
@@ -70,6 +86,7 @@ export function undo() {
 }
 
 export function redo() {
+  if (collabStep('redo')) return
   const t = track()
   const next = t?.history.redo(snapshot())
   if (!t || !next) return
@@ -79,10 +96,10 @@ export function redo() {
 }
 
 export function canUndo() {
-  return !!track()?.history.canUndo
+  return getCollabBinding(useProjectStore.getState().root)?.canUndo(collabNames.project) ?? !!track()?.history.canUndo
 }
 export function canRedo() {
-  return !!track()?.history.canRedo
+  return getCollabBinding(useProjectStore.getState().root)?.canRedo(collabNames.project) ?? !!track()?.history.canRedo
 }
 
 const store = () => useProjectStore.getState()

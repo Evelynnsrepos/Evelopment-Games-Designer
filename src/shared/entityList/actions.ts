@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { newId, type Category, type CategoryValue, type EntityBase, type EntityOf, type EntityType, type Id } from '@/core/model'
-import { History, useProjectStore } from '@/core/state'
+import { collabNames, getCollabBinding, History, useProjectStore } from '@/core/state'
 import { applyToEntity, forgetEntity, removeFromEntity, renameOptionValues, type CategoryChange } from '@/shared/categories'
 
 /**
@@ -82,7 +82,12 @@ export function createEntityActions<T extends EntityType>(type: T): EntityAction
     const t = track()
     if (!t) return
     const now = Date.now()
-    if (!(group && t.lastGroup === group && now - t.lastAt < GROUP_MS)) t.history.record(snapshot())
+    const sameGroup = group && t.lastGroup === group && now - t.lastAt < GROUP_MS
+    // In a shared project undo only covers this device's changes (core/collab).
+    const collab = getCollabBinding(store().root)
+    if (collab) {
+      if (!sameGroup) collab.boundary(collabNames.project)
+    } else if (!sameGroup) t.history.record(snapshot())
     t.lastGroup = group
     t.lastAt = now
     fn()
@@ -90,6 +95,14 @@ export function createEntityActions<T extends EntityType>(type: T): EntityAction
   }
 
   const step = (dir: 'undo' | 'redo') => {
+    const collab = getCollabBinding(store().root)
+    if (collab) {
+      collab[dir](collabNames.project)
+      const t = track()
+      if (t) t.lastGroup = null
+      bump()
+      return
+    }
     const t = track()
     const snap = t?.history[dir](snapshot())
     if (!t || !snap) return
@@ -106,8 +119,8 @@ export function createEntityActions<T extends EntityType>(type: T): EntityAction
     change,
     undo: () => step('undo'),
     redo: () => step('redo'),
-    canUndo: () => !!track()?.history.canUndo,
-    canRedo: () => !!track()?.history.canRedo,
+    canUndo: () => getCollabBinding(store().root)?.canUndo(collabNames.project) ?? !!track()?.history.canUndo,
+    canRedo: () => getCollabBinding(store().root)?.canRedo(collabNames.project) ?? !!track()?.history.canRedo,
 
     add(name) {
       let entity: EntityOf<T> | undefined
