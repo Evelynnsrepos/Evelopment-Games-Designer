@@ -1,4 +1,5 @@
 import { convertFileSrc } from '@tauri-apps/api/core'
+import { create } from 'zustand'
 import { getFs } from '../fs'
 import { newId, type AssetPath } from '../model'
 
@@ -167,6 +168,12 @@ export async function resolveAssetPath(root: string, path: AssetPath): Promise<s
 
 const blobUrls = new Map<string, string>()
 
+/** Bumped when asset files appear on disk from outside the app's own import (collaboration). */
+export const useAssetsVersion = create<{ version: number }>()(() => ({ version: 0 }))
+export function bumpAssets() {
+  useAssetsVersion.setState((s) => ({ version: s.version + 1 }))
+}
+
 /**
  * A URL an `<img>` or `<audio>` can load. Desktop: Tauri's asset protocol.
  * Browser dev build: a blob URL read from the fake disk (cached).
@@ -176,7 +183,8 @@ export async function assetUrl(root: string, path: AssetPath | null | undefined)
   if (!path) return null
   const fs = getFs()
   const abs = await resolveAssetPath(root, path)
-  if (fs.kind === 'tauri') return convertFileSrc(abs)
+  // Missing files (e.g. still arriving from a teammate) show the placeholder until bumpAssets().
+  if (fs.kind === 'tauri') return (await fs.exists(abs)) ? convertFileSrc(abs) : null
   const cached = blobUrls.get(abs)
   if (cached) return cached
   if (!(await fs.exists(abs))) return null

@@ -2,7 +2,7 @@ import { Download } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { saveTextFile } from '@/core/export'
 import type { PanelProps } from '@/core/registry'
-import { useDocument, useProjectStore } from '@/core/state'
+import { collabNames, useDocument, useProjectStore } from '@/core/state'
 import {
   combineRefProviders,
   countRichTextWords,
@@ -70,6 +70,7 @@ export default function View({ documentId }: PanelProps) {
           key={documentId}
           value={body}
           onChange={setBody}
+          liveTextName={collabNames.text(collabNames.document('writer', documentId), 'body')}
           refs={refs}
           pickImage={images.pickImage}
           resolveImageSrc={images.resolveImageSrc}

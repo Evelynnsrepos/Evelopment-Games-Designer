@@ -26,6 +26,7 @@ import {
   type NewProjectInput,
 } from '../project'
 import { flushAll, scheduleSave } from './autosave'
+import { collabNames, getCollabBinding } from './collabBinding'
 
 /**
  * The open project: meta, entities and categories. Every mutation updates
@@ -62,6 +63,30 @@ interface ProjectState {
 
 const emptyEntities = (): EntityCollections => ({ item: [], character: [], town: [], enemy: [] })
 
+/** Meta fields each person keeps for themselves in a shared project (their own layout). */
+export const PERSONAL_META_KEYS = ['layout', 'sidebarCollapsed'] as const
+
+export type SharedMeta = Omit<ProjectMeta, (typeof PERSONAL_META_KEYS)[number]>
+
+export function sharedMeta(meta: ProjectMeta): SharedMeta {
+  const { layout: _layout, sidebarCollapsed: _collapsed, ...shared } = meta
+  return shared
+}
+
+/**
+ * Called around opening and closing a project, e.g. to start collaboration
+ * when the project is shared. `opened` runs before `open()` resolves.
+ */
+export interface ProjectLifecycleHook {
+  opened(root: string): Promise<void>
+  closing(root: string): Promise<void>
+}
+const lifecycleHooks = new Set<ProjectLifecycleHook>()
+export function addProjectLifecycleHook(hook: ProjectLifecycleHook) {
+  lifecycleHooks.add(hook)
+  return () => void lifecycleHooks.delete(hook)
+}
+
 export const useProjectStore = create<ProjectState>()((set, get) => {
   const saveMetaSoon = () => {
     const { root, meta } = get()
@@ -70,6 +95,13 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
   const saveCollectionSoon = (type: EntityType) => {
     const root = get().root
     if (root) scheduleSave(`${root}|entities/${type}`, () => saveCollection(root, type, get().entities[type]))
+  }
+  /** Mirror a change into the shared project, if this project is shared. */
+  const share = (name: string, prev: unknown, next: unknown) => getCollabBinding(get().root)?.write(name, prev, next)
+  const setList = (type: EntityType, next: Entity[]) => {
+    share(collabNames.entities(type), get().entities[type], next)
+    set({ entities: { ...get().entities, [type]: next } })
+    saveCollectionSoon(type)
   }
 
   const afterOpen = async (root: string, meta: ProjectMeta) => {
@@ -92,7 +124,8 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
       await get().close()
       const p = await loadProject(root)
       set({ root: p.root, meta: p.meta, entities: p.entities, categories: p.categories })
-      await afterOpen(p.root, p.meta)
+      for (const hook of lifecycleHooks) await hook.opened(p.root)
+      await afterOpen(p.root, get().meta!)
     },
 
     async create(input) {
@@ -106,6 +139,7 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
       const { root, meta } = get()
       if (!root) return
       await flushAll(root)
+      for (const hook of lifecycleHooks) await hook.closing(root)
       if (meta) {
         // Refresh launcher stats with everything just saved.
         await afterOpen(root, meta)
@@ -116,7 +150,12 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
     updateMeta(patch) {
       const meta = get().meta
       if (!meta) return
-      set({ meta: { ...meta, ...patch } })
+      const next = { ...meta, ...patch }
+      const collab = getCollabBinding(get().root)
+      if (collab && Object.keys(patch).some((k) => !(PERSONAL_META_KEYS as readonly string[]).includes(k))) {
+        collab.write(collabNames.meta, sharedMeta(meta), sharedMeta(next), { track: false })
+      }
+      set({ meta: next })
       saveMetaSoon()
     },
 
@@ -153,22 +192,19 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
 
     addEntity(type, name) {
       const entity = createEntity(type, name)
-      set({ entities: { ...get().entities, [type]: [...get().entities[type], entity] } })
-      saveCollectionSoon(type)
+      setList(type, [...(get().entities[type] as Entity[]), entity])
       return entity
     },
 
     updateEntity(type, id, patch) {
       const list = get().entities[type] as Entity[]
       const next = list.map((e) => (e.id === id ? { ...e, ...patch, updatedAt: new Date().toISOString() } : e))
-      set({ entities: { ...get().entities, [type]: next } })
-      saveCollectionSoon(type)
+      setList(type, next)
     },
 
     removeEntity(type, id) {
       const list = get().entities[type] as Entity[]
-      set({ entities: { ...get().entities, [type]: list.filter((e) => e.id !== id) } })
-      saveCollectionSoon(type)
+      setList(type, list.filter((e) => e.id !== id))
     },
 
     getEntity(type, id) {
@@ -176,11 +212,11 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
     },
 
     setEntities(type, list) {
-      set({ entities: { ...get().entities, [type]: list } })
-      saveCollectionSoon(type)
+      setList(type, list as Entity[])
     },
 
     setCategories(categories) {
+      share(collabNames.categories, get().categories, categories)
       set({ categories })
       const root = get().root
       if (root) scheduleSave(`${root}|categories`, () => saveCategories(root, get().categories))
@@ -191,4 +227,29 @@ export const useProjectStore = create<ProjectState>()((set, get) => {
 /** All entities of every type, handy for pickers and `[[` link search. */
 export function allEntities(collections: EntityCollections): Entity[] {
   return ENTITY_TYPES.flatMap((t) => collections[t] as Entity[])
+}
+
+// ---------------------------------------------------------------------------
+// Shared projects: changes that arrived from another device (or by undo).
+
+export function receiveSharedMeta(root: string, shared: SharedMeta) {
+  const s = useProjectStore.getState()
+  if (s.root !== root || !s.meta) return
+  const meta: ProjectMeta = { ...shared, layout: s.meta.layout, sidebarCollapsed: s.meta.sidebarCollapsed }
+  useProjectStore.setState({ meta })
+  scheduleSave(`${root}|meta`, () => saveMeta(root, useProjectStore.getState().meta!))
+}
+
+export function receiveSharedEntities(root: string, type: EntityType, list: Entity[]) {
+  const s = useProjectStore.getState()
+  if (s.root !== root) return
+  useProjectStore.setState({ entities: { ...s.entities, [type]: list } })
+  scheduleSave(`${root}|entities/${type}`, () => saveCollection(root, type, useProjectStore.getState().entities[type]))
+}
+
+export function receiveSharedCategories(root: string, categories: Category[]) {
+  const s = useProjectStore.getState()
+  if (s.root !== root) return
+  useProjectStore.setState({ categories })
+  scheduleSave(`${root}|categories`, () => saveCategories(root, useProjectStore.getState().categories))
 }

@@ -51,6 +51,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - **Tiling editor**: open several tools side by side, drag a tool from the sidebar to split the screen, and resize the splits.
 - **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets.
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
+- **Work together**: share a project with an invite code and edit it live with others, peer to peer, on Windows, Mac and Linux. No account or server; offline changes merge when you reconnect.
 - **Light and dark themes** (dark by default), plus a **Project look** per project: accent, background and wallpaper.
 - **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
 
@@ -82,6 +83,8 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 ### Your data stays yours
 Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 `Documents/Evelopment Games Designer/`. Easy to back up and readable, it works fully offline, and the app sends no telemetry.
+The app only goes online when you share a project: teammates' computers then connect to each other directly and encrypted,
+using public relay servers by [n0](https://n0.computer) only to find each other or when a direct connection is not possible. Relays cannot read your project.
 
 ## Community
 

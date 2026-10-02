@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -8,6 +8,7 @@ import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { ProjectThemeDialog } from './projectTheme'
+import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
 import { CloseToolDialog, RestoreToolDialog, type CloseChoice, type RestoreChoice } from './ToolDialogs'
 import { deleteToolContent, hideTool, toolHasContent } from './toolContent'
 
@@ -18,6 +19,7 @@ export function Sidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [addOpen, setAddOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   const [toolMenu, setToolMenu] = useState<{ manifest: ComponentManifest; x: number; y: number } | null>(null)
   const [closing, setClosing] = useState<ComponentManifest | null>(null)
   const [restoring, setRestoring] = useState<ComponentManifest | null>(null)
@@ -89,6 +91,7 @@ export function Sidebar() {
                 >
                   <m.icon size={16} />
                   {!collapsed && <span>{m.name}</span>}
+                  {!collapsed && <TeammateDots at={m.type} wholeType={m.multiDocument && !isOpen} />}
                 </button>
                 {!collapsed && m.multiDocument && (
                   <button className="icon-btn" title={isOpen ? 'Collapse' : 'Expand'} onClick={() => setExpanded({ ...expanded, [m.type]: !isOpen })}>
@@ -111,6 +114,7 @@ export function Sidebar() {
                         {...dragProps(m.type, d.id)}
                       >
                         <span>{d.title}</span>
+                        <TeammateDots at={`${m.type}/${d.id}`} />
                       </button>
                       <button
                         className="icon-btn sidebar-doc-delete"
@@ -168,6 +172,12 @@ export function Sidebar() {
             </div>
           </div>
         )}
+        <button className="sidebar-row" title="Work together" data-tour="share" onClick={() => setShareOpen(true)}>
+          <Users size={16} />
+          {!collapsed && <span>Work together</span>}
+          {!collapsed && <PresenceDots />}
+        </button>
+        {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
         {closing && <CloseToolDialog manifest={closing} onDone={(c) => void finishClose(c)} />}
         {restoring && <RestoreToolDialog manifest={restoring} onDone={(c) => void finishRestore(c)} />}
         <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>

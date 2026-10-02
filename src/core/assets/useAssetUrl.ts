@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { AssetPath } from '../model'
 import { useProjectStore } from '../state'
-import { assetUrl } from './assets'
+import { assetUrl, useAssetsVersion } from './assets'
 
 /** URL for a stored asset path in the open project; null while loading or if missing. */
 export function useAssetUrl(path: AssetPath | null | undefined): string | null {
   const root = useProjectStore((s) => s.root)
+  const assetsVersion = useAssetsVersion((s) => s.version)
   const [resolved, setResolved] = useState<{ key: string; url: string | null } | null>(null)
   const key = `${root}|${path ?? ''}`
 
@@ -20,7 +21,7 @@ export function useAssetUrl(path: AssetPath | null | undefined): string | null {
     return () => {
       cancelled = true
     }
-  }, [root, path, key])
+  }, [root, path, key, assetsVersion])
 
   return resolved?.key === key ? resolved.url : null
 }
