@@ -16,9 +16,12 @@ export interface AppSettings {
   personalWords: string[]
   /** Use the downloaded AI helper for suggestions when it is installed. */
   aiHelper: boolean
+  /** Pen tool on every canvas: line width in pixels and stabilizer strength 0..1. */
+  penSize: number
+  penSmoothing: number
 }
 
-const defaults = (): AppSettings => ({ spellCheck: true, spellLanguages: ['en', 'de'], personalWords: [], aiHelper: true })
+const defaults = (): AppSettings => ({ spellCheck: true, spellLanguages: ['en', 'de'], personalWords: [], aiHelper: true, penSize: 3, penSmoothing: 0.5 })
 
 async function settingsPath() {
   const fs = getFs()
@@ -42,8 +45,8 @@ export const useSettings = create<SettingsState>()((set, get) => ({
   },
   update(patch) {
     set(patch)
-    const { spellCheck, spellLanguages, personalWords, aiHelper } = get()
-    void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper }))
+    const { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing } = get()
+    void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing }))
   },
   addWord(word) {
     const words = get().personalWords

@@ -1,5 +1,6 @@
 import { Redo2, Scan, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { useSettings } from '@/core/state'
 import type { CanvasTool } from './types'
 
 export const TOOLBAR_LABELS = {
@@ -10,6 +11,8 @@ export const TOOLBAR_LABELS = {
   zoomReset: 'Reset zoom to 100% (0)',
   fit: 'Fit to content (Shift+1)',
   toolbar: 'Canvas tools',
+  penSize: 'Size',
+  smoothing: 'Smoothing',
 }
 
 export interface CanvasToolbarProps {
@@ -49,6 +52,12 @@ export function CanvasToolbar(p: CanvasToolbarProps) {
           </button>
         )
       })}
+      {p.toolId === 'pen' && (
+        <>
+          <span className="canvas-toolbar-sep" />
+          <PenOptions />
+        </>
+      )}
       {p.children ? (
         <>
           <span className="canvas-toolbar-sep" />
@@ -80,5 +89,25 @@ export function CanvasToolbar(p: CanvasToolbarProps) {
         <Scan size={17} strokeWidth={1.8} />
       </button>
     </div>
+  )
+}
+
+/** Pen size and smoothing sliders, shown while the pen is the active tool (v0.4). Kept for every canvas. */
+function PenOptions() {
+  const size = useSettings((s) => s.penSize)
+  const smoothing = useSettings((s) => s.penSmoothing)
+  const update = useSettings((s) => s.update)
+  return (
+    <>
+      <label className="canvas-toolbar-slider" title={`${TOOLBAR_LABELS.penSize}: ${size}px`}>
+        <span>{TOOLBAR_LABELS.penSize}</span>
+        <input type="range" min={1} max={40} step={1} value={size} onChange={(e) => update({ penSize: Number(e.target.value) })} />
+        <span className="canvas-toolbar-value">{size}</span>
+      </label>
+      <label className="canvas-toolbar-slider" title={`${TOOLBAR_LABELS.smoothing}: ${Math.round(smoothing * 100)}%`}>
+        <span>{TOOLBAR_LABELS.smoothing}</span>
+        <input type="range" min={0} max={1} step={0.05} value={smoothing} onChange={(e) => update({ penSmoothing: Number(e.target.value) })} />
+      </label>
+    </>
   )
 }

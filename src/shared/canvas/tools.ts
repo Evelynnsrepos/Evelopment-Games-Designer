@@ -4,6 +4,7 @@ import { rectFromPoints, rectsIntersect, simplifyPoints, snapAngle } from './geo
 import { addNodes, selectableNodes, translateNodes } from './scene'
 import { NOTE_COLORS } from './nodeTypes'
 import type { CanvasApi, CanvasTool, EllipseNode, LineNode, NodeBase, NoteNode, Point, RectNode, TextNode, ToolPointerEvent } from './types'
+import { useSettings } from '@/core/state'
 
 /** Labels kept as constants so they can be translated later. */
 export const TOOL_LABELS = {
@@ -251,6 +252,12 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
     if (e.button !== 0) return
     const origin = e.world
     const points = [0, 0]
+    const { penSize, penSmoothing } = useSettings.getState()
+    // Stabilizer: each drawn point only moves part of the way to the pointer, which irons out shaky hands.
+    const follow = 1 - Math.min(0.9, penSmoothing * 0.9)
+    let sx = 0
+    let sy = 0
+    let raw = { x: 0, y: 0 }
     const make = (pts: number[]): LineNode => ({
       id: newId(),
       kind: 'line',
@@ -258,18 +265,22 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
       x: origin.x,
       y: origin.y,
       smooth: true,
-      strokeWidth: 3,
       ...options.defaults?.(),
+      strokeWidth: penSize,
       points: pts,
     })
     return {
       move(m) {
-        points.push(m.world.x - origin.x, m.world.y - origin.y)
+        raw = { x: m.world.x - origin.x, y: m.world.y - origin.y }
+        sx += (raw.x - sx) * follow
+        sy += (raw.y - sy) * follow
+        points.push(sx, sy)
         api.setDraft([make(points)])
       },
       up() {
         api.setDraft(null)
         if (points.length < 4) points.push(0.5, 0.5) // a dot
+        else points.push(raw.x, raw.y) // the stroke still ends where the pointer was let go
         const node = make(simplifyPoints(points, 1.5 / api.viewport.scale))
         api.update((s) => addNodes(s, [node]))
       },
