@@ -260,13 +260,19 @@ export default function View({ documentId, active }: PanelProps) {
             </button>
           ))}
           <span className="canvas-toolbar-sep" />
-          <select className="input map-select" title={UI.stampSize} aria-label={UI.stampSize} value={stamp.size} onChange={(e) => setStamp((v) => ({ ...v, size: Number(e.target.value) }))}>
-            {STAMP_SIZES.map((n) => (
-              <option key={n} value={n}>
-                {n}px
-              </option>
-            ))}
-          </select>
+          <label className="canvas-toolbar-slider" title={UI.stampSize}>
+            <span>{UI.stampSize}</span>
+            <input
+              type="range"
+              min={STAMP_SIZES[0]}
+              max={STAMP_SIZES[STAMP_SIZES.length - 1]}
+              step={2}
+              value={stamp.size}
+              aria-label={UI.stampSize}
+              onChange={(e) => setStamp((v) => ({ ...v, size: Number(e.target.value) }))}
+            />
+            <span className="canvas-toolbar-value">{stamp.size}</span>
+          </label>
         </div>
       )}
 

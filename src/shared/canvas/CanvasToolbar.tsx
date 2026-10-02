@@ -13,6 +13,7 @@ export const TOOLBAR_LABELS = {
   toolbar: 'Canvas tools',
   penSize: 'Size',
   smoothing: 'Smoothing',
+  opacity: 'Opacity',
 }
 
 export interface CanvasToolbarProps {
@@ -96,6 +97,7 @@ export function CanvasToolbar(p: CanvasToolbarProps) {
 function PenOptions() {
   const size = useSettings((s) => s.penSize)
   const smoothing = useSettings((s) => s.penSmoothing)
+  const opacity = useSettings((s) => s.penOpacity)
   const update = useSettings((s) => s.update)
   return (
     <>
@@ -103,6 +105,11 @@ function PenOptions() {
         <span>{TOOLBAR_LABELS.penSize}</span>
         <input type="range" min={1} max={40} step={1} value={size} onChange={(e) => update({ penSize: Number(e.target.value) })} />
         <span className="canvas-toolbar-value">{size}</span>
+      </label>
+      <label className="canvas-toolbar-slider" title={`${TOOLBAR_LABELS.opacity}: ${Math.round(opacity * 100)}%`}>
+        <span>{TOOLBAR_LABELS.opacity}</span>
+        <input type="range" min={0.1} max={1} step={0.05} value={opacity} onChange={(e) => update({ penOpacity: Number(e.target.value) })} />
+        <span className="canvas-toolbar-value">{Math.round(opacity * 100)}%</span>
       </label>
       <label className="canvas-toolbar-slider" title={`${TOOLBAR_LABELS.smoothing}: ${Math.round(smoothing * 100)}%`}>
         <span>{TOOLBAR_LABELS.smoothing}</span>

@@ -156,7 +156,7 @@ const lineType: NodeType<LineNode> = {
     return n.arrow ? (
       <Arrow {...common} fill={common.stroke} pointerLength={10 + common.strokeWidth} pointerWidth={10 + common.strokeWidth} />
     ) : (
-      <Line {...common} tension={n.smooth ? 0.4 : 0} />
+      <Line {...common} tension={n.smooth ? 0.4 : 0} opacity={n.opacity ?? 1} />
     )
   },
   bounds: (n) => expandRect(pointsBounds(n.points), (n.strokeWidth ?? 2) / 2 + (n.arrow ? 8 : 0)),

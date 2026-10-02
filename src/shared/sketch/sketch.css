@@ -1,0 +1,292 @@
+.sketch {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+.sketch-topbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.sketch-tool.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+.sketch-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 6px;
+  background: var(--border);
+}
+.sketch-spacer {
+  flex: 1;
+}
+.sketch-saving {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sketch-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+.sketch-stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--bg-sunken, var(--bg));
+  touch-action: none;
+}
+.sketch-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+.sketch-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.sketch-guide {
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 6 6;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-selection {
+  fill: rgb(62 142 247 / 0.08);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-dasharray: 5 4;
+  vector-effect: non-scaling-stroke;
+  animation: sketch-ants 0.6s linear infinite;
+}
+@keyframes sketch-ants {
+  to {
+    stroke-dashoffset: -9;
+  }
+}
+.sketch-cursor {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1;
+  filter: drop-shadow(0 0 1px #000);
+}
+.sketch-panel {
+  width: 250px;
+  flex: none;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-size: 13px;
+}
+.sketch-panel h4 {
+  margin: 0 0 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.sketch-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+.sketch-colors input[type='color'] {
+  width: 34px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.sketch-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.sketch-swatch.is-active {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.sketch-brushes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.sketch-brush {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+.sketch-brush.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.sketch-slider {
+  display: grid;
+  grid-template-columns: 68px 1fr 44px;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0;
+}
+.sketch-slider input {
+  width: 100%;
+}
+.sketch-slider-value {
+  text-align: right;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sketch-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+.sketch-row select {
+  flex: 1;
+}
+.sketch-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sketch-layers-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sketch-layer {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.sketch-layer:hover {
+  background: var(--bg-hover);
+}
+.sketch-layer.is-active {
+  background: var(--bg-hover);
+  outline: 1px solid var(--accent);
+}
+.sketch-layer.is-clip {
+  margin-left: 14px;
+}
+.sketch-layer-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sketch-thumb {
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0 / 8px 8px;
+}
+.sketch-layer-props {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: default;
+}
+.sketch-layer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  align-items: center;
+}
+.sketch-small {
+  padding: 2px 6px;
+  font-size: 12px;
+}
+.sketch-small.is-active {
+  color: var(--accent);
+}
+.sketch-background {
+  margin-top: 10px;
+}
+.sketch-ref {
+  position: absolute;
+  z-index: 5;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.sketch-ref img {
+  display: block;
+  width: 100%;
+  user-select: none;
+}
+.sketch-ref-missing {
+  height: 120px;
+}
+.sketch-ref-bar {
+  display: flex;
+  justify-content: flex-end;
+  height: 20px;
+  cursor: move;
+  background: var(--bg-hover);
+}
+.sketch-ref-resize {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
+}
+.modal:has(.sketch-picker) {
+  width: min(720px, calc(100vw - 32px));
+}
+.sketch-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+  max-height: 55vh;
+  overflow: auto;
+}
+.sketch-picker-item {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: none;
+  cursor: pointer;
+}
+.sketch-picker-item:hover {
+  outline: 2px solid var(--accent);
+}
+.sketch-picker-item img,
+.sketch-picker-item .placeholder-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

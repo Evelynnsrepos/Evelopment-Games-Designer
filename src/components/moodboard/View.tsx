@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assetUrl, dragHasFiles, importAssetsFromDataTransfer, pickAndImportAssets, useAssetUrls, type ImportedAsset } from '@/core/assets'
 import { newId, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
-import { useDocument, useProjectStore } from '@/core/state'
+import { useDocument, useIntentHandler, useProjectStore } from '@/core/state'
 import {
   addNodes,
   arrowTool,
@@ -142,6 +142,19 @@ export default function View({ documentId, active }: PanelProps) {
       api.select(nodes.map((n) => n.id))
     },
     [root, imageLayerId],
+  )
+
+  // Pictures sent from another tool (Sketch "Send to…", v0.5).
+  useIntentHandler(
+    'moodboard',
+    (intent) => {
+      if (intent.action !== 'add-image' || typeof intent.path !== 'string') return
+      const asset: ImportedAsset = { path: intent.path, kind: 'image', name: String(intent.name ?? 'Image') }
+      // The canvas may still be mounting right after the panel opened.
+      const place = (tries: number) => (apiRef.current ? void placeImages([asset], viewCenter()) : tries > 0 && setTimeout(() => place(tries - 1), 150))
+      place(20)
+    },
+    !!scene,
   )
 
   if (!doc.data || !scene) return null

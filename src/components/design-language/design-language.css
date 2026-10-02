@@ -1,0 +1,40 @@
+.dl-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.dl-palette {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.dl-color {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dl-chip {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  flex: none;
+}
+.dl-color-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dl-remove {
+  opacity: 0;
+}
+.dl-color:hover .dl-remove {
+  opacity: 1;
+}
+.dl-rules {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+}

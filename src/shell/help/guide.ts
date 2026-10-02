@@ -193,6 +193,37 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     ],
     tips: ['Each cosmos is its own document, so you can keep several (for example one per game or era).', 'Ctrl+Z undoes, including deletes.'],
   },
+  sketch: {
+    title: 'Sketch',
+    body: [
+      'Draw and paint like in Procreate. Pick a canvas size when you start a new drawing.',
+      'Brushes: Pencil, Ink, Marker, Paint and Airbrush. With a pen tablet, pressing harder makes lines thicker or stronger. Size, opacity and smoothing are on the right; [ and ] change the size.',
+      'Layers have opacity, blend modes (Multiply, Screen, Overlay and more), alpha lock (paint only on what is there), clipping masks, duplicate, merge down and reordering. Double-click a layer to rename it.',
+      'Selection: lasso (L) or rectangle (M). Painting, fill, clear, flip and move (V) only affect the selection. Ctrl+D deselects.',
+      'Mirror draws left/right, top/bottom or four ways at once. The eyedropper (I, or hold Alt) picks a color from the picture.',
+      'Insert an image as a new layer, or add a reference image that floats over the canvas without being part of the picture; references can come from any image in the project.',
+      'Export as PNG, or use Send to… to put the picture on a Moodboard, a Design Language board or into the Asset Pool.',
+    ],
+    tips: ['Space or the middle mouse button pans, the mouse wheel zooms, 0 fits the canvas into view.', 'Ctrl+Z undoes strokes. Everything saves by itself a moment after you stop drawing.'],
+  },
+  'design-language': {
+    title: 'Design Language',
+    body: [
+      'Collect the look of your game in one place: put in images as layers, paint and sketch over them with the same brushes and layers as the Sketch tool.',
+      'Keep a named palette on the right; click a color to paint with it. Write the style rules (shapes, line weight, lighting) underneath.',
+      'Pictures sent from the Sketch tool land here as new layers.',
+    ],
+  },
+  'asset-pool': {
+    title: 'Asset Pool',
+    body: [
+      'Track every asset the game still needs: icons, sprites, 3D models, animations, sounds, music, UI and effects.',
+      'Add many… makes one asset for every item, character, town or enemy that does not have one of that kind yet, or one per line of a pasted checklist.',
+      'Click the status to move an asset from Needed to In progress, Review and Done; the bar at the top shows how much is done.',
+      'Select an asset to add notes and pictures. Assets made from an item or character keep its name when you rename it, and Open jumps to it.',
+    ],
+    tips: ['Send a drawing from the Sketch tool to the Asset Pool: it is attached to the selected asset, or becomes a new one.'],
+  },
   'damage-calculator': {
     title: 'Damage Calculator',
     body: [

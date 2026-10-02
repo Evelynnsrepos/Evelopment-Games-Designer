@@ -252,7 +252,7 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
     if (e.button !== 0) return
     const origin = e.world
     const points = [0, 0]
-    const { penSize, penSmoothing } = useSettings.getState()
+    const { penSize, penSmoothing, penOpacity } = useSettings.getState()
     // Stabilizer: each drawn point only moves part of the way to the pointer, which irons out shaky hands.
     const follow = 1 - Math.min(0.9, penSmoothing * 0.9)
     let sx = 0
@@ -267,6 +267,7 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
       smooth: true,
       ...options.defaults?.(),
       strokeWidth: penSize,
+      ...(penOpacity < 1 ? { opacity: penOpacity } : {}),
       points: pts,
     })
     return {

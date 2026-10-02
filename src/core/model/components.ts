@@ -19,6 +19,9 @@ export const COMPONENT_TYPES = [
   'town-list',
   'enemy-list',
   'cosmos',
+  'sketch',
+  'design-language',
+  'asset-pool',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

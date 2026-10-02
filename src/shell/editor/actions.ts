@@ -1,6 +1,7 @@
 import { newId, type ComponentType, type Id } from '@/core/model'
 import { getManifest } from '@/core/registry'
-import { clearDocumentCache, flushAll, useAppStore, useProjectStore } from '@/core/state'
+import { importAssetFromBlob } from '@/core/assets'
+import { clearDocumentCache, flushAll, postIntent, useAppStore, useProjectStore } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import { autoPlacement, findOpen, insertPanel, leaves, neighbor, removePanel, swapPanels, type Direction, type DropSide } from '../workspace/layoutTree'
 
@@ -115,4 +116,25 @@ export const DRAG_MIME = 'application/x-egd-component'
 export interface DragPayload {
   type: ComponentType
   documentId: Id | null
+}
+
+/** Tools that accept a picture from another tool (intent `add-image` with `path` and `name`). */
+export const IMAGE_TARGETS: { type: ComponentType; label: string }[] = [
+  { type: 'moodboard', label: 'Moodboard' },
+  { type: 'design-language', label: 'Design Language' },
+  { type: 'asset-pool', label: 'Asset Pool' },
+]
+
+/**
+ * Send a picture to another tool (v0.5, e.g. a drawing from the Sketch tool):
+ * it is saved into the project's assets, the target opens next to the current
+ * tool and receives an `add-image` intent.
+ */
+export async function sendImageTo(type: ComponentType, blob: Blob, name: string) {
+  const root = useProjectStore.getState().root
+  if (!root) return
+  const asset = await importAssetFromBlob(root, blob, 'image', `${name}.png`)
+  if (!asset) return
+  postIntent(type, { action: 'add-image', path: asset.path, name })
+  openComponent(type)
 }

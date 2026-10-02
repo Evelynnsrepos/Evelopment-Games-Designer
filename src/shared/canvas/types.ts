@@ -75,6 +75,8 @@ export interface LineNode extends NodeBase {
   arrow?: boolean
   /** Smooth the stroke (freehand pen). */
   smooth?: boolean
+  /** 0..1, pen strokes only. */
+  opacity?: number
 }
 
 export interface TextNode extends NodeBase {
