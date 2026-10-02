@@ -1,10 +1,11 @@
-import { FolderOpen, Image, MoreHorizontal, Moon, Plus, Sun, Type } from 'lucide-react'
+import { CircleHelp, FolderOpen, Image, MoreHorizontal, Moon, Plus, Sun, Type } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { getFs } from '@/core/fs'
 import type { RecentProject } from '@/core/model'
 import { deleteProject, isProjectFolder, loadProject, readRecents, removeRecent, saveMeta, upsertRecent } from '@/core/project'
 import { useAppStore, useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
+import { maybeStartTour, useHelp } from '../help/help'
 import { toggleTheme, useTheme } from '../theme'
 import { BackupsDialog } from './BackupsDialog'
 import './launcher.css'
@@ -27,6 +28,9 @@ export function Launcher() {
   useEffect(() => {
     void refresh()
   }, [refresh])
+  useEffect(() => {
+    maybeStartTour('launcher')
+  }, [])
 
   const open = async (path: string) => {
     try {
@@ -56,13 +60,16 @@ export function Launcher() {
           <div className="muted">Your game projects</div>
         </div>
         <div className="launcher-actions">
-          <button className="icon-btn" title="Toggle light/dark theme" onClick={toggleTheme}>
+          <button className="icon-btn" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
+            <CircleHelp size={16} />
+          </button>
+          <button className="icon-btn" title="Toggle light/dark theme" data-tour="theme-toggle" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
-          <button className="btn" onClick={() => void openExisting()}>
+          <button className="btn" data-tour="open-folder" onClick={() => void openExisting()}>
             <FolderOpen size={16} /> Open existing folder
           </button>
-          <button className="btn btn-primary" onClick={() => useAppStore.getState().go('new-project')}>
+          <button className="btn btn-primary" data-tour="new-project" onClick={() => useAppStore.getState().go('new-project')}>
             <Plus size={16} /> New Project
           </button>
         </div>
