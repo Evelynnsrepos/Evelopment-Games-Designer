@@ -114,6 +114,11 @@ export default function View({ documentId, active }: PanelProps) {
 - Confirmations and text prompts: `await confirmDialog({...})`, `await promptDialog(title, initial)` from `@/shared/dialogs`.
 - Text visible to users is English but kept in plain string constants so it can be translated later.
 
+### Releases
+
+Every release gets `docs/releases/v<version>.md` (what's new, in plain words). The release workflow puts it on the
+GitHub Releases page. Update the README feature list and the in-app user guide (`src/shell/help/guide.ts`) in the same release.
+
 ### Commits
 
 - Small, focused commits, imperative subject (`Add drop table editor to Enemy List`), reference requirement IDs in the body.

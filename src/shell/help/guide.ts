@@ -25,12 +25,9 @@ export const BASICS: Record<string, GuideTopic> = {
     body: [
       'You can open several tools side by side. Shift-click a tool in the sidebar, or drag a tool or document from the sidebar onto an open panel to split the screen, and drag the dividers to resize.',
       'Press Esc to enter Layout Mode. Every panel shows big buttons to close it or move it around. Layout Mode ends after your next click or key press.',
-      'Settings at the bottom of the sidebar (or the gear on the start screen) has spell check for English and German, your own word list, and an optional AI helper you can download for better suggestions.',
-      'Right-click an underlined word for suggestions or to add it to your dictionary. Names of your items, characters, towns and enemies are never marked as wrong.',
-      'Export a project as a zip from its menu on the start screen, and bring one back with Import zip.',
       'Single-letter shortcuts only work in the panel you clicked last, so typing in one tool never triggers another.',
     ],
-    tips: ['Collapse the sidebar with the button at its bottom to get more room.'],
+    tips: ['Collapse the sidebar with the button at its bottom to get more room.', 'On drawing canvases, the Size and Smoothing sliders appear in the bottom toolbar while the pen is selected. More smoothing irons out shaky lines.'],
   },
   tools: {
     title: 'Adding and closing tools',
@@ -46,6 +43,24 @@ export const BASICS: Record<string, GuideTopic> = {
       'There is no Save button. Everything saves about a second after you change it, and again when you close the app.',
       'Every tool has its own undo and redo: Ctrl+Z and Ctrl+Y (Cmd on a Mac).',
       'The app keeps rolling backups of your last 10 saves. On the start screen, open a project card menu (…) and choose Restore a backup.',
+      'To back up a whole project or send it to someone, open its card menu (…) and choose Export as zip. Import zip on the start screen brings it back as a new project.',
+    ],
+  },
+  spelling: {
+    title: 'Spell check and the AI helper',
+    body: [
+      'Text editors underline misspelled words in English and German. Right-click an underlined word for suggestions or choose Add to dictionary.',
+      'Names of your items, characters, towns and enemies are always counted as correct, so your made-up names are not flagged.',
+      'Settings (bottom of the sidebar, or the gear on the start screen) turns spell check on or off, picks the languages and lists your own words.',
+      'The AI helper is optional. Download it in Settings (about 1.1 GB). It runs on your computer and adds Ask the AI helper to the right-click menu, which picks the spelling that fits the sentence.',
+    ],
+  },
+  plugins: {
+    title: 'Plugins',
+    body: [
+      'Plugins add new tools made by other people. Open Settings, paste the link of a plugin on GitHub and press Install, or use Install from zip.',
+      'Only install plugins you trust. A plugin is a program with full access to your computer, and in projects you share with others it can change things your teammates do not expect.',
+      'An installed plugin appears in Add tool like any other tool. Remove it in Settings; what you made with it stays in your project.',
     ],
   },
   links: {
@@ -156,8 +171,9 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Mark out where everything is in the universe you are creating: universes, galaxies, nebulae, star clusters, solar systems, stars, black holes, planets, moons, asteroid belts, comets and stations.',
       'The list on the left shows everything nested inside each other. Drag an entry onto another to move it inside, or onto the empty space below to move it to the top level.',
-      'The middle shows the place you are looking at with everything inside it on its own orbit. Click to select, double-click to look inside, and use the breadcrumb or the up arrow to go back out.',
-      'Add places a new body where you are looking; it picks a sensible kind (planets in a solar system, moons around a planet) and you can choose another in the drop-down. Give each body a name, a color and notes on the right.',
+      'The middle is an isometric view. At the top level, and inside universes, nebulae and star clusters, everything is drawn as a node graph: lines connect each body to what is inside it.',
+      'Double-click a galaxy or a solar system to see its orbits. Moons circle their planets. Click to select, double-click to look inside, and use the breadcrumb or the up arrow to go back out.',
+      'Add places a new body where you are looking; it picks a sensible kind (planets in a solar system, moons around a planet) and you can choose another in the drop-down. Give each body a name, a color, a picture of your own and notes on the right.',
     ],
     tips: ['Each cosmos is its own document, so you can keep several (for example one per game or era).', 'Ctrl+Z undoes, including deletes.'],
   },

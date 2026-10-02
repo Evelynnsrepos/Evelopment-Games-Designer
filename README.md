@@ -53,6 +53,12 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
 - **Light and dark themes** (dark by default), plus a **Project look** per project: accent, background and wallpaper.
 - **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
+- **Click** a tool in the sidebar to show only that tool; **Shift-click** to open it next to the ones already open.
+- **Spell check** in English and German with suggestions on right-click, your own word list, and names from your project counted as correct.
+- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that picks the best spelling for the sentence.
+- **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
+- **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
+- **Pen size and smoothing** sliders on every drawing canvas.
 
 ### The tools
 
@@ -72,7 +78,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 | **Damage Calculator** | A library of game damage formulas (elemental reactions, armor, crits, damage over time, resistances), plus your own formulas. |
 | **Level Calculator** | XP curves, stat growth, and damage per level against a fixed defense or an enemy from your Enemy List. |
 | **Resource Calculator** | How many resources and how much play time a goal takes, using level-up costs and enemy drop rates. |
-| **Cosmos Creator** | Universes, galaxies, solar systems, planets, moons and more, nested inside each other on an orbit view, to mark out where everything is in your universe. |
+| **Cosmos Creator** | Universes, galaxies, solar systems, planets, moons and more in an isometric view: a node graph at the top level and orbits inside galaxies and solar systems, with moons around their planets and your own pictures for any body. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.
