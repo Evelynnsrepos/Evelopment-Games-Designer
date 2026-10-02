@@ -141,7 +141,8 @@ export class CollabSession implements CollabBinding {
       }
     }, ORIGIN.untracked)
     for (const name of [...this.doc.share.keys()]) {
-      if (parseDocumentName(name) && !docs.has(name) && readTop(this.doc, name) !== undefined) this.removeDocument(name)
+      const doc = parseDocumentName(name)
+      if (doc && !isLocalOnlyType(doc.type) && !docs.has(name) && readTop(this.doc, name) !== undefined) this.removeDocument(name)
     }
     for (const um of this.undoManagers.values()) um.clear()
   }
@@ -333,7 +334,7 @@ export class CollabSession implements CollabBinding {
   private pushToStores(name: string) {
     if (isRemoved(this.doc, name)) {
       const removed = parseDocumentName(name)
-      if (removed) forgetSharedDocument(this.root, removed.type, removed.id)
+      if (removed && !isLocalOnlyType(removed.type)) forgetSharedDocument(this.root, removed.type, removed.id)
       return
     }
     const value = readTop(this.doc, name)
@@ -370,7 +371,8 @@ async function readAllDocuments(root: string): Promise<Map<string, unknown>> {
   const componentsDir = await fs.join(root, 'components')
   if (!(await fs.exists(componentsDir))) return out
   for (const typeDir of await fs.list(componentsDir)) {
-    if (!typeDir.isDirectory) continue
+    // Local-only tools (Sketch) are never shared.
+    if (!typeDir.isDirectory || isLocalOnlyType(typeDir.name as ComponentType)) continue
     const dir = await fs.join(componentsDir, typeDir.name)
     for (const file of await fs.list(dir)) {
       if (file.isDirectory || !file.name.endsWith('.json')) continue
