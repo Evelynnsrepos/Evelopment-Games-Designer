@@ -163,6 +163,25 @@ export class CollabSession implements CollabBinding {
     this.undoManager(scope).stopCapturing()
   }
 
+  // ---- rich text ------------------------------------------------------------
+
+  /**
+   * The live text of a document field (`collabNames.text`). An empty one is
+   * filled by `seed` from the saved JSON. The seed is written under a client id
+   * derived from the name and content, so two devices seeding the same text
+   * while apart produce identical edits that merge into one copy.
+   */
+  richText(name: string, seedKey: string, seed: (fragment: Y.XmlFragment) => void): Y.XmlFragment {
+    const fragment = this.doc.getXmlFragment(name)
+    if (fragment.length > 0) return fragment
+    const temp = new Y.Doc()
+    temp.clientID = hash32(`${name}\n${seedKey}`)
+    seed(temp.getXmlFragment(name))
+    if (temp.getXmlFragment(name).length > 0) Y.applyUpdate(this.doc, Y.encodeStateAsUpdate(temp), ORIGIN.import)
+    temp.destroy()
+    return fragment
+  }
+
   // ---- share info -----------------------------------------------------------
 
   get shareInfo(): ShareInfo | undefined {
@@ -266,6 +285,16 @@ function scopeOf(name: string): string | null {
   if (name === collabNames.categories || name.startsWith('entities:')) return collabNames.project
   if (name.startsWith('doc:')) return name
   return null
+}
+
+/** FNV-1a, never 0 (a valid Yjs client id). */
+function hash32(text: string): number {
+  let h = 0x811c9dc5
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 0x01000193)
+  }
+  return h >>> 0 || 1
 }
 
 /** Every component document on disk, by shared name. */

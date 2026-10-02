@@ -130,6 +130,16 @@ export function activeAwareness() {
   return active?.network.awareness ?? null
 }
 
+/**
+ * Live rich text for a document field of the open shared project, or null
+ * when the project is not shared. See `CollabSession.richText`.
+ */
+export function sharedRichText(name: string, seedKey: string, seed: (fragment: Y.XmlFragment) => void) {
+  const a = active
+  if (!a) return null
+  return { fragment: a.session.richText(name, seedKey, seed), awareness: a.network.awareness }
+}
+
 async function goOnline(session: CollabSession) {
   const network = new CollabNetwork(
     makeTransport(),

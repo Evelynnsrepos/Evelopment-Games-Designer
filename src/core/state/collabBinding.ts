@@ -50,6 +50,13 @@ export const collabNames = {
   document: (type: ComponentType, id: Id) => `doc:${type}/${id}`,
   /** Undo scope for entity lists. */
   project: 'project',
+  /** Live rich text of one field of a document (a Y.XmlFragment, edited character by character). */
+  text: (document: string, field: string) => `text:${document}#${field}`,
+}
+
+/** Names made by `collabNames.text`: these are not JSON values. */
+export function isTextName(name: string): boolean {
+  return name.startsWith('text:')
 }
 
 /** Inverse of `collabNames.document`. */

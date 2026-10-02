@@ -8,7 +8,7 @@ import type { Rect, Viewport } from './types'
  */
 export function RemoteCursors({ presenceKey, viewport, bounds }: { presenceKey: string; viewport: Viewport; bounds(id: Id): Rect | null }) {
   const remotes = usePresence((s) => s.remotes)
-  const here = remotes.filter((r) => r.cursor?.key === presenceKey || r.selection?.key === presenceKey)
+  const here = remotes.filter((r) => r.pointer?.key === presenceKey || r.selection?.key === presenceKey)
   if (here.length === 0) return null
   const s = viewport.scale
   return (
@@ -27,8 +27,8 @@ export function RemoteCursors({ presenceKey, viewport, bounds }: { presenceKey: 
                 />
               )
             })}
-          {r.cursor?.key === presenceKey && (
-            <div className="canvas-presence-cursor" style={{ left: r.cursor.x * s + viewport.x, top: r.cursor.y * s + viewport.y }}>
+          {r.pointer?.key === presenceKey && (
+            <div className="canvas-presence-cursor" style={{ left: r.pointer.x * s + viewport.x, top: r.pointer.y * s + viewport.y }}>
               <svg width="16" height="20" viewBox="0 0 16 20">
                 <path d="M1 1 L1 16 L5 12 L8 19 L11 18 L8 11 L14 11 Z" fill={r.color} stroke="#000" strokeOpacity="0.35" />
               </svg>

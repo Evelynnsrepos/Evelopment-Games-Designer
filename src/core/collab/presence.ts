@@ -6,7 +6,7 @@ import { panelKey, useAppStore, useProjectStore } from '../state'
 /**
  * Presence: what teammates are doing right now (never saved). Each device
  * publishes `user`, `location` (the panel it works in), and per canvas or
- * text editor a `cursor` and `selection`, all tagged with a panel key.
+ * a `pointer` and `selection`; text editors use `cursor` (y-prosemirror carets), all tagged with a panel key.
  */
 export interface Point {
   x: number
@@ -20,7 +20,7 @@ export interface RemotePresence {
   color: string
   /** Panel key of the active panel, e.g. `brainstorm/<id>`. */
   location: string | null
-  cursor: { key: string; x: number; y: number } | null
+  pointer: { key: string; x: number; y: number } | null
   selection: { key: string; ids: string[] } | null
 }
 
@@ -69,15 +69,15 @@ function readRemotes(a: Awareness): RemotePresence[] {
       name: user.name || 'Someone',
       color: user.color || '#888',
       location: typeof state.location === 'string' ? state.location : null,
-      cursor: (state.cursor as RemotePresence['cursor']) ?? null,
+      pointer: (state.pointer as RemotePresence['pointer']) ?? null,
       selection: (state.selection as RemotePresence['selection']) ?? null,
     })
   })
   return out
 }
 
-/** Publish a presence field (cursor, selection) for teammates. No-op when not shared. */
-export function setPresence(field: 'cursor' | 'selection', value: unknown) {
+/** Publish a presence field (canvas pointer, selection) for teammates. No-op when not shared. */
+export function setPresence(field: 'pointer' | 'selection', value: unknown) {
   if (!awareness) return
   const current = awareness.getLocalState()?.[field]
   if (JSON.stringify(current ?? null) === JSON.stringify(value ?? null)) return

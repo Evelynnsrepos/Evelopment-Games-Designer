@@ -469,7 +469,7 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
       const r = rootRef.current?.getBoundingClientRect()
       if (r) {
         const w = screenToWorld({ x: e.clientX - r.left, y: e.clientY - r.top }, live.current.state.viewport)
-        setPresence('cursor', { key: presenceKey, x: Math.round(w.x), y: Math.round(w.y) })
+        setPresence('pointer', { key: presenceKey, x: Math.round(w.x), y: Math.round(w.y) })
       }
     }
     if (gestureRef.current || !tool?.hover) return
@@ -478,7 +478,7 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
   }
 
   const onPointerLeave = () => {
-    if (presenceKey) setPresence('cursor', null)
+    if (presenceKey) setPresence('pointer', null)
     if (!gestureRef.current) tool?.hover?.(null, api)
   }
 
@@ -488,7 +488,7 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
   useEffect(
     () => () => {
       if (presenceKey) {
-        setPresence('cursor', null)
+        setPresence('pointer', null)
         setPresence('selection', null)
       }
     },

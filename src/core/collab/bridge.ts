@@ -1,5 +1,6 @@
 import { generateNKeysBetween } from 'fractional-indexing'
 import * as Y from 'yjs'
+import { isTextName } from '../state/collabBinding'
 
 /**
  * Two-way bridge between the app's immutable JSON snapshots and Yjs, so the
@@ -223,7 +224,8 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 
 /** JSON of a top-level document, or undefined if nobody has written it yet. */
 export function readTop(doc: Y.Doc, name: string): unknown {
-  if (!doc.share.has(name)) return undefined
+  // Rich text fragments are not maps; asking for a map would re-type them.
+  if (!doc.share.has(name) || isTextName(name)) return undefined
   const map = doc.getMap<unknown>(name)
   if (map.size === 0) return undefined
   return fromY(map)
