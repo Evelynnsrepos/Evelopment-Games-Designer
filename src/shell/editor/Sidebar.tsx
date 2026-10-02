@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -8,6 +8,7 @@ import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { ProjectThemeDialog } from './projectTheme'
+import { PresenceDots, ShareDialog } from '../collab/CollabDialogs'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
 export function Sidebar() {
@@ -16,6 +17,7 @@ export function Sidebar() {
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [addOpen, setAddOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
   if (!meta) return null
   const collapsed = meta.sidebarCollapsed
   const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m)
@@ -132,6 +134,12 @@ export function Sidebar() {
             )}
           </div>
         )}
+        <button className="sidebar-row" title="Work together" data-tour="share" onClick={() => setShareOpen(true)}>
+          <Users size={16} />
+          {!collapsed && <span>Work together</span>}
+          {!collapsed && <PresenceDots />}
+        </button>
+        {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
         <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>
           <Palette size={16} />
           {!collapsed && <span>Project look</span>}
