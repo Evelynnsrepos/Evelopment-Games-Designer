@@ -42,4 +42,12 @@ describe('live rich text', () => {
     expect(readTop(b, name)).toBeUndefined()
     expect(() => b.getXmlFragment(name)).not.toThrow()
   })
+
+  it('fills cleared text again (after a restore), even with the same content', () => {
+    const a = new CollabSession('/a')
+    const fragment = a.richText(name, 'same', seed(content))
+    fragment.delete(0, fragment.length)
+    a.richText(name, 'same', seed(content))
+    expect(text(a.doc)).toContain('Once upon a time')
+  })
 })

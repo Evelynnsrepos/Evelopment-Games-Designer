@@ -16,6 +16,8 @@ export const projectPaths = {
   /** Collaboration state of a shared project (Yjs), see core/collab. */
   collabDir: (root: string) => getFs().join(root, 'collab'),
   collabState: (root: string) => getFs().join(root, 'collab', 'state.bin'),
+  /** Present after a backup was restored into a shared project: share the restored files on next open. */
+  collabRestored: (root: string) => getFs().join(root, 'collab', 'restored.txt'),
 }
 
 export const APP_FOLDER_NAME = 'Evelopment Games Designer'

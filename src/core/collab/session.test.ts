@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import * as Y from 'yjs'
-import { MemoryFs, setFs } from '../fs'
+import { getFs, MemoryFs, setFs } from '../fs'
+import { projectPaths } from '../project'
 import {
   flushAll,
   loadDocumentNow,
@@ -11,7 +12,7 @@ import {
   updateDocument,
   useProjectStore,
 } from '../state'
-import { invalidate, readTop, writeTop } from './bridge'
+import { invalidate, readTop, REMOVED, writeTop } from './bridge'
 import { CollabSession, ORIGIN } from './session'
 
 interface Board {
@@ -137,5 +138,43 @@ describe('collab session', () => {
     await loadDocumentNow<Board>(root, 'brainstorm', 'new', () => ({ title: 'default', nodes: [] }))
     // A default for a document nobody saved is not shared until someone edits it.
     expect(readTop(remote, 'doc:brainstorm/new')).toBeUndefined()
+  })
+
+  it('deletes documents on every device and keeps them deleted', async () => {
+    const { root, session } = await sharedProject()
+    const { remote } = connect(session)
+    const board = useProjectStore.getState().addDocument('brainstorm', 'Ideas')
+    await loadDocumentNow<Board>(root, 'brainstorm', board.id, () => ({ title: 'Ideas', nodes: [] }))
+    updateDocument<Board>(root, 'brainstorm', board.id, (d) => ({ ...d, nodes: [{ id: 'n', x: 1 }] }))
+    await flushAll(root)
+    const path = await projectPaths.document(root, 'brainstorm', board.id)
+    expect(await getFs().exists(path)).toBe(true)
+
+    // A teammate deletes it.
+    remote.transact(() => {
+      const map = remote.getMap(`doc:brainstorm/${board.id}`)
+      for (const key of [...map.keys()]) map.delete(key)
+      map.set(REMOVED, true)
+    })
+    await flushAll(root)
+    expect(await getFs().exists(path)).toBe(false)
+    expect(peekDocument(root, 'brainstorm', board.id)).toBeUndefined()
+
+    // Reopening does not bring it back.
+    session.pullAll()
+    await flushAll(root)
+    expect(await getFs().exists(path)).toBe(false)
+  })
+
+  it('tells teammates when this device deletes a document', async () => {
+    const { root, session } = await sharedProject()
+    const { remote } = connect(session)
+    const board = useProjectStore.getState().addDocument('brainstorm', 'Ideas')
+    await loadDocumentNow<Board>(root, 'brainstorm', board.id, () => ({ title: 'Ideas', nodes: [] }))
+    updateDocument<Board>(root, 'brainstorm', board.id, (d) => ({ ...d, nodes: [{ id: 'n', x: 1 }] }))
+    expect(readTop(remote, `doc:brainstorm/${board.id}`)).toBeDefined()
+    await useProjectStore.getState().removeDocument(board.id)
+    expect(readTop(remote, `doc:brainstorm/${board.id}`)).toBeUndefined()
+    expect(remote.getMap(`doc:brainstorm/${board.id}`).get(REMOVED)).toBe(true)
   })
 })

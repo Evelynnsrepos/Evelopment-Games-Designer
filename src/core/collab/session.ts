@@ -5,6 +5,8 @@ import { projectPaths, readVersioned, type LoadedProject } from '../project'
 import {
   collabNames,
   flush,
+  isTextName,
+  forgetSharedDocument,
   parseDocumentName,
   receiveSharedCategories,
   receiveSharedDocument,
@@ -16,7 +18,7 @@ import {
   type CollabBinding,
   type SharedMeta,
 } from '../state'
-import { invalidate, readTop, writeTop } from './bridge'
+import { invalidate, isRemoved, readTop, REMOVED, writeTop } from './bridge'
 
 // oxlint-disable-next-line no-explicit-any -- Yjs types are invariant in their event type
 type AnyType = Y.AbstractType<any>
@@ -116,6 +118,31 @@ export class CollabSession implements CollabBinding {
     return session
   }
 
+  /**
+   * After a backup was restored: make the files on disk the shared state, so
+   * teammates get the restored project too. Documents not in the backup are removed.
+   */
+  async replaceWithFiles(project: Pick<LoadedProject, 'meta' | 'entities' | 'categories'>) {
+    const docs = await readAllDocuments(this.root)
+    const replace = (name: string, next: unknown) => writeTop(this.doc, name, readTop(this.doc, name), next)
+    this.doc.transact(() => {
+      replace(collabNames.meta, sharedMeta(project.meta))
+      for (const type of ENTITY_TYPES) replace(collabNames.entities(type), project.entities[type])
+      replace(collabNames.categories, project.categories)
+      for (const [name, data] of docs) replace(name, data)
+      // Live text is filled again from the restored files when next opened.
+      for (const key of [...this.doc.share.keys()]) {
+        if (!isTextName(key)) continue
+        const text = this.doc.getXmlFragment(key)
+        text.delete(0, text.length)
+      }
+    }, ORIGIN.untracked)
+    for (const name of [...this.doc.share.keys()]) {
+      if (parseDocumentName(name) && !docs.has(name) && readTop(this.doc, name) !== undefined) this.removeDocument(name)
+    }
+    for (const um of this.undoManagers.values()) um.clear()
+  }
+
   /** Bring the stores in line with the shared state (after loading or joining). */
   pullAll() {
     for (const name of this.doc.share.keys()) this.pushToStores(name)
@@ -142,8 +169,23 @@ export class CollabSession implements CollabBinding {
     if (um && options?.undoable !== false) um.stopCapturing()
   }
 
+  removeDocument(name: string) {
+    if (!this.doc.share.has(name)) return
+    this.doc.transact(() => {
+      const map = this.doc.getMap(name)
+      for (const key of [...map.keys()]) map.delete(key)
+      map.set(REMOVED, true)
+      for (const key of [...this.doc.share.keys()]) {
+        if (!key.startsWith(collabNames.text(name, ''))) continue
+        const text = this.doc.getXmlFragment(key)
+        text.delete(0, text.length)
+      }
+    }, ORIGIN.untracked)
+    this.undoManagers.get(name)?.clear()
+  }
+
   importDocument(name: string, value: unknown) {
-    if (readTop(this.doc, name) !== undefined) return
+    if (readTop(this.doc, name) !== undefined || isRemoved(this.doc, name)) return
     this.doc.transact(() => writeTop(this.doc, name, undefined, value), ORIGIN.import)
   }
 
@@ -175,7 +217,10 @@ export class CollabSession implements CollabBinding {
     const fragment = this.doc.getXmlFragment(name)
     if (fragment.length > 0) return fragment
     const temp = new Y.Doc()
-    temp.clientID = hash32(`${name}\n${seedKey}`)
+    // After the text was cleared (a restore), the same seed needs a fresh id: the old one's edits are already here.
+    let attempt = 0
+    do temp.clientID = hash32(`${name}\n${seedKey}\n${attempt++}`)
+    while (this.doc.store.clients.has(temp.clientID))
     seed(temp.getXmlFragment(name))
     if (temp.getXmlFragment(name).length > 0) Y.applyUpdate(this.doc, Y.encodeStateAsUpdate(temp), ORIGIN.import)
     temp.destroy()
@@ -271,6 +316,11 @@ export class CollabSession implements CollabBinding {
   }
 
   private pushToStores(name: string) {
+    if (isRemoved(this.doc, name)) {
+      const removed = parseDocumentName(name)
+      if (removed) forgetSharedDocument(this.root, removed.type, removed.id)
+      return
+    }
     const value = readTop(this.doc, name)
     if (value === undefined) return
     if (name === collabNames.meta) return receiveSharedMeta(this.root, value as SharedMeta)

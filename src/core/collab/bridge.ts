@@ -223,11 +223,18 @@ export function deepEqual(a: unknown, b: unknown): boolean {
 // peers creating the same document offline still merge field by field.
 
 /** JSON of a top-level document, or undefined if nobody has written it yet. */
+/** Marks a deleted document. Writing it again (`syncMap`) drops the mark. */
+export const REMOVED = '__removed'
+
+export function isRemoved(doc: Y.Doc, name: string): boolean {
+  return doc.share.has(name) && !isTextName(name) && doc.getMap(name).get(REMOVED) === true
+}
+
 export function readTop(doc: Y.Doc, name: string): unknown {
   // Rich text fragments are not maps; asking for a map would re-type them.
   if (!doc.share.has(name) || isTextName(name)) return undefined
   const map = doc.getMap<unknown>(name)
-  if (map.size === 0) return undefined
+  if (map.size === 0 || isRemoved(doc, name)) return undefined
   return fromY(map)
 }
 

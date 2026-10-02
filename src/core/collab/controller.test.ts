@@ -1,8 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MemoryFs, setFs } from '../fs'
 import { loadProject, readDocument } from '../project'
-import { loadDocumentNow, updateDocument, useProjectStore } from '../state'
+import { createBackup, restoreBackup } from '../backups'
+import { flushAll, loadDocumentNow, updateDocument, useProjectStore } from '../state'
 import {
+  activeSession,
   installCollaboration,
   joinProject,
   newInviteCode,
@@ -94,5 +96,24 @@ describe('collaboration controller', () => {
 
   it('refuses nonsense invite codes', async () => {
     await expect(joinProject('hello', '/x').done).rejects.toThrow('not a valid invite code')
+  })
+
+  it('shares a restored backup instead of loading the old shared copy over it', async () => {
+    const store = useProjectStore.getState()
+    await store.create({ name: 'Restore', description: '', components: ['item-list'] })
+    const root = useProjectStore.getState().root!
+    await shareProject()
+    store.addEntity('item', 'Torch')
+    await flushAll(root)
+    const backup = await createBackup(root, 'autosave')
+    useProjectStore.getState().addEntity('item', 'Rope')
+    await useProjectStore.getState().close()
+
+    await restoreBackup(root, backup!.id)
+    await useProjectStore.getState().open(root)
+    expect(useProjectStore.getState().entities.item.map((i) => i.name)).toEqual(['Torch'])
+    expect((activeSession()!.read('entities:item') as { name: string }[]).map((i) => i.name)).toEqual(['Torch'])
+    await flushAll(root)
+    expect((await loadProject(root)).entities.item.map((i) => i.name)).toEqual(['Torch'])
   })
 })

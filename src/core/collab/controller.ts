@@ -201,6 +201,12 @@ export function installCollaboration() {
     async opened(root) {
       if (!(await CollabSession.isShared(root))) return
       const session = await CollabSession.load(root)
+      const restored = await projectPaths.collabRestored(root)
+      if (await getFs().exists(restored)) {
+        const { meta, entities, categories } = useProjectStore.getState()
+        if (meta) await session.replaceWithFiles({ meta, entities, categories })
+        await getFs().remove(restored)
+      }
       setCollabBinding(session)
       session.pullAll()
       void goOnline(session)

@@ -170,6 +170,21 @@ export function receiveSharedDocument(root: string, type: ComponentType, id: Id,
   else scheduleSave(key, () => writeDocument(root, type, id, data))
 }
 
+/** A teammate deleted this document: drop it here too (its pending save becomes the delete). */
+export function forgetSharedDocument(root: string, type: ComponentType, id: Id) {
+  const key = keyOf(root, type, id)
+  histories.delete(key)
+  if (key in useDocs.getState().docs) {
+    const docs = { ...useDocs.getState().docs }
+    delete docs[key]
+    useDocs.setState({ docs })
+  }
+  scheduleSave(key, async () => {
+    const path = await projectPaths.document(root, type, id)
+    if (await getFs().exists(path)) await getFs().remove(path)
+  })
+}
+
 /** Drop cached documents when a project closes. */
 export function clearDocumentCache() {
   useDocs.setState({ docs: {} })

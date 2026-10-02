@@ -28,6 +28,8 @@ export interface CollabBinding {
   canRedo(scope: string): boolean
   /** Start a new undo step even if the next change comes quickly. */
   boundary(scope: string): void
+  /** A document was deleted: remove it on every device. */
+  removeDocument?(name: string): void
 }
 
 let binding: CollabBinding | null = null
