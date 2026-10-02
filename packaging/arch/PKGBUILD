@@ -1,0 +1,36 @@
+# Builds the app from this checkout and installs it as a normal Arch package.
+# Usage: cd packaging/arch && makepkg -si
+pkgname=evelopment-games-designer
+pkgver=0.1.0
+pkgrel=1
+pkgdesc="All-in-one game design tool: writing, wiki, maps, boards, lists and calculators"
+arch=('x86_64' 'aarch64')
+url="https://github.com/Evelynnsrepos/evelopment-games-designer"
+license=('LicenseRef-PolyForm-Strict-1.0.0')
+depends=('webkit2gtk-4.1' 'gtk3' 'hicolor-icon-theme')
+makedepends=('cargo' 'nodejs' 'npm')
+options=('!lto')
+
+_root="$startdir/../.."
+
+build() {
+  cd "$_root"
+  npm ci
+  npm run tauri build -- --no-bundle
+}
+
+package() {
+  cd "$_root"
+  install -Dm755 "src-tauri/target/release/$pkgname" "$pkgdir/usr/bin/$pkgname"
+  install -Dm644 src-tauri/icons/128x128.png "$pkgdir/usr/share/icons/hicolor/128x128/apps/$pkgname.png"
+  install -Dm644 LICENSE "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+  install -Dm644 /dev/stdin "$pkgdir/usr/share/applications/$pkgname.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=Evelopment Games Designer
+Comment=$pkgdesc
+Exec=$pkgname
+Icon=$pkgname
+Categories=Development;Graphics;
+EOF
+}

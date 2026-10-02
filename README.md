@@ -69,7 +69,28 @@ sudo apt install libwebkit2gtk-4.1-dev build-essential curl wget file libxdo-dev
 curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh
 ```
 
-Then install [Node.js](https://nodejs.org) 20 or newer. For other distributions, see the
+Then install [Node.js](https://nodejs.org) 20 or newer.
+
+**Arch Linux**
+
+The easy way: clone the code (step 2) and let `makepkg` build and install it as a normal package.
+It pulls in everything it needs, and you get a menu entry and `pacman -R evelopment-games-designer` to uninstall.
+
+```bash
+sudo pacman -S --needed git base-devel
+git clone https://github.com/Evelynnsrepos/evelopment-games-designer.git
+cd evelopment-games-designer/packaging/arch
+makepkg -si
+```
+
+To work on the code instead, install the prerequisites and follow steps 2 and 3:
+
+```bash
+sudo pacman -S --needed webkit2gtk-4.1 base-devel curl wget file openssl appmenu-gtk-module libappindicator-gtk3 librsvg xdotool rustup nodejs npm
+rustup default stable
+```
+
+For other distributions, see the
 [Tauri prerequisites](https://v2.tauri.app/start/prerequisites/#linux).
 
 ### 2. Get the code
