@@ -23,7 +23,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     { title: 'Your project', text: 'This is the editor. Here is a quick look at how it works.' },
     { target: 'sidebar-list', title: 'Your tools', text: 'Click a tool to open it. Tools with several documents list them underneath; click New to add one, double-click to rename.' },
     { target: 'workspace', title: 'Side by side', text: 'Drag a tool from the sidebar onto an open panel to split the screen. Press Esc for Layout Mode to close or move panels.' },
-    { target: 'add-component', title: 'More tools', text: 'Add any of the 14 tools to this project whenever you need it.' },
+    { target: 'add-component', title: 'More tools', text: 'Add any tool to this project whenever you need it. Right-click a tool to close it again.' },
     { target: 'project-look', title: 'Make it yours', text: 'Give this project its own accent color, background and wallpaper.' },
     { target: 'help', title: 'Need help?', text: 'The user guide explains every tool. Everything saves automatically, so just start creating.' },
   ],

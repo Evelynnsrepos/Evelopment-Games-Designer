@@ -136,3 +136,36 @@
   text-align: right;
   color: var(--text-muted);
 }
+
+/* Add tool / Close tool (v0.3) */
+.sidebar-menu-note {
+  padding: 6px 10px;
+  color: var(--text-muted);
+}
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 499;
+}
+.tool-dialog-text {
+  margin-bottom: 4px;
+  color: var(--text-muted);
+  white-space: pre-wrap;
+}
+/* The really red button: pressing it once arms it, the second press deletes. */
+.tool-delete {
+  background: #d4142a;
+  border-color: #d4142a;
+  font-weight: 600;
+}
+.tool-delete.armed {
+  background: #ff0022;
+  border-color: #ff0022;
+  box-shadow: 0 0 0 3px rgb(255 0 34 / 0.35);
+  animation: tool-delete-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes tool-delete-pulse {
+  to {
+    box-shadow: 0 0 0 6px rgb(255 0 34 / 0.15);
+  }
+}

@@ -1,5 +1,5 @@
 /**
- * The 14 component types from spec section 6. This list is the contract
+ * The component types from spec section 6, plus later additions (cosmos: v0.3). This list is the contract
  * between the shell and the feature modules in `src/components/<type>/`.
  * Adding a new component type means adding it here AND creating its folder.
  */
@@ -18,6 +18,7 @@ export const COMPONENT_TYPES = [
   'character-list',
   'town-list',
   'enemy-list',
+  'cosmos',
 ] as const
 
 export type ComponentType = (typeof COMPONENT_TYPES)[number]

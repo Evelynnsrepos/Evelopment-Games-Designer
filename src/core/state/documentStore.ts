@@ -113,3 +113,12 @@ export function clearDocumentCache() {
   useDocs.setState({ docs: {} })
   histories.clear()
 }
+
+/** Drop cached copies and undo history of every document of a type, e.g. after its files were deleted. */
+export function forgetDocuments(type: ComponentType) {
+  const root = useProjectStore.getState().root
+  if (!root) return
+  const prefix = `${root}|${type}/`
+  useDocs.setState((s) => ({ docs: Object.fromEntries(Object.entries(s.docs).filter(([k]) => !k.startsWith(prefix))) }))
+  for (const k of [...histories.keys()]) if (k.startsWith(prefix)) histories.delete(k)
+}
