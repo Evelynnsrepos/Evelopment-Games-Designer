@@ -2,11 +2,13 @@ import { useEffect } from 'react'
 import { useAppStore } from '@/core/state'
 import { Workspace } from '../workspace/Workspace'
 import { openInitialLayout } from './actions'
+import { ProjectWallpaper, useProjectTheme } from './projectTheme'
 import { Sidebar } from './Sidebar'
 import './editor.css'
 
 /** Project editor: sidebar + tiling workspace (spec 6, 7). */
 export function EditorScreen() {
+  useProjectTheme()
   useEffect(() => {
     openInitialLayout()
   }, [])
@@ -41,6 +43,7 @@ export function EditorScreen() {
 
   return (
     <div className="editor">
+      <ProjectWallpaper />
       <Sidebar />
       <Workspace />
     </div>

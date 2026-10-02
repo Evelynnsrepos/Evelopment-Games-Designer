@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, House, PanelLeftClose, PanelLeftOpen, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -6,6 +6,7 @@ import { useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type DragPayload } from './actions'
 import { leaves } from '../workspace/layoutTree'
+import { ProjectThemeDialog } from './projectTheme'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
 export function Sidebar() {
@@ -13,6 +14,7 @@ export function Sidebar() {
   const updateMeta = useProjectStore((s) => s.updateMeta)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const [addOpen, setAddOpen] = useState(false)
+  const [themeOpen, setThemeOpen] = useState(false)
   if (!meta) return null
   const collapsed = meta.sidebarCollapsed
   const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m)
@@ -129,6 +131,11 @@ export function Sidebar() {
             )}
           </div>
         )}
+        <button className="sidebar-row" title="Project look" onClick={() => setThemeOpen(true)}>
+          <Palette size={16} />
+          {!collapsed && <span>Project look</span>}
+        </button>
+        {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
         <button
           className="sidebar-row"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
