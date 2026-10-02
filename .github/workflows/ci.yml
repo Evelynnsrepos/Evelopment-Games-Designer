@@ -38,3 +38,7 @@ jobs:
       - name: Rust tests
         working-directory: src-tauri
         run: cargo test --locked
+      # Real internet test: two peers talk through the public relay, on each OS.
+      - name: Collaboration network test (relay)
+        working-directory: src-tauri
+        run: cargo test --locked -- --ignored
