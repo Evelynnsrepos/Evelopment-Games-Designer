@@ -1,4 +1,5 @@
 mod llm;
+mod plugins;
 mod spell;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -14,7 +15,8 @@ pub fn run() {
       llm::llm_status,
       llm::llm_install,
       llm::llm_remove,
-      llm::llm_suggest
+      llm::llm_suggest,
+      plugins::plugin_download
     ])
     .setup(|app| {
       if cfg!(debug_assertions) {

@@ -8,6 +8,7 @@ import { useAiHelper } from '@/shared/spell'
 import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
+import { loadAllPlugins } from '@/shell/plugins/plugins'
 
 export default function App() {
   const screen = useAppStore((s) => s.screen)
@@ -16,6 +17,7 @@ export default function App() {
     // Spec 3.5: rolling backups, and save everything before the app closes.
     void useSettings.getState().load()
     void useAiHelper.getState().check()
+    void loadAllPlugins()
     const stopBackups = installAutoBackup()
     const stopGuard = installCloseGuard(waitForBackups)
     return () => {

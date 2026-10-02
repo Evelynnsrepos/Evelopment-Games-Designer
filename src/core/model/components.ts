@@ -21,8 +21,23 @@ export const COMPONENT_TYPES = [
   'cosmos',
 ] as const
 
-export type ComponentType = (typeof COMPONENT_TYPES)[number]
+export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]
+
+/** Tools added by plugins (v0.4): `plugin.<plugin id>`. A dot, not a colon, so it is a valid folder name everywhere. */
+export type PluginComponentType = `plugin.${string}`
+
+export type ComponentType = BuiltInComponentType | PluginComponentType
+
+export const PLUGIN_ID_PATTERN = /^[a-z0-9][a-z0-9-]{0,62}$/
+
+export function isPluginComponentType(value: unknown): value is PluginComponentType {
+  return typeof value === 'string' && value.startsWith('plugin.') && PLUGIN_ID_PATTERN.test(value.slice('plugin.'.length))
+}
+
+export function isBuiltInComponentType(value: unknown): value is BuiltInComponentType {
+  return typeof value === 'string' && (COMPONENT_TYPES as readonly string[]).includes(value)
+}
 
 export function isComponentType(value: unknown): value is ComponentType {
-  return typeof value === 'string' && (COMPONENT_TYPES as readonly string[]).includes(value)
+  return isBuiltInComponentType(value) || isPluginComponentType(value)
 }

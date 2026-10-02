@@ -40,11 +40,23 @@ for (const [path, mod] of Object.entries(modules)) {
   byType.set(m.type, m)
 }
 
-export function getManifest(type: ComponentType): ComponentManifest | undefined {
-  return byType.get(type)
+/** Tools from installed plugins (v0.4), registered at runtime by `src/shell/plugins`. */
+const pluginManifests = new Map<ComponentType, ComponentManifest>()
+
+export function registerPluginManifest(m: ComponentManifest) {
+  pluginManifests.set(m.type, m)
 }
 
-/** Manifests in the order of spec section 6. */
+export function unregisterPluginManifest(type: ComponentType) {
+  pluginManifests.delete(type)
+}
+
+export function getManifest(type: ComponentType): ComponentManifest | undefined {
+  return byType.get(type) ?? pluginManifests.get(type)
+}
+
+/** Built-in manifests in the order of spec section 6, then plugin tools. */
 export function allManifests(): ComponentManifest[] {
-  return COMPONENT_TYPES.map((t) => byType.get(t)).filter((m): m is ComponentManifest => !!m)
+  const builtIn = COMPONENT_TYPES.map((t) => byType.get(t)).filter((m): m is ComponentManifest => !!m)
+  return [...builtIn, ...pluginManifests.values()]
 }

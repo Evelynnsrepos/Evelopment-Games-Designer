@@ -8,6 +8,7 @@ import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, repl
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
+import { usePlugins } from '../plugins/plugins'
 import { ProjectThemeDialog } from './projectTheme'
 import { CloseToolDialog, RestoreToolDialog, type CloseChoice, type RestoreChoice } from './ToolDialogs'
 import { deleteToolContent, hideTool, toolHasContent } from './toolContent'
@@ -22,6 +23,7 @@ export function Sidebar() {
   const [toolMenu, setToolMenu] = useState<{ manifest: ComponentManifest; x: number; y: number } | null>(null)
   const [closing, setClosing] = useState<ComponentManifest | null>(null)
   const [restoring, setRestoring] = useState<ComponentManifest | null>(null)
+  usePlugins((s) => s.installed) // re-render when plugin tools come and go
   if (!meta) return null
   const collapsed = meta.sidebarCollapsed
   const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m)

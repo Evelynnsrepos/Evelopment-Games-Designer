@@ -1,5 +1,7 @@
 .settings {
-  width: min(520px, 90vw);
+  width: min(560px, 90vw);
+  max-height: 85vh;
+  overflow: auto;
   display: flex;
   flex-direction: column;
   gap: 16px;

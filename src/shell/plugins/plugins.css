@@ -1,0 +1,63 @@
+.plugin-warning {
+  max-width: 560px;
+}
+.plugin-warning h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--danger);
+}
+.plugin-warning-lead {
+  font-weight: 600;
+}
+.plugin-warning ul {
+  padding: 10px 10px 10px 28px;
+  border: 2px solid var(--danger);
+  border-radius: var(--radius-sm);
+  line-height: 1.45;
+}
+.plugin-warning li + li {
+  margin-top: 6px;
+}
+.plugin-warning-facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 12px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.plugin-warning-facts dd {
+  margin: 0;
+}
+.plugin-warning-check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.plugin-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.plugin-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.plugin-row-main {
+  flex: 1;
+  min-width: 0;
+}
+.plugin-row-error {
+  color: var(--danger);
+  font-size: 0.9em;
+}
+.plugin-install {
+  display: flex;
+  gap: 6px;
+}
+.plugin-install .input {
+  flex: 1;
+}

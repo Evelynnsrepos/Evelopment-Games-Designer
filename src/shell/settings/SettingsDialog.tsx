@@ -4,6 +4,7 @@ import { SPELL_LANGUAGES, useSettings } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import { AI_DOWNLOAD_SIZE, spellAvailable, useAiHelper } from '@/shared/spell'
 import { Modal } from '@/shared/ui'
+import { PluginsSection } from '../plugins/PluginsSection'
 import './settings.css'
 
 import { useSettingsDialog } from './open'
@@ -125,6 +126,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             {ai.error && <p className="settings-error">{ai.error}</p>}
           </section>
         )}
+        {desktop && <PluginsSection />}
       </div>
     </Modal>
   )
