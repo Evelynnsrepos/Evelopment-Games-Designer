@@ -215,5 +215,6 @@ export function moveLayer<N extends NodeBase>(scene: Scene<N>, id: Id, index: nu
 export function ensureTopLayer<N extends NodeBase>(scene: Scene<N>, name = 'Always on top'): { scene: Scene<N>; id: Id } {
   const existing = scene.layers.find((l) => l.alwaysOnTop)
   if (existing) return { scene, id: existing.id }
-  return addLayer(scene, { name, alwaysOnTop: true })
+  // A fixed id: teammates turning it on at the same time get one layer, not two.
+  return addLayer(scene, { id: 'always-on-top', name, alwaysOnTop: true })
 }
