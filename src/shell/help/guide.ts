@@ -209,9 +209,9 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
   'design-language': {
     title: 'Design Language',
     body: [
-      'Collect the look of your game in one place: put in images as layers, paint and sketch over them with the same brushes and layers as the Sketch tool.',
-      'Keep a named palette on the right; click a color to paint with it. Write the style rules (shapes, line weight, lighting) underneath.',
-      'Pictures sent from the Sketch tool land here as new layers.',
+      'Pin down the look of your game: style references, color swatches, shapes and examples of what fits and what does not.',
+      'It works exactly like a Moodboard: add images, cut them out, draw, write notes, and use layers.',
+      'The brush button opens your drawings from the Sketch tool; click one to place it as a sticker. Pictures sent from Sketch land here too.',
     ],
   },
   'asset-pool': {

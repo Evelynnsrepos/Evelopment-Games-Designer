@@ -5,7 +5,7 @@ import type { ComponentManifest } from '@/core/registry'
 export const manifest: ComponentManifest = {
   type: 'design-language',
   name: 'Design Language',
-  description: 'The look of your game: images, sketches with layers and brushes, a palette and style rules.',
+  description: 'The look of your game: images, cutouts and your drawings as stickers.',
   icon: Palette,
   specSection: 'v0.5',
   multiDocument: true,
