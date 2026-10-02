@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { AssetPath } from '../model'
 import { useProjectStore } from '../state'
-import { assetUrl } from './assets'
+import { assetUrl, useAssetsVersion } from './assets'
 
 /**
  * Synchronous resolver for many stored asset paths at once, for canvases
@@ -11,6 +11,7 @@ import { assetUrl } from './assets'
  */
 export function useAssetUrls(paths: readonly (AssetPath | null | undefined)[]): (path: AssetPath) => string {
   const root = useProjectStore((s) => s.root)
+  const assetsVersion = useAssetsVersion((s) => s.version)
   const [urls, setUrls] = useState<{ root: string | null; map: Map<string, string> }>({ root: null, map: new Map() })
   const wanted = [...new Set(paths.filter((p): p is AssetPath => !!p && !isUrl(p)))].sort().join('\n')
 
@@ -34,7 +35,7 @@ export function useAssetUrls(paths: readonly (AssetPath | null | undefined)[]): 
     return () => {
       cancelled = true
     }
-  }, [root, wanted])
+  }, [root, wanted, assetsVersion])
 
   const map = urls.root === root ? urls.map : null
   return useCallback((path: AssetPath) => (isUrl(path) ? path : (map?.get(path) ?? '')), [map])

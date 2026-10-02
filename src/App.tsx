@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { installAutoBackup, waitForBackups } from '@/core/backups'
+import { installCollaboration } from '@/core/collab'
 import { installCloseGuard, useAppStore, useSettings } from '@/core/state'
 import { EditorScreen } from '@/shell/editor/EditorScreen'
 import { Launcher } from '@/shell/launcher/Launcher'
@@ -9,9 +10,14 @@ import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
 import { loadAllPlugins } from '@/shell/plugins/plugins'
+import { useJoinRequests } from '@/shell/collab/joinRequests'
+
+// Shared projects go online when opened (core/collab).
+installCollaboration()
 
 export default function App() {
   const screen = useAppStore((s) => s.screen)
+  useJoinRequests()
 
   useEffect(() => {
     // Spec 3.5: rolling backups, and save everything before the app closes.

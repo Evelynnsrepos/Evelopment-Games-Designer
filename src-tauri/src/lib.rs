@@ -1,5 +1,7 @@
 use tauri::Manager;
 
+mod collab;
+mod collab_commands;
 mod llm;
 mod plugins;
 mod spell;
@@ -11,6 +13,7 @@ pub fn run() {
     .plugin(tauri_plugin_dialog::init())
     .plugin(tauri_plugin_opener::init())
     .manage(llm::LlmState::default())
+    .manage(collab_commands::CollabState::default())
     .invoke_handler(tauri::generate_handler![
       spell::spell_check,
       spell::spell_suggest,
@@ -18,7 +21,13 @@ pub fn run() {
       llm::llm_install,
       llm::llm_remove,
       llm::llm_suggest,
-      plugins::plugin_download
+      plugins::plugin_download,
+      collab_commands::collab_start,
+      collab_commands::collab_addr,
+      collab_commands::collab_connect,
+      collab_commands::collab_send,
+      collab_commands::collab_disconnect,
+      collab_commands::collab_stop,
     ])
     .setup(|app| {
       // Version in the title bar, e.g. "Evelopment Games Designer 0.4.0".

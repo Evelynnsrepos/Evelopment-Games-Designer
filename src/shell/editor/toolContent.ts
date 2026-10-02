@@ -1,7 +1,7 @@
 import { getFs } from '@/core/fs'
 import { ENTITY_TYPES, type ComponentType } from '@/core/model'
 import { projectPaths } from '@/core/project'
-import { flushAll, forgetDocuments, useProjectStore } from '@/core/state'
+import { flushAll, forgetDocuments, getCollabBinding, useProjectStore } from '@/core/state'
 import { ENTITY_COMPONENT } from '@/shared/entityList/navigation'
 import { leaves } from '../workspace/layoutTree'
 import { closePanel } from './actions'
@@ -39,6 +39,8 @@ export async function deleteToolContent(type: ComponentType) {
   const entityType = entityTypeOf(type)
   if (entityType) useProjectStore.getState().setEntities(entityType, [])
   await flushAll(root)
+  // In a shared project, teammates delete their copies too (e.g. Wiki articles, which are not in the document list).
+  getCollabBinding(root)?.removeDocumentsOfType?.(type)
   await getFs().remove(await projectPaths.componentDir(root, type))
   forgetDocuments(type)
 }

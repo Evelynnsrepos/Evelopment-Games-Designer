@@ -28,7 +28,7 @@ interface Snapshot {
 }
 
 /** Top-level folders that are not part of a snapshot. */
-const SKIPPED_DIRS = new Set(['.backups', 'assets'])
+const SKIPPED_DIRS = new Set(['.backups', 'assets', 'collab'])
 
 const NAME_PATTERN = /^(\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-\d{3}Z)_([a-z-]+)_([0-9a-f]{8})\.json$/
 
@@ -130,5 +130,9 @@ export async function restoreBackup(root: string, id: string): Promise<void> {
   }
   for (const [rel, text] of Object.entries(snapshot.files)) {
     if (current[rel] !== text) await fs.writeTextAtomic(await fs.join(root, ...rel.split('/')), text)
+  }
+  // A shared project would load its shared copy over the restored files; this asks it to share them instead.
+  if (await fs.exists(await projectPaths.collabState(root))) {
+    await fs.writeTextAtomic(await projectPaths.collabRestored(root), `Restored ${id}\n`)
   }
 }

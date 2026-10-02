@@ -1,7 +1,7 @@
 import { Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Id } from '@/core/model'
-import { useDocument } from '@/core/state'
+import { collabNames, useDocument } from '@/core/state'
 import { emptyRichText, extractRefs, RichTextEditor, useProjectImages, type RefProvider, type RichTextDoc } from '@/shared/richtext'
 import type { WikiArticleDoc, WikiArticleMeta } from '@/shared/wiki'
 import { InfoBox } from './InfoBox'
@@ -58,6 +58,7 @@ export function Article({ meta, title, refs, mentionedIn, onRename, onLinksChang
           key={meta.id}
           value={body}
           onChange={onChange}
+          liveTextName={collabNames.text(collabNames.document('wiki', meta.id), 'body')}
           refs={refs}
           pickImage={images.pickImage}
           resolveImageSrc={images.resolveImageSrc}

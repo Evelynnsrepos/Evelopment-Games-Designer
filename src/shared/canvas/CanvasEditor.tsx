@@ -12,7 +12,10 @@ import {
   type SetStateAction,
 } from 'react'
 import { Group, Layer as KonvaLayer, Rect, Stage, Transformer } from 'react-konva'
+import { isPresenceActive, setPresence } from '@/core/collab'
 import type { Id } from '@/core/model'
+import { panelKey, usePanelContext } from '@/core/state'
+import { RemoteCursors } from './RemoteCursors'
 import { CanvasToolbar } from './CanvasToolbar'
 import { fitRect, screenToWorld, transformBounds, unionRects, zoomAt } from './geometry'
 import { BUILTIN_NODE_TYPES, UNKNOWN_NODE_TYPE } from './nodeTypes'
@@ -178,6 +181,9 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
   const resolveImageSrc = props.resolveImageSrc ?? identity
 
   const rootRef = useRef<HTMLDivElement>(null)
+  // Shared projects: show teammates' pointers and selections on this canvas.
+  const presenceKey = panelKey(usePanelContext())
+  const lastCursorAt = useRef(0)
   const stageRef = useRef<Konva.Stage>(null)
   const trRef = useRef<Konva.Transformer>(null)
   const overlayRef = useRef<Konva.Layer>(null)
@@ -458,14 +464,36 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
   }
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (presenceKey && isPresenceActive() && e.timeStamp - lastCursorAt.current > 50) {
+      lastCursorAt.current = e.timeStamp
+      const r = rootRef.current?.getBoundingClientRect()
+      if (r) {
+        const w = screenToWorld({ x: e.clientX - r.left, y: e.clientY - r.top }, live.current.state.viewport)
+        setPresence('pointer', { key: presenceKey, x: Math.round(w.x), y: Math.round(w.y) })
+      }
+    }
     if (gestureRef.current || !tool?.hover) return
     if (!(e.target instanceof HTMLCanvasElement)) return
     tool.hover(toolEvent(e, 0), api)
   }
 
   const onPointerLeave = () => {
+    if (presenceKey) setPresence('pointer', null)
     if (!gestureRef.current) tool?.hover?.(null, api)
   }
+
+  useEffect(() => {
+    if (presenceKey) setPresence('selection', selection.length ? { key: presenceKey, ids: selection } : null)
+  }, [presenceKey, selection])
+  useEffect(
+    () => () => {
+      if (presenceKey) {
+        setPresence('pointer', null)
+        setPresence('selection', null)
+      }
+    },
+    [presenceKey],
+  )
 
   // Wheel zooms at the cursor; Shift+wheel pans sideways. Needs a non-passive listener.
   useEffect(() => {
@@ -733,6 +761,7 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
           {props.html(api, scene)}
         </div>
       )}
+      {presenceKey && <RemoteCursors presenceKey={presenceKey} viewport={viewport} bounds={getWorldBounds} />}
       {editing && editNode && (
         <TextEditor key={editing.id} node={editNode} type={typeOf(editNode)} theme={theme} viewport={viewport} getBounds={(n) => typeOf(n).bounds(n, ctx)} onDone={finishEdit} />
       )}

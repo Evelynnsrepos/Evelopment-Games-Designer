@@ -1,4 +1,4 @@
-import { CircleHelp, FileArchive, FolderOpen, Image, MoreHorizontal, Moon, Plus, Settings, Sun, Type } from 'lucide-react'
+import { CircleHelp, FileArchive, FolderOpen, Image, MoreHorizontal, Moon, Plus, Settings, Sun, Type, Users } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { getFs } from '@/core/fs'
@@ -10,6 +10,7 @@ import { maybeStartTour, useHelp } from '../help/help'
 import { toggleTheme, useTheme } from '../theme'
 import { openSettings } from '../settings/open'
 import { BackupsDialog } from './BackupsDialog'
+import { JoinDialog } from '../collab/CollabDialogs'
 import './launcher.css'
 
 /** Project list shown on startup (spec 4, PM-1..PM-8). */
@@ -17,6 +18,7 @@ export function Launcher() {
   const [projects, setProjects] = useState<RecentProject[] | null>(null)
   const [missing, setMissing] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [joinOpen, setJoinOpen] = useState(false)
   const theme = useTheme()
 
   const refresh = useCallback(async () => {
@@ -82,6 +84,9 @@ export function Launcher() {
           <button className="icon-btn" title="Toggle light/dark theme" data-tour="theme-toggle" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
           </button>
+          <button className="btn" data-tour="join-project" onClick={() => setJoinOpen(true)}>
+            <Users size={16} /> Join project
+          </button>
           <button className="btn" data-tour="open-folder" onClick={() => void openExisting()}>
             <FolderOpen size={16} /> Open existing folder
           </button>
@@ -95,6 +100,15 @@ export function Launcher() {
       </header>
 
       {error && <div className="launcher-error">{error}</div>}
+      {joinOpen && (
+        <JoinDialog
+          onClose={() => setJoinOpen(false)}
+          onJoined={(root) => {
+            setJoinOpen(false)
+            void open(root)
+          }}
+        />
+      )}
 
       {projects && projects.length === 0 && (
         <div className="launcher-empty">

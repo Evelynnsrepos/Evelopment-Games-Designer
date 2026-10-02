@@ -1,0 +1,96 @@
+.collab-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.collab-field {
+  display: grid;
+  gap: 6px;
+}
+.collab-field > span:first-child {
+  font-size: 0.85em;
+  color: var(--text-muted);
+}
+.collab-profile {
+  display: grid;
+  gap: 8px;
+}
+.collab-colors {
+  display: flex;
+  gap: 6px;
+}
+.collab-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+}
+.collab-color.selected {
+  border-color: var(--text);
+}
+.collab-code-row {
+  display: flex;
+  gap: 6px;
+}
+.collab-code {
+  font-family: var(--mono);
+  font-size: 0.8em;
+  resize: vertical;
+}
+.collab-small {
+  font-size: 0.85em;
+  justify-self: start;
+}
+.collab-people {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 4px;
+}
+.collab-people li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.collab-person {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.collab-state {
+  font-size: 0.8em;
+  color: var(--text-muted);
+}
+.collab-state.online {
+  color: var(--accent);
+}
+.collab-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+}
+.collab-dots {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: auto;
+}
+.collab-actions {
+  justify-content: space-between;
+}
+.collab-danger {
+  color: var(--danger);
+}
+.collab-error {
+  color: var(--danger);
+  font-size: 0.9em;
+}
+.collab-status {
+  color: var(--text-muted);
+  font-size: 0.9em;
+}

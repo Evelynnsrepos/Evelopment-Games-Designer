@@ -126,3 +126,32 @@
   min-width: 2ch;
   text-align: right;
 }
+/* Teammates in shared projects (RemoteCursors.tsx). */
+.canvas-presence {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.canvas-presence-selection {
+  position: absolute;
+  border: 2px solid;
+  border-radius: 4px;
+}
+.canvas-presence-cursor {
+  position: absolute;
+  transition:
+    left 80ms linear,
+    top 80ms linear;
+}
+.canvas-presence-cursor span {
+  position: absolute;
+  left: 14px;
+  top: 16px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 11px;
+  white-space: nowrap;
+  text-shadow: 0 0 2px rgb(0 0 0 / 0.5);
+}
