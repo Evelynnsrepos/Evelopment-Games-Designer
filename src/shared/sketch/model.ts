@@ -61,6 +61,8 @@ export interface SketchDoc {
   /** Bottom to top. */
   layers: SketchLayer[]
   references: SketchReference[]
+  /** The picture without background as a transparent PNG, for placing it elsewhere (Moodboard stickers). */
+  sticker?: AssetPath | null
 }
 
 export const newLayer = (name: string): SketchLayer => ({
@@ -110,82 +112,14 @@ export function moveLayer(doc: SketchDoc, id: Id, dir: 1 | -1): SketchDoc {
   return { ...doc, layers }
 }
 
-// ---- Brushes ---------------------------------------------------------------
-
-export interface Brush {
-  id: string
-  label: string
-  /** Diameter in canvas pixels at full pressure. */
-  size: number
-  /** 0..1, the most a single stroke can cover. */
-  opacity: number
-  /** 0..1, how much each dab adds; low flow builds up like an airbrush. */
-  flow: number
-  /** 0..1, 1 = hard edge. */
-  hardness: number
-  /** Distance between dabs as a fraction of the diameter. */
-  spacing: number
-  /** How much pen pressure changes size / opacity (0..1). */
-  pressureSize: number
-  pressureOpacity: number
-  /** 0..1 stabilizer. */
-  smoothing: number
-  /** Random size change per dab, 0..1 (pencil grain). */
-  jitter: number
-}
-
-export const BRUSHES: Brush[] = [
-  { id: 'pencil', label: 'Pencil', size: 6, opacity: 0.9, flow: 0.6, hardness: 0.9, spacing: 0.15, pressureSize: 0.6, pressureOpacity: 0.7, smoothing: 0.2, jitter: 0.25 },
-  { id: 'ink', label: 'Ink', size: 10, opacity: 1, flow: 1, hardness: 1, spacing: 0.08, pressureSize: 0.9, pressureOpacity: 0, smoothing: 0.5, jitter: 0 },
-  { id: 'marker', label: 'Marker', size: 28, opacity: 0.6, flow: 1, hardness: 0.85, spacing: 0.1, pressureSize: 0.2, pressureOpacity: 0, smoothing: 0.3, jitter: 0 },
-  { id: 'paint', label: 'Paint', size: 40, opacity: 1, flow: 0.35, hardness: 0.6, spacing: 0.08, pressureSize: 0.5, pressureOpacity: 0.5, smoothing: 0.3, jitter: 0 },
-  { id: 'airbrush', label: 'Airbrush', size: 120, opacity: 0.8, flow: 0.06, hardness: 0, spacing: 0.06, pressureSize: 0.1, pressureOpacity: 0.9, smoothing: 0.2, jitter: 0 },
-  { id: 'eraser', label: 'Eraser', size: 40, opacity: 1, flow: 1, hardness: 0.8, spacing: 0.1, pressureSize: 0.5, pressureOpacity: 0, smoothing: 0.2, jitter: 0 },
-]
-
 export interface InputPoint {
   x: number
   y: number
-  /** 0..1; mice report 0.5 while pressed, which callers map to 1. */
+  /** 0..1; mice count as full pressure. */
   pressure: number
 }
 
-export interface Dab {
-  x: number
-  y: number
-  /** Diameter. */
-  size: number
-  /** 0..1 alpha of this dab. */
-  alpha: number
-}
-
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t
-
-/** The dab for one pressure value. */
-export function dabFor(brush: Brush, size: number, x: number, y: number, pressure: number, random = Math.random): Dab {
-  const p = Math.min(1, Math.max(0, pressure))
-  const s = size * lerp(1, p, brush.pressureSize) * (1 - brush.jitter * random() * 0.5)
-  return { x, y, size: Math.max(0.5, s), alpha: brush.flow * lerp(1, p, brush.pressureOpacity) }
-}
-
-/**
- * Dabs from `a` to `b`, evenly spaced; `carry` is how far past the last dab the
- * previous segment ended, so spacing stays even across pointer events.
- * Returns the dabs and the new carry.
- */
-export function dabsAlong(brush: Brush, size: number, a: InputPoint, b: InputPoint, carry: number, random = Math.random): { dabs: Dab[]; carry: number } {
-  const dist = Math.hypot(b.x - a.x, b.y - a.y)
-  const dabs: Dab[] = []
-  let d = carry
-  // Spacing follows the size at the start of the segment; at least half a pixel.
-  const step = () => Math.max(0.5, size * lerp(1, Math.max(a.pressure, 0.05), brush.pressureSize) * brush.spacing)
-  for (let s = step(); d + s <= dist; s = step()) {
-    d += s
-    const t = d / dist
-    dabs.push(dabFor(brush, size, lerp(a.x, b.x, t), lerp(a.y, b.y, t), lerp(a.pressure, b.pressure, t), random))
-  }
-  return { dabs, carry: d - dist }
-}
 
 /** Stabilizer: moves `prev` part of the way toward `next`. */
 export function stabilize(prev: InputPoint, next: InputPoint, smoothing: number): InputPoint {

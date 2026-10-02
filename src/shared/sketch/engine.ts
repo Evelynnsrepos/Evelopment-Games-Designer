@@ -1,5 +1,6 @@
 import type { Id } from '@/core/model'
-import { dabsAlong, mirrored, type Brush, type Dab, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
+import { colorStroke, StrokeStamper, type BrushSettings } from './brushes'
+import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
 
 /**
  * The raster painting engine behind SketchEditor: one offscreen canvas per
@@ -28,8 +29,7 @@ const MAX_UNDO = 40
 
 export interface StrokeOptions {
   layer: SketchLayer
-  brush: Brush
-  size: number
+  brush: BrushSettings
   color: string
   symmetry: SymmetryMode
   erase: boolean
@@ -41,11 +41,14 @@ export class SketchEngine {
   private layers = new Map<Id, Canvas2D>()
   private composite: Canvas2D
   private scratch: Canvas2D
+  /** Alpha mask of the stroke being drawn. */
   private stroke: Canvas2D | null = null
+  private stamper: StrokeStamper | null = null
   private strokeOpts: StrokeOptions | null = null
-  private last: InputPoint | null = null
-  private carry = 0
-  private dabCache = new Map<string, HTMLCanvasElement>()
+  /** The stroke colored, ready to composite. */
+  private paint: Canvas2D
+  /** Pixels being moved with the Move tool, lifted off their layer. */
+  private floating: { layerId: Id; piece: Canvas2D; before: ImageData; dx: number; dy: number } | null = null
   private undoStack: UndoStep[] = []
   private redoStack: UndoStep[] = []
   /** Painting only lands inside this path (canvas pixels); null = everywhere. */
@@ -58,6 +61,7 @@ export class SketchEngine {
     this.height = height
     this.composite = makeCanvas(width, height)
     this.scratch = makeCanvas(width, height)
+    this.paint = makeCanvas(width, height)
   }
 
   layerCanvas(id: Id): HTMLCanvasElement {
@@ -98,61 +102,29 @@ export class SketchEngine {
 
   // ---- Strokes --------------------------------------------------------------
 
-  private dabImage(brush: Brush, color: string): HTMLCanvasElement {
-    // One 128px dab per brush hardness and color, scaled when stamped.
-    const key = `${brush.hardness}|${color}`
-    let img = this.dabCache.get(key)
-    if (!img) {
-      const { canvas, ctx } = makeCanvas(128, 128)
-      const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64)
-      g.addColorStop(0, color)
-      g.addColorStop(Math.min(0.99, Math.max(0.01, brush.hardness)), color)
-      g.addColorStop(1, 'transparent')
-      ctx.fillStyle = g
-      ctx.fillRect(0, 0, 128, 128)
-      img = canvas
-      this.dabCache.set(key, img)
-    }
-    return img
-  }
-
   beginStroke(opts: StrokeOptions, p: InputPoint) {
     this.stroke = makeCanvas(this.width, this.height)
     this.strokeOpts = opts
-    this.last = p
-    this.carry = 0
-    this.stamp([{ x: p.x, y: p.y, size: opts.size * (1 - opts.brush.pressureSize * (1 - p.pressure)), alpha: opts.brush.flow }])
-  }
-
-  strokeTo(p: InputPoint) {
-    if (!this.stroke || !this.strokeOpts || !this.last) return
-    const { dabs, carry } = dabsAlong(this.strokeOpts.brush, this.strokeOpts.size, this.last, p, this.carry)
-    this.carry = carry
-    this.last = p
-    this.stamp(dabs)
-  }
-
-  private stamp(dabs: Dab[]) {
-    if (!this.stroke || !this.strokeOpts || !dabs.length) return
-    const { ctx } = this.stroke
-    const img = this.dabImage(this.strokeOpts.brush, this.strokeOpts.erase ? '#000' : this.strokeOpts.color)
-    for (const d of dabs) {
-      ctx.globalAlpha = Math.min(1, d.alpha)
-      for (const m of mirrored(d, this.width, this.height, this.strokeOpts.symmetry)) {
-        ctx.drawImage(img, m.x - d.size / 2, m.y - d.size / 2, d.size, d.size)
-      }
-    }
-    ctx.globalAlpha = 1
+    const mirror = (q: { x: number; y: number }) => mirrored(q, this.width, this.height, opts.symmetry)
+    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, mirror)
+    this.stamper.add(p)
     this.version++
   }
 
-  /** Draw the stroke buffer into `ctx` the way it will land on the layer. */
+  strokeTo(p: InputPoint) {
+    if (!this.stamper) return
+    this.stamper.add(p)
+    this.version++
+  }
+
+  /** Draw the stroke into `ctx` the way it will land on the layer. */
   private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
+    colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)
     ctx.save()
     if (this.selection) ctx.clip(this.selection)
     ctx.globalAlpha = opts.brush.opacity
     ctx.globalCompositeOperation = opts.erase ? 'destination-out' : opts.layer.alphaLock ? 'source-atop' : 'source-over'
-    ctx.drawImage(this.stroke!.canvas, 0, 0)
+    ctx.drawImage(this.paint.canvas, 0, 0)
     ctx.restore()
   }
 
@@ -160,19 +132,21 @@ export class SketchEngine {
   endStroke(): Id | null {
     const opts = this.strokeOpts
     if (!this.stroke || !opts) return null
+    this.stamper?.finish()
     const layer = this.ensure(opts.layer.id)
     const before = layer.ctx.getImageData(0, 0, this.width, this.height)
     this.applyStroke(layer.ctx, opts)
     this.record(opts.layer.id, before)
     this.stroke = null
+    this.stamper = null
     this.strokeOpts = null
-    this.last = null
     this.version++
     return opts.layer.id
   }
 
   cancelStroke() {
     this.stroke = null
+    this.stamper = null
     this.strokeOpts = null
     this.version++
   }
@@ -235,20 +209,49 @@ export class SketchEngine {
     })
   }
 
-  /** Move the selected pixels (or the whole layer) by dx, dy. */
-  move(layerId: Id, dx: number, dy: number): Id {
-    return this.edit(layerId, (ctx) => {
-      const piece = makeCanvas(this.width, this.height)
-      piece.ctx.save()
-      if (this.selection) piece.ctx.clip(this.selection)
-      piece.ctx.drawImage(ctx.canvas, 0, 0)
-      piece.ctx.restore()
-      ctx.save()
-      if (this.selection) ctx.clip(this.selection)
-      ctx.clearRect(0, 0, this.width, this.height)
-      ctx.restore()
-      ctx.drawImage(piece.canvas, dx, dy)
-    })
+  /** Lift the selected pixels (or the whole layer) so they can be dragged with a live preview. */
+  beginMove(layerId: Id) {
+    const layer = this.ensure(layerId)
+    const before = layer.ctx.getImageData(0, 0, this.width, this.height)
+    const piece = makeCanvas(this.width, this.height)
+    piece.ctx.save()
+    if (this.selection) piece.ctx.clip(this.selection)
+    piece.ctx.drawImage(layer.canvas, 0, 0)
+    piece.ctx.restore()
+    layer.ctx.save()
+    if (this.selection) layer.ctx.clip(this.selection)
+    layer.ctx.clearRect(0, 0, this.width, this.height)
+    layer.ctx.restore()
+    this.floating = { layerId, piece, before, dx: 0, dy: 0 }
+    this.version++
+  }
+
+  moveTo(dx: number, dy: number) {
+    if (!this.floating) return
+    this.floating.dx = dx
+    this.floating.dy = dy
+    this.version++
+  }
+
+  /** Drop the lifted pixels at their new place. Returns the changed layer. */
+  endMove(): Id | null {
+    const f = this.floating
+    if (!f) return null
+    this.floating = null
+    const layer = this.ensure(f.layerId)
+    layer.ctx.drawImage(f.piece.canvas, Math.round(f.dx), Math.round(f.dy))
+    if (!f.dx && !f.dy) {
+      layer.ctx.putImageData(f.before, 0, 0)
+      this.version++
+      return null
+    }
+    this.record(f.layerId, f.before)
+    this.version++
+    return f.layerId
+  }
+
+  get moving() {
+    return !!this.floating
   }
 
   /** Merge `upper` into `lower` with the upper layer's opacity and blend mode. */
@@ -311,6 +314,14 @@ export class SketchEngine {
         s.drawImage(src, 0, 0)
         this.applyStroke(s, this.strokeOpts)
         src = this.scratch.canvas
+      } else if (this.floating?.layerId === layer.id) {
+        const s = this.scratch.ctx
+        s.globalCompositeOperation = 'source-over'
+        s.globalAlpha = 1
+        s.clearRect(0, 0, this.width, this.height)
+        s.drawImage(src, 0, 0)
+        s.drawImage(this.floating.piece.canvas, this.floating.dx, this.floating.dy)
+        src = this.scratch.canvas
       }
       if (layer.clip && base) {
         // Clipping mask: keep only where the base layer has pixels.
@@ -343,8 +354,8 @@ export class SketchEngine {
     return toPng(this.ensure(layerId).canvas)
   }
 
-  flattenedPng(doc: SketchDoc): Promise<Blob> {
-    return toPng(this.render(doc))
+  flattenedPng(doc: SketchDoc, withBackground = true): Promise<Blob> {
+    return toPng(this.render(doc, withBackground))
   }
 
   /** True when the layer has no visible pixels (saved as an empty layer instead of a PNG). */

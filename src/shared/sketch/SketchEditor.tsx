@@ -33,16 +33,17 @@ import { useProjectStore } from '@/core/state'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { confirmDialog, promptDialog } from '../dialogs'
 import { SketchEngine } from './engine'
+import { drawPreview } from './brushes'
+import { BrushLibrary } from './BrushLibrary'
+import { useBrushLibrary } from './library'
 import {
   BLEND_MODES,
-  BRUSHES,
   moveLayer,
   newLayer,
   nextLayerName,
   stabilize,
   updateLayer,
   type BlendMode,
-  type Brush,
   type InputPoint,
   type SketchDoc,
   type SketchLayer,
@@ -66,6 +67,8 @@ const UI = {
   flipX: 'Flip horizontally',
   flipY: 'Flip vertically',
   deselect: 'Deselect (Ctrl+D)',
+  moveSelection: 'Move selection',
+  library: 'Brush library',
   fit: 'Fit to view (0)',
   reference: 'Add a reference image (floats over the canvas, not part of the picture)',
   insertImage: 'Insert an image as a new layer',
@@ -102,9 +105,6 @@ const TOOLS: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
 ]
 
 const SWATCHES = ['#111111', '#ffffff', '#e5484d', '#f08c2e', '#f5d90a', '#30a46c', '#3e8ef7', '#8e6cf0', '#d6409f', '#8d6e63']
-
-/** Per-brush size, opacity and smoothing the user changed, kept for the session. */
-const brushTweaks = new Map<string, Partial<Brush>>()
 
 export interface SketchEditorProps {
   doc: SketchDoc
@@ -160,8 +160,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     viewRef.current = view
   })
   const [tool, setTool] = useState<Tool>('brush')
-  const [brushId, setBrushId] = useState('pencil')
-  const [tweaks, setTweaks] = useState(0) // re-render when brushTweaks changes
+  const [libraryOpen, setLibraryOpen] = useState<'brush' | 'eraser' | null>(null)
+  const [libraryAt, setLibraryAt] = useState({ x: 0, y: 0 })
   const [color, setColor] = useState('#111111')
   const [symmetry, setSymmetry] = useState<SymmetryMode>('off')
   const [activeLayerId, setActiveLayerId] = useState<Id>(doc.layers[doc.layers.length - 1]?.id ?? '')
@@ -175,13 +175,14 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const altDown = useRef(false)
 
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
-  const baseBrush = BRUSHES.find((b) => b.id === (tool === 'eraser' ? 'eraser' : brushId)) ?? BRUSHES[0]
-  void tweaks
-  const brush: Brush = { ...baseBrush, ...brushTweaks.get(baseBrush.id) }
-  const setBrush = (patch: Partial<Brush>) => {
-    brushTweaks.set(baseBrush.id, { ...brushTweaks.get(baseBrush.id), ...patch })
-    setTweaks((n) => n + 1)
-  }
+  const lib = useBrushLibrary()
+  useEffect(() => {
+    void useBrushLibrary.getState().load()
+  }, [])
+  const brushMode = tool === 'eraser' ? 'eraser' : 'brush'
+  const brush = lib.brushes.find((b) => b.id === (brushMode === 'eraser' ? lib.eraserId : lib.brushId)) ?? lib.brushes[0]
+  // Like Procreate, the sliders change the brush itself and are remembered.
+  const setBrush = (patch: Partial<typeof brush>) => lib.updateBrush(brush.id, patch)
 
   // ---- Loading and saving layer pixels -------------------------------------
 
@@ -243,7 +244,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if (prev && prev !== path) old.push(prev)
       loaded.current.set(id, path)
     }
-    update((d) => ({ ...d, layers: d.layers.map((l) => (saved.has(l.id) ? { ...l, image: saved.get(l.id)! } : l)) }))
+    // The sticker: the whole picture without background.
+    const sticker = await importAssetFromBlob(root, await engine.flattenedPng(docRef.current, false), 'image', 'sticker.png')
+    if (docRef.current.sticker) old.push(docRef.current.sticker)
+    update((d) => ({ ...d, sticker: sticker?.path ?? null, layers: d.layers.map((l) => (saved.has(l.id) ? { ...l, image: saved.get(l.id)! } : l)) }))
     // Each save writes a new PNG (assets are write-once); remove the ones this editor replaced.
     for (const p of old) void resolveAssetPath(root, p).then((abs) => getFs().remove(abs).catch(() => {}))
     setSaving(false)
@@ -302,11 +306,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.save()
     ctx.translate(view.x, view.y)
     ctx.scale(view.scale, view.scale)
-    // Transparent areas show a checkerboard.
-    if (!doc.backgroundColor) {
-      ctx.fillStyle = checker(ctx)
-      ctx.fillRect(0, 0, doc.width, doc.height)
-    }
+    // Transparent: nothing is drawn behind the picture, so the app's own background and wallpaper show through.
     ctx.imageSmoothingEnabled = view.scale < 1
     ctx.drawImage(engine.render(doc), 0, 0)
     ctx.restore()
@@ -349,14 +349,17 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (t === 'brush' || t === 'eraser') {
       if (!activeLayer.visible) return
       const pt = { ...p, pressure: pressureOf(e) }
-      engine.beginStroke({ layer: activeLayer, brush, size: brush.size, color, symmetry, erase: t === 'eraser' }, pt)
+      engine.beginStroke({ layer: activeLayer, brush, color, symmetry, erase: t === 'eraser' }, pt)
       gesture.current = { kind: 'paint', smooth: pt }
       setVersion(engine.version)
     } else if (t === 'lasso' || t === 'rect') {
       gesture.current = { kind: 'select', pts: [p], rect: t === 'rect' }
       setDraftSel([p])
     } else if (t === 'move') {
+      if (!activeLayer.visible) return
+      engine.beginMove(activeLayer.id)
       gesture.current = { kind: 'move', from: p, to: p }
+      setVersion(engine.version)
     }
   }
 
@@ -372,7 +375,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent]
       for (const ev of events.length ? events : [e.nativeEvent]) {
         const raw = { ...toDoc(ev), pressure: pressureOf(ev) }
-        g.smooth = stabilize(g.smooth, raw, brush.smoothing)
+        g.smooth = stabilize(g.smooth, raw, brush.streamline)
         engine.strokeTo(g.smooth)
       }
       setVersion(engine.version)
@@ -381,7 +384,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       setDraftSel(g.pts)
     } else if (g.kind === 'move') {
       g.to = p
+      engine.moveTo(Math.round(p.x - g.from.x), Math.round(p.y - g.from.y))
       setDraftSel(selectionPts ? selectionPts.map((q) => ({ x: q.x + p.x - g.from.x, y: q.y + p.y - g.from.y })) : null)
+      setVersion(engine.version)
     }
   }
 
@@ -394,13 +399,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       setDraftSel(null)
       if (g.pts.length < 3) return setSelection(null)
       setSelection(g.pts)
-    } else if (g.kind === 'move' && activeLayer) {
+    } else if (g.kind === 'move') {
       setDraftSel(null)
       const dx = Math.round(g.to.x - g.from.x)
       const dy = Math.round(g.to.y - g.from.y)
-      if (!dx && !dy) return
-      markDirty(engine.move(activeLayer.id, dx, dy))
-      if (selectionPts) setSelection(selectionPts.map((q) => ({ x: q.x + dx, y: q.y + dy })))
+      markDirty(engine.endMove())
+      if (selectionPts && (dx || dy)) setSelection(selectionPts.map((q) => ({ x: q.x + dx, y: q.y + dy })))
     }
   }
 
@@ -529,10 +533,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       else if (k === 'delete' || k === 'backspace') commands.current.clear()
       else if (k === '0') commands.current.fit()
       else if (k === '[' || k === ']') {
-        const b = BRUSHES.find((x) => x.id === (tool === 'eraser' ? 'eraser' : brushId))!
-        const cur = brushTweaks.get(b.id)?.size ?? b.size
-        brushTweaks.set(b.id, { ...brushTweaks.get(b.id), size: Math.max(1, Math.min(500, Math.round(cur * (k === ']' ? 1.2 : 1 / 1.2)))) })
-        setTweaks((n) => n + 1)
+        const st = useBrushLibrary.getState()
+        const b = st.brushes.find((x) => x.id === (tool === 'eraser' ? st.eraserId : st.brushId))
+        if (b) st.updateBrush(b.id, { size: Math.max(1, Math.min(500, Math.round(b.size * (k === ']' ? 1.2 : 1 / 1.2)))) })
       } else if (!ctrl && !e.altKey) {
         const t = TOOLS.find((x) => x.key === k)
         if (!t) return
@@ -550,7 +553,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       window.removeEventListener('keydown', down)
       window.removeEventListener('keyup', up)
     }
-  }, [active, tool, brushId])
+  }, [active, tool])
 
   // ---- Render --------------------------------------------------------------
 
@@ -571,7 +574,14 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={Trash2} label={UI.clear} onClick={() => activeLayer && markDirty(engine.clear(activeLayer.id))} />
         <ToolButton icon={FlipHorizontal2} label={UI.flipX} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'x'))} />
         <ToolButton icon={FlipVertical2} label={UI.flipY} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'y'))} />
-        {selectionPts && <ToolButton icon={X} label={UI.deselect} onClick={() => setSelection(null)} />}
+        {selectionPts && (
+          <>
+            <button className={`btn sketch-move-sel${tool === 'move' ? ' is-active' : ''}`} title={UI.moveSelection} onClick={() => setTool('move')}>
+              <Move size={14} /> {UI.moveSelection}
+            </button>
+            <ToolButton icon={X} label={UI.deselect} onClick={() => setSelection(null)} />
+          </>
+        )}
         <span className="sketch-sep" />
         <ToolButton icon={Scan} label={UI.fit} onClick={fit} />
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
@@ -588,7 +598,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       <div className="sketch-body">
         <div
           ref={boxRef}
-          className="sketch-stage"
+          className={`sketch-stage${doc.backgroundColor ? '' : ' see-through'}`}
           onWheel={onWheel}
           style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' ? 'none' : 'crosshair' }}
         >
@@ -600,6 +610,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onPointerUp={onPointerUp}
             onPointerCancel={() => {
               engine.cancelStroke()
+              if (engine.moving) markDirty(engine.endMove())
               gesture.current = null
             }}
             onPointerLeave={() => setCursor(null)}
@@ -643,23 +654,21 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           </section>
 
           <section>
-            <div className="sketch-brushes">
-              {BRUSHES.filter((b) => b.id !== 'eraser').map((b) => (
-                <button
-                  key={b.id}
-                  className={`sketch-brush${tool === 'brush' && b.id === brushId ? ' is-active' : ''}`}
-                  onClick={() => {
-                    setBrushId(b.id)
-                    setTool('brush')
-                  }}
-                >
-                  {b.label}
-                </button>
-              ))}
+            <div className="sketch-current-brush">
+              <button className="sketch-brush-pick" title={UI.library} onClick={(e) => {
+                  // Opens to the left of the side panel, over the canvas, like Procreate's popover.
+                  const r = e.currentTarget.getBoundingClientRect()
+                  setLibraryAt({ x: Math.max(8, r.left - 572), y: Math.max(8, Math.min(r.top, window.innerHeight - 470)) })
+                  setLibraryOpen(libraryOpen ? null : brushMode)
+                }}>
+                <span>{brush.name}</span>
+                <BrushPreview brush={brush} color={brushMode === 'eraser' ? '#888' : color} />
+              </button>
+              {libraryOpen && <BrushLibrary mode={libraryOpen} color={color} at={libraryAt} onClose={() => setLibraryOpen(null)} />}
             </div>
             <Slider label={UI.size} min={1} max={500} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
             <Slider label={UI.opacity} min={0.05} max={1} step={0.05} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
-            <Slider label={UI.smoothing} min={0} max={1} step={0.05} value={brush.smoothing} onChange={(smoothing) => setBrush({ smoothing })} percent />
+            <Slider label={UI.smoothing} min={0} max={1} step={0.05} value={brush.streamline} onChange={(streamline) => setBrush({ streamline })} percent />
             <label className="sketch-row">
               <span>{UI.symmetry}</span>
               <select className="input" value={symmetry} onChange={(e) => setSymmetry(e.target.value as SymmetryMode)}>
@@ -848,18 +857,10 @@ function ReferenceWindow(p: { image: string; x: number; y: number; width: number
   )
 }
 
-let checkerPattern: CanvasPattern | null = null
-function checker(ctx: CanvasRenderingContext2D): CanvasPattern {
-  if (!checkerPattern) {
-    const c = document.createElement('canvas')
-    c.width = c.height = 16
-    const g = c.getContext('2d')!
-    g.fillStyle = '#d0d0d0'
-    g.fillRect(0, 0, 16, 16)
-    g.fillStyle = '#f4f4f4'
-    g.fillRect(0, 0, 8, 8)
-    g.fillRect(8, 8, 8, 8)
-    checkerPattern = ctx.createPattern(c, 'repeat')!
-  }
-  return checkerPattern
+function BrushPreview({ brush, color }: { brush: Parameters<typeof drawPreview>[1]; color: string }) {
+  const ref = useRef<HTMLCanvasElement>(null)
+  useEffect(() => {
+    if (ref.current) drawPreview(ref.current, brush, color)
+  }, [brush, color])
+  return <canvas ref={ref} width={200} height={40} className="sketch-brush-preview" />
 }

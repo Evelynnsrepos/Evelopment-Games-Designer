@@ -37,6 +37,8 @@ interface SettingsState extends AppSettings {
   addWord(word: string): void
 }
 
+let saveTimer: ReturnType<typeof setTimeout> | undefined
+
 export const useSettings = create<SettingsState>()((set, get) => ({
   ...defaults(),
   loaded: false,
@@ -47,8 +49,12 @@ export const useSettings = create<SettingsState>()((set, get) => ({
   },
   update(patch) {
     set(patch)
-    const { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity } = get()
-    void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity }))
+    // Sliders call this many times a second; write once they settle.
+    clearTimeout(saveTimer)
+    saveTimer = setTimeout(() => {
+      const { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity } = get()
+      void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity }))
+    }, 400)
   },
   addWord(word) {
     const words = get().personalWords

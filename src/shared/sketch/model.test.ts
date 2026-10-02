@@ -1,27 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { BRUSHES, createSketchDoc, dabsAlong, mirrored, moveLayer, newLayer, stabilize } from './model'
-
-const ink = BRUSHES.find((b) => b.id === 'ink')!
-const fixed = () => 0
+import { builtInBrush, defaultLibrary, seeded } from './brushes'
+import { createSketchDoc, mirrored, moveLayer, newLayer, stabilize } from './model'
 
 describe('sketch model', () => {
-  it('spaces dabs evenly across segments', () => {
-    const a = { x: 0, y: 0, pressure: 1 }
-    const b = { x: 10, y: 0, pressure: 1 }
-    const c = { x: 20, y: 0, pressure: 1 }
-    const first = dabsAlong(ink, 10, a, b, 0, fixed) // step 0.8
-    const second = dabsAlong(ink, 10, b, c, first.carry, fixed)
-    const xs = [...first.dabs, ...second.dabs].map((d) => d.x)
-    const gaps = xs.slice(1).map((x, i) => +(x - xs[i]).toFixed(6))
-    expect(new Set(gaps)).toEqual(new Set([0.8]))
-  })
-
-  it('pen pressure shrinks the dab', () => {
-    const light = dabsAlong(ink, 20, { x: 0, y: 0, pressure: 0.2 }, { x: 40, y: 0, pressure: 0.2 }, 0, fixed).dabs[0]
-    const hard = dabsAlong(ink, 20, { x: 0, y: 0, pressure: 1 }, { x: 40, y: 0, pressure: 1 }, 0, fixed).dabs[0]
-    expect(light.size).toBeLessThan(hard.size)
-  })
-
   it('mirrors points through the canvas center', () => {
     expect(mirrored({ x: 10, y: 20 }, 100, 100, 'quad')).toEqual([
       { x: 10, y: 20 },
@@ -42,5 +23,21 @@ describe('sketch model', () => {
     const moved = moveLayer(doc, doc.layers[0].id, 1)
     expect(moved.layers.map((l) => l.name)).toEqual(['B', 'A'])
     expect(moveLayer(moved, moved.layers[1].id, 1)).toBe(moved)
+  })
+})
+
+describe('brushes', () => {
+  it('has unique brush ids, every set brush exists, and built-ins can be reset', () => {
+    const lib = defaultLibrary()
+    const ids = lib.brushes.map((b) => b.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const s of lib.sets) for (const id of s.brushIds) expect(ids).toContain(id)
+    expect(builtInBrush('studio-pen')?.name).toBe('Studio Pen')
+  })
+
+  it('seeded random numbers repeat, so a redrawn stroke looks the same', () => {
+    const a = seeded(42)
+    const b = seeded(42)
+    expect([a(), a(), a()]).toEqual([b(), b(), b()])
   })
 })

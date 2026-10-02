@@ -1,4 +1,4 @@
-import { ArrowUpToLine, Circle, ImagePlus, Lasso, PanelRight, Pentagon, Square, Undo2 } from 'lucide-react'
+import { ArrowUpToLine, Brush, Circle, ImagePlus, Lasso, PanelRight, Pentagon, Square, Undo2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assetUrl, dragHasFiles, importAssetsFromDataTransfer, pickAndImportAssets, useAssetUrls, type ImportedAsset } from '@/core/assets'
 import { newId, type Id } from '@/core/model'
@@ -27,6 +27,7 @@ import {
   type SceneRecipe,
   type UpdateOptions,
 } from '@/shared/canvas'
+import { DrawingDrawer } from './DrawingDrawer'
 import { LayersPanel } from './LayersPanel'
 import { createMoodboardDoc, isImage, type CutoutKind, type MoodImageNode, type MoodNode, type MoodboardDoc } from './model'
 import { MOOD_NODE_TYPES } from './nodeTypes'
@@ -44,6 +45,7 @@ const TEXT = {
   pickImage: 'Select an image first, then draw the cutout over it.',
   dropHere: 'Drop images to add them',
   importFailed: 'Only images can be added to a moodboard.',
+  drawings: 'Add a drawing (from the Sketch tool) as a sticker',
 }
 
 /** Drawing colors (user content colors). */
@@ -76,7 +78,9 @@ export default function View({ documentId, active }: PanelProps) {
   const boxRef = useRef<HTMLDivElement>(null)
   const [ink, setInk] = useState<string | null>(null)
   const [cutKind, setCutKind] = useState<CutoutKind>('lasso')
-  const [showLayers, setShowLayers] = useState(true)
+  // Opens clean like the Brainstorm board; layers and drawings are one click away.
+  const [showLayers, setShowLayers] = useState(false)
+  const [showDrawings, setShowDrawings] = useState(false)
   const [dropping, setDropping] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
 
@@ -255,6 +259,9 @@ export default function View({ documentId, active }: PanelProps) {
       <button className="canvas-toolbar-btn" title={TEXT.addImage} aria-label={TEXT.addImage} onClick={addFromPicker}>
         <ImagePlus size={17} strokeWidth={1.8} />
       </button>
+      <button className={'canvas-toolbar-btn' + (showDrawings ? ' is-active' : '')} title={TEXT.drawings} aria-label={TEXT.drawings} aria-pressed={showDrawings} onClick={() => setShowDrawings((v) => !v)}>
+        <Brush size={17} strokeWidth={1.8} />
+      </button>
       <button className={'canvas-toolbar-btn' + (showLayers ? ' is-active' : '')} title={TEXT.layers} aria-label={TEXT.layers} aria-pressed={showLayers} onClick={() => setShowLayers((v) => !v)}>
         <PanelRight size={17} strokeWidth={1.8} />
       </button>
@@ -302,6 +309,7 @@ export default function View({ documentId, active }: PanelProps) {
           </div>
         ) : null}
       </div>
+      {showDrawings ? <DrawingDrawer onPlace={(asset) => void placeImages([asset], viewCenter())} onClose={() => setShowDrawings(false)} /> : null}
       {showLayers ? (
         <LayersPanel
           doc={doc.data}

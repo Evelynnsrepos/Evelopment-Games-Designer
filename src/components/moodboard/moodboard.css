@@ -218,3 +218,66 @@
   outline: 2px solid var(--focus);
   outline-offset: -2px;
 }
+
+.moodboard-drawer {
+  width: 230px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--bg-elevated);
+  min-height: 0;
+}
+.moodboard-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 10px 0;
+}
+.moodboard-drawer-head h4 {
+  flex: 1;
+  margin: 0;
+}
+.moodboard-drawer-hint {
+  margin: 4px 10px 8px;
+  font-size: 12px;
+}
+.moodboard-drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  align-content: start;
+}
+.moodboard-drawer-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+}
+.moodboard-drawer-item:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.moodboard-drawer-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.moodboard-drawer-thumb {
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: repeating-conic-gradient(var(--bg-hover) 0 25%, transparent 0 50%) 0 0 / 12px 12px;
+}
+.moodboard-drawer-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
