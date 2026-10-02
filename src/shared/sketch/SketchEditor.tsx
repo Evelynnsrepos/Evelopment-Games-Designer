@@ -310,8 +310,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.imageSmoothingEnabled = view.scale < 1
     ctx.drawImage(engine.render(doc), 0, 0)
     ctx.restore()
-    ctx.strokeStyle = 'rgba(128,128,128,0.6)'
-    ctx.lineWidth = 1
+    // Transparent pages are just a white outline over the app's wallpaper.
+    ctx.strokeStyle = doc.backgroundColor ? 'rgba(128,128,128,0.6)' : '#ffffff'
+    ctx.lineWidth = doc.backgroundColor ? 1 : 1.5
     ctx.strokeRect(view.x - 0.5, view.y - 0.5, doc.width * view.scale + 1, doc.height * view.scale + 1)
   })
 
