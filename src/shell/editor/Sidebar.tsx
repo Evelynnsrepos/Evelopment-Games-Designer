@@ -8,7 +8,7 @@ import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { ProjectThemeDialog } from './projectTheme'
-import { PresenceDots, ShareDialog } from '../collab/CollabDialogs'
+import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
 export function Sidebar() {
@@ -57,6 +57,7 @@ export function Sidebar() {
                 >
                   <m.icon size={16} />
                   {!collapsed && <span>{m.name}</span>}
+                  {!collapsed && <TeammateDots at={m.type} wholeType={m.multiDocument && !isOpen} />}
                 </button>
                 {!collapsed && m.multiDocument && (
                   <button className="icon-btn" title={isOpen ? 'Collapse' : 'Expand'} onClick={() => setExpanded({ ...expanded, [m.type]: !isOpen })}>
@@ -79,6 +80,7 @@ export function Sidebar() {
                         {...dragProps(m.type, d.id)}
                       >
                         <span>{d.title}</span>
+                        <TeammateDots at={`${m.type}/${d.id}`} />
                       </button>
                       <button
                         className="icon-btn sidebar-doc-delete"

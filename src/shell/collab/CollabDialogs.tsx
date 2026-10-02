@@ -11,6 +11,7 @@ import {
   shareProject,
   stopSharingHere,
   useCollab,
+  useTeammatesAt,
   type JoinHandle,
 } from '@/core/collab'
 import { getFs } from '@/core/fs'
@@ -315,6 +316,19 @@ export function PresenceDots() {
     <span className="collab-dots" title={peers.map((p) => p.name).join(', ')}>
       {peers.slice(0, 4).map((p) => (
         <span key={p.id} className="collab-dot" style={{ background: p.color || 'var(--accent)' }} />
+      ))}
+    </span>
+  )
+}
+
+/** Dots for teammates working in a tool or document right now (sidebar rows). */
+export function TeammateDots({ at, wholeType = false }: { at: string; wholeType?: boolean }) {
+  const here = useTeammatesAt(at, wholeType)
+  if (here.length === 0) return null
+  return (
+    <span className="collab-dots" title={`${here.map((r) => r.name).join(', ')} ${here.length === 1 ? 'is' : 'are'} here`}>
+      {here.slice(0, 3).map((r) => (
+        <span key={r.clientId} className="collab-dot" style={{ background: r.color }} />
       ))}
     </span>
   )
