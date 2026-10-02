@@ -37,13 +37,7 @@ export function Workspace() {
   }
 
   return (
-    <div
-      className={`workspace${layoutMode ? ' layout-mode' : ''}`}
-      onMouseDown={(e) => {
-        // ED-7: clicking empty space (a divider gap) leaves Layout Mode.
-        if (layoutMode && e.target === e.currentTarget) useAppStore.getState().setLayoutMode(false)
-      }}
-    >
+    <div className={`workspace${layoutMode ? ' layout-mode' : ''}`}>
       <Node node={layout} path={[]} />
     </div>
   )
