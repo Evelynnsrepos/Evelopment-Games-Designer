@@ -1,8 +1,9 @@
-import { CircleHelp, FolderOpen, Image, MoreHorizontal, Moon, Plus, Sun, Type } from 'lucide-react'
+import { CircleHelp, FileArchive, FolderOpen, Image, MoreHorizontal, Moon, Plus, Sun, Type } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
+import { saveBinaryFile, safeFileName } from '@/core/export'
 import { getFs } from '@/core/fs'
 import type { RecentProject } from '@/core/model'
-import { deleteProject, isProjectFolder, loadProject, readRecents, removeRecent, saveMeta, upsertRecent } from '@/core/project'
+import { deleteProject, importProjectZip, isProjectFolder, loadProject, readRecents, removeRecent, saveMeta, upsertRecent, zipProject } from '@/core/project'
 import { useAppStore, useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { maybeStartTour, useHelp } from '../help/help'
@@ -52,6 +53,17 @@ export function Launcher() {
     await open(path)
   }
 
+  const importZip = async () => {
+    const [file] = await getFs().pickFiles('Import a project zip', ['zip'])
+    if (!file) return
+    try {
+      setError(null)
+      await open(await importProjectZip(await getFs().readBinary(file)))
+    } catch (e) {
+      setError(`Could not import project: ${(e as Error).message}`)
+    }
+  }
+
   return (
     <div className="launcher">
       <header className="launcher-header">
@@ -68,6 +80,9 @@ export function Launcher() {
           </button>
           <button className="btn" data-tour="open-folder" onClick={() => void openExisting()}>
             <FolderOpen size={16} /> Open existing folder
+          </button>
+          <button className="btn" onClick={() => void importZip()}>
+            <FileArchive size={16} /> Import zip
           </button>
           <button className="btn btn-primary" data-tour="new-project" onClick={() => useAppStore.getState().go('new-project')}>
             <Plus size={16} /> New Project
@@ -89,14 +104,26 @@ export function Launcher() {
 
       <div className="project-grid">
         {projects?.map((p) => (
-          <ProjectCard key={p.path} project={p} missing={missing.has(p.path)} onOpen={() => void open(p.path)} onChanged={refresh} />
+          <ProjectCard key={p.path} project={p} missing={missing.has(p.path)} onOpen={() => void open(p.path)} onChanged={refresh} onError={setError} />
         ))}
       </div>
     </div>
   )
 }
 
-function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentProject; missing: boolean; onOpen: () => void; onChanged: () => void }) {
+function ProjectCard({
+  project,
+  missing,
+  onOpen,
+  onChanged,
+  onError,
+}: {
+  project: RecentProject
+  missing: boolean
+  onOpen: () => void
+  onChanged: () => void
+  onError: (message: string) => void
+}) {
   const [menu, setMenu] = useState(false)
   const [showBackups, setShowBackups] = useState(false)
 
@@ -108,6 +135,16 @@ function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentP
     await saveMeta(project.path, meta)
     await upsertRecent({ ...project, name: meta.name, description: meta.description })
     onChanged()
+  }
+
+  const exportZip = async () => {
+    setMenu(false)
+    try {
+      const bytes = await zipProject(project.path)
+      await saveBinaryFile({ title: 'Export project', defaultName: `${safeFileName(project.name)}.zip`, bytes, filter: { name: 'Zip', extensions: ['zip'] } })
+    } catch (e) {
+      onError(`Could not export project: ${(e as Error).message}`)
+    }
   }
 
   const remove = async () => {
@@ -162,6 +199,7 @@ function ProjectCard({ project, missing, onOpen, onChanged }: { project: RecentP
               <button onClick={() => void editMeta('name')}>Rename</button>
               <button onClick={() => void editMeta('description')}>Edit description</button>
               <button onClick={() => void getFs().revealInFolder(project.path)}>Show in folder</button>
+              <button onClick={() => void exportZip()}>Export as zip…</button>
               <button
                 onClick={() => {
                   setMenu(false)

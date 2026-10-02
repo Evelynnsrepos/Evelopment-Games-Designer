@@ -1,3 +1,4 @@
+import { downloadDir } from '@tauri-apps/api/path'
 import { save } from '@tauri-apps/plugin-dialog'
 import { getFs, isTauri } from '../fs'
 
@@ -34,6 +35,29 @@ export async function saveTextFile(opts: SaveTextFileOptions): Promise<boolean> 
     return true
   }
   const url = URL.createObjectURL(new Blob([opts.text], { type: 'text/plain;charset=utf-8' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = opts.defaultName
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  return true
+}
+
+/**
+ * Save a binary export (project zip). The dialog opens in the Downloads folder
+ * so the user confirms or changes the location; in a plain browser the file is
+ * downloaded. Returns false when the user cancelled.
+ */
+export async function saveBinaryFile(opts: Omit<SaveTextFileOptions, 'text'> & { bytes: Uint8Array }): Promise<boolean> {
+  if (isTauri()) {
+    const fs = getFs()
+    const defaultPath = await fs.join(await downloadDir(), opts.defaultName)
+    const path = await save({ title: opts.title, defaultPath, filters: opts.filter ? [opts.filter] : undefined })
+    if (!path) return false
+    await fs.writeBinaryAtomic(path, opts.bytes)
+    return true
+  }
+  const url = URL.createObjectURL(new Blob([opts.bytes as BlobPart]))
   const a = document.createElement('a')
   a.href = url
   a.download = opts.defaultName

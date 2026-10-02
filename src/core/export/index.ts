@@ -1,1 +1,1 @@
-export { safeFileName, saveTextFile, type SaveTextFileOptions } from './saveTextFile'
+export { safeFileName, saveBinaryFile, saveTextFile, type SaveTextFileOptions } from './saveTextFile'
