@@ -1,4 +1,4 @@
-import { CircleHelp, FileArchive, FolderOpen, Image, MoreHorizontal, Moon, Plus, Sun, Type } from 'lucide-react'
+import { CircleHelp, FileArchive, FolderOpen, Image, MoreHorizontal, Moon, Plus, Settings, Sun, Type } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { getFs } from '@/core/fs'
@@ -8,6 +8,7 @@ import { useAppStore, useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { maybeStartTour, useHelp } from '../help/help'
 import { toggleTheme, useTheme } from '../theme'
+import { openSettings } from '../settings/open'
 import { BackupsDialog } from './BackupsDialog'
 import './launcher.css'
 
@@ -74,6 +75,9 @@ export function Launcher() {
         <div className="launcher-actions">
           <button className="icon-btn" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
             <CircleHelp size={16} />
+          </button>
+          <button className="icon-btn" title="Settings" onClick={openSettings}>
+            <Settings size={16} />
           </button>
           <button className="icon-btn" title="Toggle light/dark theme" data-tour="theme-toggle" onClick={toggleTheme}>
             {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}

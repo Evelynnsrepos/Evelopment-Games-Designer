@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Settings, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -7,6 +7,7 @@ import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type DragPayload } from './actions'
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
+import { openSettings } from '../settings/open'
 import { ProjectThemeDialog } from './projectTheme'
 import { CloseToolDialog, RestoreToolDialog, type CloseChoice, type RestoreChoice } from './ToolDialogs'
 import { deleteToolContent, hideTool, toolHasContent } from './toolContent'
@@ -175,6 +176,10 @@ export function Sidebar() {
           {!collapsed && <span>Project look</span>}
         </button>
         {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
+        <button className="sidebar-row" title="Settings" onClick={openSettings}>
+          <Settings size={16} />
+          {!collapsed && <span>Settings</span>}
+        </button>
         <button className="sidebar-row" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
           <CircleHelp size={16} />
           {!collapsed && <span>Help</span>}

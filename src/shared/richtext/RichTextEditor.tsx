@@ -21,6 +21,8 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { promptDialog } from '../dialogs'
+import { SpellCheck, SpellMenu, type MisspellingHit } from '../spell'
+import '../spell/spell.css'
 import { normalizeRichText } from './doc'
 import { RichImage } from './imageExtension'
 import { RefExtension } from './refExtension'
@@ -81,7 +83,7 @@ interface LiveProps {
   placeholder: string
 }
 
-function buildExtensions(live: RefObject<LiveProps>) {
+function buildExtensions(live: RefObject<LiveProps>, onMisspelling: (hit: MisspellingHit) => void) {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
@@ -90,6 +92,7 @@ function buildExtensions(live: RefObject<LiveProps>) {
     Placeholder.configure({ placeholder: () => live.current.placeholder }),
     RichImage.configure({ getResolveSrc: () => live.current.resolveImageSrc }),
     RefExtension.configure({ getProvider: () => live.current.provider }),
+    SpellCheck.configure({ onMisspelling }),
   ]
 }
 
@@ -116,6 +119,7 @@ export function RichTextEditor({
   const provider = refs ?? entityRefs
 
   // Extensions are built once (rebuilding would reset the content); they read the latest props through `live`.
+  const [misspelling, setMisspelling] = useState<MisspellingHit | null>(null)
   const live = useRef<LiveProps>({ provider, resolveImageSrc, onChange, placeholder })
   useEffect(() => {
     live.current = { provider, resolveImageSrc, onChange, placeholder }
@@ -123,7 +127,7 @@ export function RichTextEditor({
   const lastEmitted = useRef<RichTextDoc | null>(null)
   // The extensions only read `live` inside editor callbacks, never during render.
   // oxlint-disable-next-line react/refs
-  const [extensions] = useState(() => buildExtensions(live))
+  const [extensions] = useState(() => buildExtensions(live, setMisspelling))
 
   const editor = useEditor({
     extensions,
@@ -169,6 +173,7 @@ export function RichTextEditor({
     <div className={['richtext', className].filter(Boolean).join(' ')}>
       {toolbar && editable && <Toolbar editor={editor} onImage={insertImage} />}
       <EditorContent editor={editor} className="richtext-content" />
+      {misspelling && editor && editable && <SpellMenu editor={editor} hit={misspelling} onClose={() => setMisspelling(null)} />}
     </div>
   )
 }

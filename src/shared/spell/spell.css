@@ -1,0 +1,17 @@
+.spell-error {
+  text-decoration: underline wavy var(--danger);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+}
+.spell-menu-suggestion {
+  font-weight: 600;
+}
+.spell-menu-note {
+  padding: 6px 10px;
+  color: var(--text-muted);
+}
+.spell-menu-sep {
+  margin: 4px 0;
+  border: none;
+  border-top: 1px solid var(--border);
+}

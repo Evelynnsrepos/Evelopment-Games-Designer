@@ -1,17 +1,21 @@
 import { useEffect } from 'react'
 import { installAutoBackup, waitForBackups } from '@/core/backups'
-import { installCloseGuard, useAppStore } from '@/core/state'
+import { installCloseGuard, useAppStore, useSettings } from '@/core/state'
 import { EditorScreen } from '@/shell/editor/EditorScreen'
 import { Launcher } from '@/shell/launcher/Launcher'
 import { NewProjectWizard } from '@/shell/launcher/NewProjectWizard'
+import { useAiHelper } from '@/shared/spell'
 import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
+import { SettingsHost } from '@/shell/settings/SettingsDialog'
 
 export default function App() {
   const screen = useAppStore((s) => s.screen)
 
   useEffect(() => {
     // Spec 3.5: rolling backups, and save everything before the app closes.
+    void useSettings.getState().load()
+    void useAiHelper.getState().check()
     const stopBackups = installAutoBackup()
     const stopGuard = installCloseGuard(waitForBackups)
     return () => {
@@ -27,6 +31,7 @@ export default function App() {
       {screen === 'editor' && <EditorScreen />}
       <DialogHost />
       <HelpHost />
+      <SettingsHost />
     </>
   )
 }
