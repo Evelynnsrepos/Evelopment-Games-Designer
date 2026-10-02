@@ -1,4 +1,5 @@
 import type { ComponentType } from './components'
+import type { AssetPath } from './entities'
 import type { Id } from './ids'
 
 /** Bump when a stored file shape changes, and add a migration in core/project/migrate.ts. */
@@ -42,8 +43,38 @@ export interface ProjectMeta {
   documents: DocumentRef[]
   layout: LayoutNode | null
   sidebarCollapsed: boolean
+  /** Per-project colors and wallpaper; missing means the app defaults. */
+  theme?: ProjectTheme
   createdAt: string
   updatedAt: string
+}
+
+/** Colors are CSS hex strings, null = theme default. Percentages are 0..100 unless noted. */
+export interface ProjectTheme {
+  accent: string | null
+  background: string | null
+  wallpaper: AssetPath | null
+  /** Wallpaper blur in px. */
+  blur: number
+  dim: number
+  /** 100 = unchanged. */
+  contrast: number
+  tint: string | null
+  tintStrength: number
+  /** How solid panels are over the wallpaper. */
+  panelOpacity: number
+}
+
+export const DEFAULT_PROJECT_THEME: ProjectTheme = {
+  accent: null,
+  background: null,
+  wallpaper: null,
+  blur: 0,
+  dim: 30,
+  contrast: 100,
+  tint: null,
+  tintStrength: 25,
+  panelOpacity: 80,
 }
 
 /** Summary shown on a launcher card (PM-2, PM-3). */

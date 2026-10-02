@@ -88,3 +88,48 @@
 .sidebar-new {
   gap: 4px;
 }
+
+/* Project wallpaper (projectTheme.tsx): sits behind the sidebar and workspace. */
+.project-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.project-wallpaper-image {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+}
+
+/* Keep the editor visible behind the look dialog so changes can be judged live. */
+.modal-backdrop:has(.theme-dialog) {
+  background: none;
+  place-items: center end;
+  padding-right: 24px;
+}
+.theme-dialog {
+  display: grid;
+  gap: 12px;
+}
+.theme-row {
+  display: grid;
+  grid-template-columns: 110px 1fr auto;
+  align-items: center;
+  gap: 10px;
+}
+.theme-row input[type='color'] {
+  width: 100%;
+  height: 30px;
+  padding: 0 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+}
+.theme-value {
+  min-width: 44px;
+  text-align: right;
+  color: var(--text-muted);
+}
