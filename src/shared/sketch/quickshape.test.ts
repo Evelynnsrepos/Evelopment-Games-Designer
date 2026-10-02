@@ -23,6 +23,12 @@ describe('quickshape', () => {
     expect(tri?.kind).toBe('triangle')
     expect(recognize(wobble(ring(100, 100, 80, 78)))?.kind).toBe('circle')
     expect(recognize(wobble(ring(100, 100, 120, 50)))?.kind).toBe('ellipse')
+    // Scribbled round three times, ending somewhere else: still a circle.
+    const loops = Array.from({ length: 200 }, (_, i) => {
+      const a = (i / 200) * Math.PI * 2 * 2.7
+      return { x: 100 + Math.cos(a) * (80 + (i % 7)), y: 100 + Math.sin(a) * (78 - (i % 5)) }
+    })
+    expect(recognize(loops)?.kind).toBe('circle')
   })
 
   it('outlines close the shape and resizing scales it', () => {

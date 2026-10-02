@@ -50,6 +50,23 @@ function bounds(pts: Pt[]) {
   return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y }
 }
 
+/** Total signed turning angle along the stroke; about 2π per loop. */
+function turning(pts: Pt[]): number {
+  // Use every few points so jitter does not add up.
+  const step = Math.max(1, Math.floor(pts.length / 80))
+  const s = pts.filter((_, i) => i % step === 0)
+  let total = 0
+  for (let i = 2; i < s.length; i++) {
+    const a1 = Math.atan2(s[i - 1].y - s[i - 2].y, s[i - 1].x - s[i - 2].x)
+    const a2 = Math.atan2(s[i].y - s[i - 1].y, s[i].x - s[i - 1].x)
+    let d = a2 - a1
+    while (d > Math.PI) d -= Math.PI * 2
+    while (d < -Math.PI) d += Math.PI * 2
+    total += d
+  }
+  return total
+}
+
 const pathLength = (pts: Pt[]) => pts.slice(1).reduce((s, p, i) => s + dist(p, pts[i]), 0)
 
 /** The clean shape for a rough stroke, or null if it is too small or too wiggly to guess. */
@@ -63,7 +80,8 @@ export function recognize(pts: Pt[]): Shape | null {
   const length = pathLength(pts)
 
   // Open strokes: a straight line, or a few straight segments.
-  const closed = dist(start, end) < Math.max(12, diag * 0.22) && length > diag * 1.6
+  // Going round more than once (scribbling a circle a few times) counts as closed too.
+  const closed = (dist(start, end) < Math.max(12, diag * 0.22) && length > diag * 1.6) || Math.abs(turning(pts)) > Math.PI * 1.8
   if (!closed) {
     const straight = Math.max(...pts.map((p) => segDist(p, start, end)))
     if (straight < Math.max(4, dist(start, end) * 0.08)) return { kind: 'line', points: [start, end] }
