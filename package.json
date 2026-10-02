@@ -42,5 +42,6 @@
     "vite": "^8.3.0",
     "vitest": "^5.0.3"
   },
-  "license": "PolyForm-Strict-1.0.0"
+  "author": "Evelopment Games",
+  "license": "GPL-3.0-only"
 }

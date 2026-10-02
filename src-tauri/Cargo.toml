@@ -2,8 +2,8 @@
 name = "evelopment-games-designer"
 version = "0.2.0"
 description = "Evelopment Games Designer: a free all-in-one game design tool"
-authors = ["Evelynn"]
-license = "PolyForm-Strict-1.0.0"
+authors = ["Evelopment Games"]
+license = "GPL-3.0-only"
 repository = ""
 edition = "2024"
 rust-version = "1.90"

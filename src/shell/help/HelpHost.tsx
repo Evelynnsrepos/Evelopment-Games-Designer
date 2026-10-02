@@ -2,8 +2,9 @@ import { BookOpen, Compass, Palette, Rocket, Save, Link2, LayoutPanelLeft, X } f
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { allManifests } from '@/core/registry'
 import { useAppStore } from '@/core/state'
+import { openExternalUrl } from '@/shared/links/openUrl'
 import { Modal } from '@/shared/ui'
-import { BASICS, TOOL_GUIDE, type GuideTopic } from './guide'
+import { BASICS, COMMUNITY_LINKS, TOOL_GUIDE, type GuideTopic } from './guide'
 import { placeCard, TOURS, useHelp } from './help'
 import './help.css'
 
@@ -73,6 +74,13 @@ function GuideDialog({ topic }: { topic: string }) {
                 <m.icon size={14} /> {m.name}
               </button>
             ))}
+            <div className="help-guide-group">Evelopment Games</div>
+            {COMMUNITY_LINKS.map((l) => (
+              <button key={l.url} title={l.url} onClick={() => void openExternalUrl(l.url)}>
+                <l.icon size={14} /> {l.label}
+              </button>
+            ))}
+            <div className="help-guide-credit">Free and open source under the GPL-3.0.</div>
           </nav>
           <div className="help-guide-body" ref={bodyRef}>
             {current && (

@@ -1,3 +1,4 @@
+import { Camera, MessageCircle, Play } from 'lucide-react'
 import type { ComponentType } from '@/core/model'
 
 /** In-app user guide. Ships with the app, no network. Plain strings so they can be translated later. */
@@ -17,7 +18,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'A project is a normal folder in Documents/Evelopment Games Designer, full of readable JSON files and an assets folder for images and audio. Back it up like any other folder.',
       'Inside a project, the sidebar on the left lists your tools. Click one to open it; tools that hold several documents (boards, maps, timelines…) list them underneath.',
     ],
-    tips: ['Press F1 anywhere to open this guide.', 'Use the Projects button at the top of the sidebar to go back to the start screen.'],
+    tips: ['Questions or ideas? Join the Evelopment Games Discord, linked at the bottom of this list.', 'Press F1 anywhere to open this guide.', 'Use the Projects button at the top of the sidebar to go back to the start screen.'],
   },
   workspace: {
     title: 'Workspace and Layout Mode',
@@ -159,3 +160,10 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     ],
   },
 }
+
+/** Where to find the developer, Evelopment Games. */
+export const COMMUNITY_LINKS = [
+  { label: 'Discord', url: 'https://discord.gg/AGfaBwNKfN', icon: MessageCircle },
+  { label: 'YouTube', url: 'https://www.youtube.com/@EvelopmentGames', icon: Play },
+  { label: 'Instagram', url: 'https://www.instagram.com/evelopmentgames/', icon: Camera },
+]
