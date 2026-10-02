@@ -2,7 +2,7 @@ import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, X } from 'lucide-react'
 import { Component, Suspense, useState, type ReactNode } from 'react'
 import type { Panel } from '@/core/model'
 import { getManifest } from '@/core/registry'
-import { useAppStore, useProjectStore } from '@/core/state'
+import { PanelContext, useAppStore, useProjectStore } from '@/core/state'
 import { closePanel, DRAG_MIME, movePanel, openComponent, type DragPayload } from '../editor/actions'
 import { neighbor, sideFromPoint, type Direction, type DropSide } from './layoutTree'
 
@@ -48,7 +48,9 @@ export function PanelFrame({ panel }: { panel: Panel }) {
       <div className="panel-body">
         <PanelErrorBoundary name={title}>
           <Suspense fallback={<div className="panel-loading">Loading…</div>}>
-            {View ? <View panel={panel} documentId={panel.documentId} active={active} /> : <div className="panel-loading">Unknown component</div>}
+            <PanelContext.Provider value={panel}>
+              {View ? <View panel={panel} documentId={panel.documentId} active={active} /> : <div className="panel-loading">Unknown component</div>}
+            </PanelContext.Provider>
           </Suspense>
         </PanelErrorBoundary>
       </div>
