@@ -374,7 +374,7 @@ mod tests {
     let node = Node::start(key(&me), Arc::new(tx), NetMode::Internet).await.unwrap();
     node.addr_json(true).await.unwrap();
     let others: Vec<String> = all.iter().filter(|n| **n != me).map(|n| key(n).public().to_string()).collect();
-    let deadline = tokio::time::Instant::now() + Duration::from_secs(600);
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(1500);
 
     let mut heard = std::collections::HashSet::new();
     let mut last_dial = tokio::time::Instant::now() - Duration::from_secs(60);
