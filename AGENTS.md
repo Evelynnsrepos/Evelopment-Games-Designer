@@ -6,7 +6,7 @@ Evelynn's original notes are in [`docs/original-notes.txt`](docs/original-notes.
 
 ## Stack
 
-- **Tauri 2** desktop shell (Rust, `src-tauri/`), targets Windows and Linux.
+- **Tauri 2** desktop shell (Rust, `src-tauri/`), targets Windows, Linux and macOS (macOS built in CI, `.github/workflows/macos.yml`).
 - **React 19 + TypeScript** (strict), built with **Vite**.
 - **zustand** for state, **lucide-react** for icons, **vitest** for tests.
 - Planned per spec: **Konva** for canvases, **TipTap** for rich text. Add them in the work package that first needs them.

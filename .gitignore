@@ -30,3 +30,6 @@ packaging/arch/*.pkg.tar.*
 
 # Local installer builds
 release/
+
+# Git worktrees for feature branches
+worktrees/

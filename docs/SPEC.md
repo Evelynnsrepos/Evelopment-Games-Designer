@@ -42,7 +42,7 @@ Solo and small-team game designers, writers and worldbuilders, especially people
 
 | Topic | Decision | Reason |
 |---|---|---|
-| App type | Desktop app, offline-first. **Required targets: Windows 10/11 (x64) and Linux (x64).** macOS is a nice-to-have, not required. | Designers work on large local projects with images and audio; Evelynn wants Windows and Linux. |
+| App type | Desktop app, offline-first. **Required targets: Windows 10/11 (x64) and Linux (x64).** macOS added 2026-10-02 (unsigned universal .dmg built by GitHub Actions). | Designers work on large local projects with images and audio; Evelynn wants Windows and Linux. |
 | Stack | **Tauri 2 + TypeScript + React**, canvas work with **Konva** (or plain HTML Canvas), rich text with **TipTap** | Free and open source, one codebase for Windows and Linux, small installers (a few MB vs ~100 MB for Electron), well known to coding agents. |
 | Packaging | Windows: `.msi` and `.exe` (NSIS) installers. Linux: **AppImage** (runs on any distro) plus `.deb`. Built automatically by GitHub Actions on every release. | Covers the common ways people install on both systems. |
 | Platform rules | Use Tauri's path APIs for all file paths (never hard-code `\` or `/`). Treat file names as case-sensitive (Linux) and avoid characters Windows forbids (`<>:"/\|?*`) when creating folders from project names. Test every release on both Windows and Linux. | Avoids the usual cross-platform bugs. |

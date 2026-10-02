@@ -2,7 +2,7 @@
 
 **One program for designing your whole game.** Story, lore wiki, characters, towns, items, enemies, maps,
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
-know about each other. Free, offline, for Windows and Linux.
+know about each other. Free, offline, for Windows, macOS and Linux.
 
 > **Status:** early development. All 14 tools work, but expect rough edges and changes to the project format.
 
@@ -52,6 +52,7 @@ Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 ## Install
 
 There are no prebuilt downloads yet, so for now you build the app from source. It takes a few minutes the first time.
+On a Mac you can also grab a ready-made `.dmg` from the macOS build (see [Mac](#mac) below).
 
 ### 1. Install the prerequisites
 
@@ -60,6 +61,11 @@ There are no prebuilt downloads yet, so for now you build the app from source. I
 2. [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/). In the installer, tick **Desktop development with C++**.
 3. [Rust](https://rustup.rs): run the installer and keep the defaults. Or in a terminal: `winget install Rustlang.Rustup`
 4. WebView2 is already part of Windows 10 and 11.
+
+**macOS 10.13 or newer** (Apple Silicon or Intel)
+1. Xcode Command Line Tools: in Terminal run `xcode-select --install`.
+2. [Rust](https://rustup.rs): `curl --proto '=https' --tlsv1.2 https://sh.rustup.rs -sSf | sh`
+3. [Node.js](https://nodejs.org) 20 or newer.
 
 **Linux (Debian/Ubuntu)**
 
@@ -122,7 +128,28 @@ The installers end up in `src-tauri/target/release/bundle/`:
 | System | Files |
 |---|---|
 | Windows | `msi/*.msi` and `nsis/*-setup.exe` |
+| macOS | `dmg/*.dmg` and `macos/*.app` |
 | Linux | `appimage/*.AppImage` (runs on any distro) and `deb/*.deb` |
+
+### Mac
+
+The **macOS build** workflow on GitHub (Actions tab, then *Run workflow*) builds a `.dmg` that runs on both
+Apple Silicon and Intel Macs. Open the finished run and download the file under *Artifacts*.
+
+Open the `.dmg` and drag the app into **Applications**. The app is not signed with a paid Apple developer
+certificate, so the first time macOS will refuse to open it:
+
+1. Open the app once. macOS says it can't be opened. Click **Done** (or **Cancel**).
+2. Go to **System Settings → Privacy & Security**, scroll down and click **Open Anyway** next to
+   *Evelopment Games Designer*, then confirm.
+
+If macOS instead says the app "is damaged and can't be opened", that's the download quarantine flag. Clear it in Terminal:
+
+```bash
+xattr -dr com.apple.quarantine "/Applications/Evelopment Games Designer.app"
+```
+
+After that it opens normally. Apps you build yourself with `npm run tauri build` skip all of this.
 
 ### Just want to look around?
 
