@@ -153,7 +153,8 @@ export function orbitLayout(count: number, inner = 70, outer = 280) {
   const step = count > 1 ? (outer - inner) / (count - 1) : 0
   return Array.from({ length: count }, (_, i) => {
     const r = count === 1 ? (inner + outer) / 2 : inner + i * step
-    const a = i * 2.39996 - Math.PI / 2
+    // Start front-right: in the tilted view a body straight up would hide behind the center.
+    const a = i * 2.39996 + Math.PI / 6
     return { r, x: r * Math.cos(a), y: r * Math.sin(a) }
   })
 }

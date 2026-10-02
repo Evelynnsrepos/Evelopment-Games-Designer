@@ -151,7 +151,8 @@ export default function View({ documentId, active }: PanelProps) {
     })
 
   const orbitView = showsOrbits(focus)
-  const orbits = orbitLayout(shown.length)
+  // The first orbit clears the (doubled) center body.
+  const orbits = orbitLayout(shown.length, (focus ? KIND_STYLE[focus.kind].size * 2 : 0) + 45)
   const select = (id: Id) => (e: React.MouseEvent) => {
     e.stopPropagation()
     setSelectedId(id)
@@ -216,12 +217,11 @@ export default function View({ documentId, active }: PanelProps) {
             {orbits.map((o, i) => (
               <ellipse key={shown[i].id} rx={o.r} ry={o.r * ISO} className="cosmos-orbit" />
             ))}
-            {focus && mark(focus, 0, 0, 2, false)}
-            {/* Painter's order: things further back (higher on screen) first. */}
-            {shown
-              .map((body, i) => ({ body, x: orbits[i].x, y: orbits[i].y * ISO }))
+            {/* Painter's order: things further back (higher on screen) first, so the center body hides what passes behind it. */}
+            {[...(focus ? [{ body: focus, x: 0, y: 0, center: true }] : []), ...shown.map((body, i) => ({ body, x: orbits[i].x, y: orbits[i].y * ISO, center: false }))]
               .sort((p, q) => p.y - q.y)
-              .map(({ body, x, y }) => {
+              .map(({ body, x, y, center }) => {
+                if (center) return <g key={body.id}>{mark(body, 0, 0, 2, false)}</g>
                 const moons = childrenOf(cosmos, body.id)
                 const base = KIND_STYLE[body.kind].size + 10
                 return (
@@ -317,7 +317,12 @@ function GraphView(p: {
   look: (id: Id) => void
   mark: (b: Body, x: number, y: number, scale: number, label: boolean) => React.ReactNode
 }) {
-  const { nodes, edges } = treeLayout(p.cosmos, p.rootId)
+  // The tree lies on the isometric ground plane: across = x, deeper levels go back-right.
+  const tree = treeLayout(p.cosmos, p.rootId)
+  const iso = (n: { x: number; y: number }) => ({ x: (n.x - n.y) * 0.866, y: (n.x + n.y) * ISO })
+  const nodes = tree.nodes.map((n) => ({ ...n, ...iso(n) })).sort((m, n) => m.y - n.y)
+  const at = new Map(nodes.map((n) => [n.body.id, n]))
+  const edges = tree.edges.map(([a, b]) => [at.get(a.body.id)!, at.get(b.body.id)!] as const)
   const xs = nodes.map((n) => n.x)
   const ys = nodes.map((n) => n.y)
   const pad = 70
