@@ -1,0 +1,54 @@
+name: Release
+
+# Push a tag like v0.1.0 to build Windows, macOS and Linux installers and
+# publish them as a GitHub Release. Can also be run by hand.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            args: --target universal-apple-darwin
+          - os: ubuntu-22.04
+            args: ''
+          - os: windows-latest
+            args: ''
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.os == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - if: matrix.os == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libxdo-dev
+      - run: npm ci
+      - run: npm test
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || 'v__VERSION__' }}
+          releaseName: Evelopment Games Designer v__VERSION__
+          releaseBody: |
+            Windows: download the `-setup.exe`. Linux: the `.AppImage` (any distro) or `.deb`.
+            Mac: the `.dmg` (Apple Silicon and Intel). It is unsigned, see the README's Mac section for the one-time "Open Anyway" step.
+          releaseDraft: false
+          args: ${{ matrix.args }}

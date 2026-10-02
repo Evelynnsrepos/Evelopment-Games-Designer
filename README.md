@@ -51,8 +51,16 @@ Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 
 ## Install
 
-There are no prebuilt downloads yet, so for now you build the app from source. It takes a few minutes the first time.
-On a Mac you can also grab a ready-made `.dmg` from the macOS build (see [Mac](#mac) below).
+**Easiest:** download the installer for your system from the
+[Releases page](https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/latest):
+
+| System | File |
+|---|---|
+| Windows | `*_x64-setup.exe` |
+| macOS (Apple Silicon and Intel) | `*_universal.dmg` (read [Mac](#mac) below first) |
+| Linux | `*.AppImage` (any distro) or `*.deb` |
+
+Or build it from source as described below. It takes a few minutes the first time.
 
 ### 1. Install the prerequisites
 
@@ -133,8 +141,8 @@ The installers end up in `src-tauri/target/release/bundle/`:
 
 ### Mac
 
-The **macOS build** workflow on GitHub (Actions tab, then *Run workflow*) builds a `.dmg` that runs on both
-Apple Silicon and Intel Macs. Open the finished run and download the file under *Artifacts*.
+Download the `.dmg` from the [Releases page](https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/latest).
+It runs on both Apple Silicon and Intel Macs.
 
 Open the `.dmg` and drag the app into **Applications**. The app is not signed with a paid Apple developer
 certificate, so the first time macOS will refuse to open it:
