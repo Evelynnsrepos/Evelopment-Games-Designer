@@ -157,3 +157,18 @@
   margin-left: auto;
   color: var(--danger);
 }
+
+.cosmos-moon-orbit {
+  stroke-opacity: 0.25;
+  stroke-dasharray: 2 4;
+}
+.cosmos-link {
+  stroke: var(--text-muted);
+  stroke-opacity: 0.5;
+  stroke-width: 1.5;
+}
+.cosmos-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}

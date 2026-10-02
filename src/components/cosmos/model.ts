@@ -82,6 +82,8 @@ export interface Body {
   notes: string
   /** null = the kind's default color. */
   color: string | null
+  /** Custom picture (`assets/images/<uuid>.png`), drawn instead of the colored ball. Added in v0.4. */
+  image?: string | null
 }
 
 /** One cosmos document. Bodies are a flat list; order among siblings is list order. */
@@ -154,4 +156,43 @@ export function orbitLayout(count: number, inner = 70, outer = 280) {
     const a = i * 2.39996 - Math.PI / 2
     return { r, x: r * Math.cos(a), y: r * Math.sin(a) }
   })
+}
+
+/** Isometric tilt of the orbit plane: vertical distances are multiplied by this. */
+export const ISO = 0.5
+
+/**
+ * Looking inside these shows orbits; at the top level and inside these
+ * containers the contents are drawn as a node graph instead (v0.4).
+ */
+export const GRAPH_KINDS: readonly BodyKind[] = ['universe', 'nebula', 'cluster', 'other']
+
+export const showsOrbits = (focus: Body | null) => !!focus && !GRAPH_KINDS.includes(focus.kind)
+
+export interface GraphNode {
+  body: Body
+  x: number
+  y: number
+}
+
+/**
+ * Top-down tree of everything under `rootId` (null = the whole cosmos): one row per
+ * depth, leaves side by side, each parent centered over its children.
+ */
+export function treeLayout(c: Cosmos, rootId: Id | null, dx = 110, dy = 120): { nodes: GraphNode[]; edges: [GraphNode, GraphNode][] } {
+  const nodes: GraphNode[] = []
+  const edges: [GraphNode, GraphNode][] = []
+  let nextX = 0
+  const place = (b: Body, depth: number, seen: Set<Id>): GraphNode => {
+    seen.add(b.id)
+    const kids = childrenOf(c, b.id).filter((k) => !seen.has(k.id)).map((k) => place(k, depth + 1, seen))
+    const x = kids.length ? (kids[0].x + kids[kids.length - 1].x) / 2 : nextX++ * dx
+    const node = { body: b, x, y: depth * dy }
+    nodes.push(node)
+    for (const k of kids) edges.push([node, k])
+    return node
+  }
+  const seen = new Set<Id>()
+  for (const b of childrenOf(c, rootId)) place(b, 0, seen)
+  return { nodes, edges }
 }

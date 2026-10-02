@@ -1,8 +1,9 @@
-import { ChevronDown, ChevronRight, CornerLeftUp, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CornerLeftUp, ImagePlus, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
-import { useDocument, useUndoRedoKeys } from '@/core/state'
+import { pickAndImportAssets, useAssetUrls } from '@/core/assets'
+import { useDocument, useProjectStore, useUndoRedoKeys } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import {
   addBody,
@@ -12,13 +13,16 @@ import {
   colorOf,
   createCosmos,
   findBody,
+  ISO,
   KIND_LABEL,
   KIND_STYLE,
   moveBody,
   orbitLayout,
   pathTo,
   removeBody,
+  showsOrbits,
   subtreeIds,
+  treeLayout,
   updateBody,
   type Body,
   type BodyKind,
@@ -39,11 +43,15 @@ const UI = {
   notes: 'Notes',
   notesHint: 'Where it is, who lives there, what happened here…',
   delete: 'Delete',
+  picture: 'Picture',
+  choosePicture: 'Choose picture…',
+  removePicture: 'Remove',
   empty: 'This cosmos is empty. Add a universe or a galaxy to begin, then add solar systems, planets and moons inside it.',
   emptyHere: 'Nothing inside yet. Use Add to place something here.',
   dropTop: 'Drop here to move to the top level',
   inside: (n: number) => `${n} inside`,
   hint: 'Click to select, double-click to look inside. Drag in the list to move things.',
+  graphHint: 'Click to select, double-click a galaxy or solar system to see its orbits. Drag in the list to move things.',
 }
 
 const DRAG = 'application/x-egd-cosmos-body'
@@ -55,6 +63,8 @@ export default function View({ documentId, active }: PanelProps) {
   const [selectedId, setSelectedId] = useState<Id | null>(null)
   const [addKind, setAddKind] = useState<BodyKind | ''>('')
   const [collapsed, setCollapsed] = useState<Record<Id, boolean>>({})
+  const root = useProjectStore((s) => s.root)
+  const urlOf = useAssetUrls(doc.data?.bodies.map((b) => b.image) ?? [])
 
   const cosmos = doc.data
   if (!cosmos) return null
@@ -140,7 +150,30 @@ export default function View({ documentId, active }: PanelProps) {
       )
     })
 
+  const orbitView = showsOrbits(focus)
   const orbits = orbitLayout(shown.length)
+  const select = (id: Id) => (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setSelectedId(id)
+  }
+  const mark = (b: Body, x: number, y: number, scale: number, label: boolean) => (
+    <BodyMark
+      body={b}
+      x={x}
+      y={y}
+      scale={scale}
+      selected={selectedId === b.id}
+      label={label}
+      inside={childrenOf(cosmos, b.id).length}
+      image={b.image ? urlOf(b.image) : ''}
+    />
+  )
+
+  const pickPicture = async (b: Body) => {
+    if (!root) return
+    const [asset] = await pickAndImportAssets(root, 'image', UI.choosePicture)
+    if (asset) edit((c) => updateBody(c, b.id, { image: asset.path }))
+  }
 
   return (
     <div className="cosmos-root">
@@ -178,29 +211,40 @@ export default function View({ documentId, active }: PanelProps) {
           </button>
         </div>
 
-        <svg className="cosmos-orbits" viewBox="-320 -320 640 640" onClick={() => setSelectedId(focus?.id ?? null)}>
-          {orbits.map((o, i) => (
-            <circle key={shown[i].id} r={o.r} className="cosmos-orbit" />
-          ))}
-          {focus ? (
-            <BodyMark body={focus} x={0} y={0} scale={2} selected={selectedId === focus.id} label={false} />
-          ) : (
-            <circle r={6} className="cosmos-center" />
-          )}
-          {shown.map((b, i) => (
-            <g
-              key={b.id}
-              onClick={(e) => {
-                e.stopPropagation()
-                setSelectedId(b.id)
-              }}
-              onDoubleClick={() => look(b.id)}
-            >
-              <BodyMark body={b} x={orbits[i].x} y={orbits[i].y} scale={1} selected={selectedId === b.id} label inside={childrenOf(cosmos, b.id).length} />
-            </g>
-          ))}
-        </svg>
-        <p className="cosmos-hint">{cosmos.bodies.length === 0 ? UI.empty : shown.length === 0 ? UI.emptyHere : UI.hint}</p>
+        {orbitView ? (
+          <svg className="cosmos-orbits" viewBox="-330 -190 660 380" onClick={() => setSelectedId(focus?.id ?? null)}>
+            {orbits.map((o, i) => (
+              <ellipse key={shown[i].id} rx={o.r} ry={o.r * ISO} className="cosmos-orbit" />
+            ))}
+            {focus && mark(focus, 0, 0, 2, false)}
+            {/* Painter's order: things further back (higher on screen) first. */}
+            {shown
+              .map((body, i) => ({ body, x: orbits[i].x, y: orbits[i].y * ISO }))
+              .sort((p, q) => p.y - q.y)
+              .map(({ body, x, y }) => {
+                const moons = childrenOf(cosmos, body.id)
+                const base = KIND_STYLE[body.kind].size + 10
+                return (
+                  <g key={body.id} onClick={select(body.id)} onDoubleClick={() => look(body.id)}>
+                    {moons.map((m, j) => {
+                      const r = base + j * 8
+                      const angle = j * 2.39996 - Math.PI / 3
+                      return (
+                        <g key={m.id} onClick={select(m.id)}>
+                          <ellipse cx={x} cy={y} rx={r} ry={r * ISO} className="cosmos-orbit cosmos-moon-orbit" />
+                          {mark(m, x + r * Math.cos(angle), y + r * ISO * Math.sin(angle), 0.6, false)}
+                        </g>
+                      )
+                    })}
+                    {mark(body, x, y, 1, true)}
+                  </g>
+                )
+              })}
+          </svg>
+        ) : (
+          <GraphView cosmos={cosmos} rootId={focus?.id ?? null} onBackground={() => setSelectedId(focus?.id ?? null)} select={select} look={look} mark={mark} />
+        )}
+        <p className="cosmos-hint">{cosmos.bodies.length === 0 ? UI.empty : shown.length === 0 ? UI.emptyHere : orbitView ? UI.hint : UI.graphHint}</p>
       </section>
 
       {selected && (
@@ -228,6 +272,17 @@ export default function View({ documentId, active }: PanelProps) {
               </button>
             </span>
           </label>
+          <div className="cosmos-field">
+            {UI.picture}
+            <span className="cosmos-color">
+              <button className="btn" onClick={() => void pickPicture(selected)}>
+                <ImagePlus size={14} /> {UI.choosePicture}
+              </button>
+              <button className="btn btn-ghost" disabled={!selected.image} onClick={() => edit((c) => updateBody(c, selected.id, { image: null }))}>
+                {UI.removePicture}
+              </button>
+            </span>
+          </div>
           <label>
             {UI.notes}
             <textarea
@@ -254,19 +309,67 @@ export default function View({ documentId, active }: PanelProps) {
   )
 }
 
-function BodyMark(p: { body: Body; x: number; y: number; scale: number; selected: boolean; label: boolean; inside?: number }) {
+function GraphView(p: {
+  cosmos: Cosmos
+  rootId: Id | null
+  onBackground: () => void
+  select: (id: Id) => (e: React.MouseEvent) => void
+  look: (id: Id) => void
+  mark: (b: Body, x: number, y: number, scale: number, label: boolean) => React.ReactNode
+}) {
+  const { nodes, edges } = treeLayout(p.cosmos, p.rootId)
+  const xs = nodes.map((n) => n.x)
+  const ys = nodes.map((n) => n.y)
+  const pad = 70
+  const minX = Math.min(0, ...xs) - pad
+  const minY = Math.min(0, ...ys) - pad
+  const w = Math.max(0, ...xs) - minX + pad
+  const h = Math.max(0, ...ys) - minY + pad
+  return (
+    <svg className="cosmos-orbits" viewBox={`${minX} ${minY} ${Math.max(w, 400)} ${Math.max(h, 300)}`} onClick={p.onBackground}>
+      {edges.map(([a, b]) => (
+        <line key={`${a.body.id}-${b.body.id}`} x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="cosmos-link" />
+      ))}
+      {nodes.map((n) => (
+        <g key={n.body.id} onClick={p.select(n.body.id)} onDoubleClick={() => p.look(n.body.id)}>
+          {p.mark(n.body, n.x, n.y, 1, true)}
+        </g>
+      ))}
+    </svg>
+  )
+}
+
+function BodyMark(p: { body: Body; x: number; y: number; scale: number; selected: boolean; label: boolean; inside?: number; image: string }) {
   const r = KIND_STYLE[p.body.kind].size * p.scale
   const color = colorOf(p.body)
   const diffuse = p.body.kind === 'galaxy' || p.body.kind === 'nebula' || p.body.kind === 'universe'
+  const clip = `cosmos-clip-${p.body.id}-${p.scale}`
+  const shade = `cosmos-shade-${p.body.id}-${p.scale}`
   return (
     <g transform={`translate(${p.x} ${p.y})`} className="cosmos-body">
       {p.selected && <circle r={r + 6} className="cosmos-selection" />}
-      {p.body.kind === 'asteroid-belt' ? (
-        <circle r={r} fill="none" stroke={color} strokeWidth={3} strokeDasharray="2 3" />
+      {p.image ? (
+        <>
+          <clipPath id={clip}>
+            <circle r={r} />
+          </clipPath>
+          <image href={p.image} x={-r} y={-r} width={r * 2} height={r * 2} clipPath={`url(#${clip})`} preserveAspectRatio="xMidYMid slice" />
+        </>
+      ) : p.body.kind === 'asteroid-belt' ? (
+        <ellipse rx={r} ry={r * ISO} fill="none" stroke={color} strokeWidth={3} strokeDasharray="2 3" />
       ) : diffuse ? (
         <ellipse rx={r * 1.3} ry={r * 0.75} fill={color} opacity={0.75} />
       ) : (
-        <circle r={r} fill={color} stroke={p.body.kind === 'black-hole' ? 'var(--accent)' : 'none'} strokeWidth={2} />
+        <>
+          {/* Lit from the top left so the balls read as spheres in the tilted view. */}
+          <radialGradient id={shade} cx="35%" cy="30%" r="75%">
+            <stop offset="0%" stopColor="#fff" stopOpacity={0.55} />
+            <stop offset="45%" stopColor={color} stopOpacity={0} />
+            <stop offset="100%" stopColor="#000" stopOpacity={0.55} />
+          </radialGradient>
+          <circle r={r} fill={color} />
+          <circle r={r} fill={`url(#${shade})`} stroke={p.body.kind === 'black-hole' ? 'var(--accent)' : 'none'} strokeWidth={2} />
+        </>
       )}
       {p.label && (
         <text y={r + 14} className="cosmos-label">

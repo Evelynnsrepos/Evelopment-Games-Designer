@@ -56,3 +56,23 @@ describe('cosmos', () => {
     expect(orbitLayout(0)).toEqual([])
   })
 })
+
+describe('v0.4 views', () => {
+  it('lays out a tree with parents centered over their children', async () => {
+    const { treeLayout, showsOrbits } = await import('./model')
+    let c = createCosmos()
+    const g = addBody(c, null, 'galaxy')
+    c = g.cosmos
+    const a = addBody(c, g.body.id, 'solar-system')
+    c = a.cosmos
+    const b = addBody(c, g.body.id, 'solar-system')
+    c = b.cosmos
+    const { nodes, edges } = treeLayout(c, null)
+    const pos = (id: string) => nodes.find((n) => n.body.id === id)!
+    expect(pos(g.body.id).x).toBe((pos(a.body.id).x + pos(b.body.id).x) / 2)
+    expect(pos(a.body.id).y).toBeGreaterThan(pos(g.body.id).y)
+    expect(edges).toHaveLength(2)
+    expect(showsOrbits(null)).toBe(false)
+    expect(showsOrbits(g.body)).toBe(true)
+  })
+})
