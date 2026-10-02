@@ -163,9 +163,10 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     title: 'Moodboard',
     body: [
       'Collect images, cutouts, text and shapes. Cutouts can be shapes or a freehand lasso.',
-      'The layers panel lets you reorder everything, and an always-on-top layer keeps your drawings above the images.',
+      'The layers panel (button in the bottom toolbar) lets you reorder everything, and an always-on-top layer keeps your drawings above the images.',
+      'The brush button opens your drawings from the Sketch tool. Click one to place it as a sticker; transparent parts stay see-through. Double-click to edit it in Sketch.',
     ],
-    tips: ['Drop image files straight onto the board.'],
+    tips: ['Drop image files straight onto the board.', 'Design Language works exactly the same way, for pinning down the look of your game.'],
   },
   brainstorm: {
     title: 'Brainstorm Board',
