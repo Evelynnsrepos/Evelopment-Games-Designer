@@ -13,6 +13,7 @@ import {
   MSG,
   PROTOCOL_VERSION,
   verifyJoinProof,
+  type Closed,
   type Hello,
   type Invite,
   type Reject,
@@ -58,6 +59,8 @@ export interface NetworkEvents {
   synced?(peer: Peer): void
   /** The other side refused us (or we refused them). */
   rejected?(reason: Reject, peer: Peer, byUs: boolean): void
+  /** A peer said it is leaving, or (as host) ending the shared project. */
+  closed?(message: Closed, peer: Peer): void
 }
 
 type Handler = (peer: Peer, payload: Uint8Array) => void
@@ -117,6 +120,13 @@ export class CollabNetwork {
     this.awareness.destroy()
     await this.transport.stop().catch(() => {})
     this.peers.clear()
+  }
+
+  /** Tell everyone connected that we leave (or end the project), and give the message a moment to arrive. */
+  async sayGoodbye(reason: Closed['reason']) {
+    const peers = this.readyPeers()
+    for (const peer of peers) this.send(peer, encodeJson(MSG.closed, { reason } satisfies Closed))
+    if (peers.length) await new Promise((r) => setTimeout(r, 400))
   }
 
   setProfile(profile: Profile) {
@@ -237,6 +247,10 @@ export class CollabNetwork {
           return
         case MSG.awareness:
           if (peer.ready) awarenessProtocol.applyAwarenessUpdate(this.awareness, payload, peer)
+          return
+        case MSG.closed:
+          if (peer.ready) this.events.closed?.(decodeJson<Closed>(payload), peer)
+          this.drop(peer)
           return
         default:
           if (peer.ready) this.handlers.get(type)?.(peer, payload)

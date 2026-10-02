@@ -4,7 +4,7 @@ import { getFs } from '../fs'
 import type { ComponentType, Id } from '../model'
 import { projectPaths, readDocument, writeDocument } from '../project'
 import { flush, scheduleSave } from './autosave'
-import { collabNames, getCollabBinding } from './collabBinding'
+import { collabNames, documentBinding } from './collabBinding'
 import { History } from './history'
 import { useProjectStore } from './projectStore'
 
@@ -46,7 +46,7 @@ async function ensureLoaded<T>(root: string, type: ComponentType, id: Id, create
 
 /** In a shared project the shared copy wins; a file that is not shared yet is added to it. */
 async function loadDocument<T>(root: string, type: ComponentType, id: Id, createDefault: () => T): Promise<T> {
-  const collab = getCollabBinding(root)
+  const collab = documentBinding(root, type)
   const name = collabNames.document(type, id)
   const shared = collab?.read(name)
   if (shared !== undefined) return shared as T
@@ -99,7 +99,7 @@ export function useDocument<T>(type: ComponentType, id: Id, createDefault: () =>
     if (root) redoDocument(root, type, id)
   }, [root, type, id])
 
-  const collab = root ? getCollabBinding(root) : null
+  const collab = root ? documentBinding(root, type) : null
   if (collab) {
     const name = collabNames.document(type, id)
     return { data, update, undo, redo, canUndo: collab.canUndo(name), canRedo: collab.canRedo(name) }
@@ -121,14 +121,14 @@ export function updateDocument<T>(
   if (current === undefined) return
   const next = recipe(current)
   if (next === current) return
-  const collab = getCollabBinding(root)
+  const collab = documentBinding(root, type)
   if (collab) collab.write(collabNames.document(type, id), current, next, options)
   else if (options?.undoable !== false) historyFor(key).record(current)
   setDoc(root, type, id, next)
 }
 
 export function undoDocument(root: string, type: ComponentType, id: Id) {
-  const collab = getCollabBinding(root)
+  const collab = documentBinding(root, type)
   if (collab) return collab.undo(collabNames.document(type, id))
   const key = keyOf(root, type, id)
   const prev = historyFor(key).undo(useDocs.getState().docs[key])
@@ -136,7 +136,7 @@ export function undoDocument(root: string, type: ComponentType, id: Id) {
 }
 
 export function redoDocument(root: string, type: ComponentType, id: Id) {
-  const collab = getCollabBinding(root)
+  const collab = documentBinding(root, type)
   if (collab) return collab.redo(collabNames.document(type, id))
   const key = keyOf(root, type, id)
   const next = historyFor(key).redo(useDocs.getState().docs[key])

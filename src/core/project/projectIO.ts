@@ -10,7 +10,7 @@ import {
   type ProjectMeta,
   type ProjectStats,
 } from '../model'
-import { collabNames, getCollabBinding } from '../state/collabBinding'
+import { collabNames, documentBinding } from '../state/collabBinding'
 import { APP_FOLDER_NAME, projectPaths } from './paths'
 import { readVersioned, writeVersioned } from './versioned'
 import { countWords } from './stats'
@@ -109,7 +109,7 @@ export async function writeDocument<T>(root: string, type: ComponentType, id: st
 }
 
 export async function deleteDocument(root: string, type: ComponentType, id: string) {
-  getCollabBinding(root)?.removeDocument?.(collabNames.document(type, id))
+  documentBinding(root, type)?.removeDocument?.(collabNames.document(type, id))
   await getFs().remove(await projectPaths.document(root, type, id))
 }
 

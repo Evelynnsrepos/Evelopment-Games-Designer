@@ -3,6 +3,7 @@ import { getFs } from '../fs'
 import { ENTITY_TYPES, type Category, type ComponentType, type Entity, type EntityType, type ProjectMeta } from '../model'
 import { projectPaths, readVersioned, type LoadedProject } from '../project'
 import {
+  isLocalOnlyType,
   collabNames,
   flush,
   isTextName,
@@ -42,6 +43,8 @@ export const MEMBERS = 'members'
 export interface ShareInfo {
   /** Same as the project's meta id; peers refuse to sync different projects. */
   projectId: string
+  /** Device id of the person who shared the project. Projects shared before this existed use the first member. */
+  hostId?: string
   /** Random, base64url. Proves an invite is real. A new invite code replaces it. */
   secret: string
 }
@@ -242,6 +245,13 @@ export class CollabSession implements CollabBinding {
     this.doc.transact(() => writeTop(this.doc, SHARE_INFO, this.shareInfo, next), ORIGIN.untracked)
   }
 
+  /** The host's device id: the person who shared the project. */
+  get hostId(): string | undefined {
+    const info = this.shareInfo
+    if (info?.hostId) return info.hostId
+    return [...this.members].sort((a, b) => a.joinedAt.localeCompare(b.joinedAt))[0]?.id
+  }
+
   get members(): Member[] {
     return (readTop(this.doc, MEMBERS) as Member[] | undefined) ?? []
   }
@@ -332,7 +342,8 @@ export class CollabSession implements CollabBinding {
     if (name === collabNames.categories) return receiveSharedCategories(this.root, value as Category[])
     if (name.startsWith('entities:')) return receiveSharedEntities(this.root, name.slice(9) as EntityType, value as Entity[])
     const doc = parseDocumentName(name)
-    if (doc) receiveSharedDocument(this.root, doc.type, doc.id, value)
+    // Local-only tools (Sketch) may still have old shared copies from before; each computer keeps its own.
+    if (doc && !isLocalOnlyType(doc.type)) receiveSharedDocument(this.root, doc.type, doc.id, value)
   }
 }
 

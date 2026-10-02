@@ -40,6 +40,21 @@ export function setCollabBinding(next: CollabBinding | null) {
   binding = next
 }
 
+/**
+ * Tools whose documents stay on each computer, even in shared projects.
+ * Live sync of raster drawing was unreliable, so Sketch drawings are local;
+ * pictures made from them (stickers on a Moodboard, images in the Asset Pool)
+ * are normal assets and still sync.
+ */
+export const LOCAL_ONLY_TYPES: readonly ComponentType[] = ['sketch']
+
+export const isLocalOnlyType = (type: ComponentType) => LOCAL_ONLY_TYPES.includes(type)
+
+/** The binding for a document of this tool: none for local-only tools. */
+export function documentBinding(root: string | null | undefined, type: ComponentType): CollabBinding | null {
+  return isLocalOnlyType(type) ? null : getCollabBinding(root)
+}
+
 /** The binding for this project root, if it is shared. */
 export function getCollabBinding(root?: string | null): CollabBinding | null {
   if (!binding) return null

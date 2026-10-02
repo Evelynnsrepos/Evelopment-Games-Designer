@@ -52,6 +52,11 @@ interface CollabState {
   /** Last problem worth showing, in plain words. */
   error: string | null
   profile: Profile
+  /** This device shared the project: only the host can remove people, and closing the project ends it for everyone. */
+  isHost: boolean
+  hostId: string
+  /** The host ended the shared project; the shell asks whether to keep this computer's copy. */
+  ended: { root: string; projectName: string; host: string } | null
 }
 
 const PROFILE_KEY = 'egd.collab.profile'
@@ -78,7 +83,15 @@ export const useCollab = create<CollabState>()(() => ({
   members: [],
   error: null,
   profile: loadProfile(),
+  isHost: false,
+  hostId: '',
+  ended: null,
 }))
+
+function updateRoles(session: CollabSession, selfId = useCollab.getState().selfId) {
+  const hostId = session.hostId ?? ''
+  useCollab.setState({ hostId, isHost: !!selfId && hostId === selfId })
+}
 
 export const PROFILE_COLORS = COLORS
 
@@ -154,12 +167,20 @@ async function goOnline(session: CollabSession) {
       rejected: (reason, peer, byUs) => {
         if (!byUs) useCollab.setState({ error: rejectMessage(reason, peer) })
       },
+      closed: (message, peer) => {
+        // Only the host can end the project for everyone.
+        if (message.reason !== 'host-closed' || peer.remoteId !== session.hostId || useCollab.getState().isHost) return
+        const projectName = useProjectStore.getState().meta?.name ?? ''
+        const host = peer.name || session.members.find((m) => m.id === peer.remoteId)?.name || 'The host'
+        void goOffline().then(() => useCollab.setState({ ended: { root: session.root, projectName, host } }))
+      },
     },
   )
   const assets = new AssetSync(network, session.doc, session.root)
   const unsubscribe = session.onChange((names) => {
-    if (!names.has('members')) return
+    if (!names.has('members') && !names.has('share')) return
     useCollab.setState({ members: session.members })
+    updateRoles(session)
     network.dropNonMembers()
   })
   active = { session, network, assets, unsubscribe }
@@ -168,6 +189,7 @@ async function goOnline(session: CollabSession) {
     await network.start()
     attachPresence(network.awareness)
     useCollab.setState({ online: true, selfId: network.selfId })
+    updateRoles(session, network.selfId)
   } catch (error) {
     console.error('Collaboration could not start', error)
     useCollab.setState({ online: false, error: 'Could not start the connection. Your changes are saved and will sync later.' })
@@ -178,7 +200,7 @@ async function goOffline() {
   const a = active
   active = null
   setCollabBinding(null)
-  useCollab.setState({ shared: false, online: false, peers: [], members: [], error: null })
+  useCollab.setState({ shared: false, online: false, peers: [], members: [], error: null, isHost: false, hostId: '' })
   attachPresence(null)
   if (!a) return
   a.unsubscribe()
@@ -212,6 +234,8 @@ export function installCollaboration() {
       void goOnline(session)
     },
     async closing() {
+      // The host closing the project ends it for everyone who is connected.
+      if (useCollab.getState().isHost) await active?.network.sayGoodbye('host-closed')
       await goOffline()
     },
   })
@@ -230,7 +254,11 @@ export async function shareProject(): Promise<string> {
     setCollabBinding(session)
     await goOnline(session)
     const { selfId, profile } = useCollab.getState()
-    if (selfId) session.setMembers([{ id: selfId, name: profile.name, color: profile.color, joinedAt: new Date().toISOString() }])
+    if (selfId) {
+      session.setShareInfo({ ...session.shareInfo!, hostId: selfId })
+      session.setMembers([{ id: selfId, name: profile.name, color: profile.color, joinedAt: new Date().toISOString() }])
+      updateRoles(session, selfId)
+    }
   }
   return inviteCode()
 }
@@ -253,19 +281,44 @@ export async function newInviteCode(): Promise<string> {
   return inviteCode()
 }
 
-/** Remove a device: it can no longer connect (it keeps its own copy). */
+/** Remove a device: it can no longer connect (it keeps its own copy). Only the host can, and never the host. */
 export function removeMember(id: string) {
   const a = active
-  if (!a) return
+  if (!a || !useCollab.getState().isHost || id === a.session.hostId) return
   a.session.setMembers(a.session.members.filter((m) => m.id !== id))
   a.network.dropDevice(id)
 }
 
-/** Stop sharing on this computer. The project stays here as a normal project. */
+/**
+ * Stop sharing on this computer; the project stays here as a normal project.
+ * The host ends the shared project for everyone; anyone else leaves it.
+ */
 export async function stopSharingHere() {
-  const root = active?.session.root
+  const a = active
+  const root = a?.session.root
+  if (a) {
+    if (useCollab.getState().isHost) await a.network.sayGoodbye('host-closed')
+    else {
+      // Leave for good: off the member list, so nobody keeps trying to reach this computer.
+      const self = useCollab.getState().selfId
+      a.session.setMembers(a.session.members.filter((m) => m.id !== self))
+      await a.network.sayGoodbye('left')
+    }
+  }
   await goOffline()
-  if (root) await getFs().remove(await projectPaths.collabDir(root))
+  if (root) await forgetSharing(root)
+}
+
+/** Turn a formerly shared project folder into a normal one (after the host ended it, or after leaving). */
+export async function forgetSharing(root: string) {
+  const dir = await projectPaths.collabDir(root)
+  if (await getFs().exists(dir)) await getFs().remove(dir)
+  useCollab.setState({ ended: null })
+}
+
+/** Dismiss the "host ended the project" question without deciding (e.g. the dialog closed). */
+export function clearEnded() {
+  useCollab.setState({ ended: null })
 }
 
 // ---- joining -------------------------------------------------------------------------

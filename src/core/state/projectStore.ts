@@ -26,7 +26,7 @@ import {
   type NewProjectInput,
 } from '../project'
 import { flushAll, scheduleSave } from './autosave'
-import { collabNames, getCollabBinding } from './collabBinding'
+import { collabNames, getCollabBinding, isLocalOnlyType } from './collabBinding'
 
 /**
  * The open project: meta, entities and categories. Every mutation updates
@@ -70,7 +70,8 @@ export type SharedMeta = Omit<ProjectMeta, (typeof PERSONAL_META_KEYS)[number]>
 
 export function sharedMeta(meta: ProjectMeta): SharedMeta {
   const { layout: _layout, sidebarCollapsed: _collapsed, ...shared } = meta
-  return shared
+  // Local-only documents (Sketch drawings) are not listed for the others.
+  return { ...shared, documents: shared.documents.filter((d) => !isLocalOnlyType(d.type)) }
 }
 
 /**
@@ -235,7 +236,13 @@ export function allEntities(collections: EntityCollections): Entity[] {
 export function receiveSharedMeta(root: string, shared: SharedMeta) {
   const s = useProjectStore.getState()
   if (s.root !== root || !s.meta) return
-  const meta: ProjectMeta = { ...shared, layout: s.meta.layout, sidebarCollapsed: s.meta.sidebarCollapsed }
+  const local = s.meta.documents.filter((d) => isLocalOnlyType(d.type))
+  const meta: ProjectMeta = {
+    ...shared,
+    documents: [...shared.documents.filter((d) => !isLocalOnlyType(d.type)), ...local],
+    layout: s.meta.layout,
+    sidebarCollapsed: s.meta.sidebarCollapsed,
+  }
   useProjectStore.setState({ meta })
   scheduleSave(`${root}|meta`, () => saveMeta(root, useProjectStore.getState().meta!))
 }

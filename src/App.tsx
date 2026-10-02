@@ -10,6 +10,7 @@ import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
 import { loadAllPlugins } from '@/shell/plugins/plugins'
+import { SharingEndedHost } from '@/shell/collab/CollabDialogs'
 import { useJoinRequests } from '@/shell/collab/joinRequests'
 
 // Shared projects go online when opened (core/collab).
@@ -39,6 +40,7 @@ export default function App() {
       {screen === 'editor' && <EditorScreen />}
       <DialogHost />
       <HelpHost />
+      <SharingEndedHost />
       <SettingsHost />
     </>
   )

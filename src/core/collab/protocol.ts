@@ -22,7 +22,14 @@ export const MSG = {
   assetRequest: 5,
   /** u32 header length, JSON AssetChunk header, then bytes. */
   assetChunk: 6,
+  /** JSON Closed: the sender is leaving the shared project (or, as host, ending it). */
+  closed: 7,
 } as const
+
+export interface Closed {
+  /** `host-closed`: the host closed the project or stopped sharing, everyone is disconnected. `left`: the sender left for good. */
+  reason: 'host-closed' | 'left'
+}
 
 export interface Hello {
   protocol: number

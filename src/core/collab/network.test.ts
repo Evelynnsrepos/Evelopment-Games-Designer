@@ -182,4 +182,30 @@ describe('collab network', () => {
     expect(events).toContain('they:version')
     expect(net.readyPeers()).toHaveLength(0)
   })
+
+  it('tells connected devices when the host ends the project', async () => {
+    const { net, invite } = await host()
+    const doc = new Y.Doc()
+    const got: string[] = []
+    const guest = new CollabNetwork(new MemoryTransport(hub, 'guest'), doc, { kind: 'join', invite: decodeInvite(invite)! }, profile('Guest'), {
+      closed: (m, peer) => got.push(`${m.reason} from ${peer.remoteId}`),
+    })
+    networks.push(guest)
+    await guest.start()
+    await until(() => guest.readyPeers().length === 1 && net.readyPeers().length === 1)
+    await net.sayGoodbye('host-closed')
+    await until(() => got.length === 1)
+    expect(got).toEqual(['host-closed from host'])
+    await until(() => guest.readyPeers().length === 0)
+  })
+
+  it('keeps Sketch drawings out of the shared project list', async () => {
+    const { sharedMeta } = await import('../state')
+    await useProjectStore.getState().create({ name: 'Game', description: '', components: ['sketch', 'writer'] })
+    const doc = useProjectStore.getState().addDocument('sketch', 'Drawing')
+    const page = useProjectStore.getState().addDocument('writer', 'Page')
+    const shared = sharedMeta(useProjectStore.getState().meta!)
+    expect(shared.documents.map((d) => d.id)).toEqual([page.id])
+    expect(doc.id).toBeTruthy()
+  })
 })

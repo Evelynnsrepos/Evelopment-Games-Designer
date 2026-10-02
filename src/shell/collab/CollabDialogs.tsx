@@ -1,6 +1,8 @@
 import { Copy, Link2, RefreshCw, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
+  clearEnded,
+  forgetSharing,
   inviteCode,
   joinProject,
   newInviteCode,
@@ -15,9 +17,11 @@ import {
   type JoinHandle,
 } from '@/core/collab'
 import { getFs } from '@/core/fs'
-import { defaultProjectsDir } from '@/core/project'
+import { defaultProjectsDir, deleteProject, removeRecent } from '@/core/project'
+import { useProjectStore } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import { Modal } from '@/shared/ui'
+import { backToProjects } from '../editor/actions'
 import './collab.css'
 
 /** Text shown to users, kept together for translation later. */
@@ -39,7 +43,16 @@ const T = {
   online: 'Online',
   offline: 'Offline',
   remove: 'Remove from project',
-  stopSharing: 'Stop sharing on this computer',
+  host: '(host)',
+  stopSharing: 'Stop sharing for everyone',
+  leave: 'Leave project',
+  keepCopy: 'Keep my copy',
+  deleteCopy: 'Delete my copy',
+  endedTitle: (host: string) => `${host} closed the project`,
+  endedText: (project: string) =>
+    `You are no longer connected to "${project}". Keep your copy on this computer as a normal project, or delete it?`,
+  leaveTitle: 'Leave this project?',
+  leaveText: 'You stop working together with the others. Keep your copy on this computer as a normal project, or delete it?',
   close: 'Close',
   joinTitle: 'Join a shared project',
   joinIntro: 'Paste the invite code someone sent you. The project is copied to this computer and stays in sync while you are both online.',
@@ -81,7 +94,8 @@ function ProfileFields() {
 
 /** Sidebar dialog: start sharing, invite code, people. */
 export function ShareDialog({ onClose }: { onClose: () => void }) {
-  const { shared, online, peers, members, selfId, error, profile } = useCollab()
+  const { shared, online, peers, members, selfId, error, profile, isHost, hostId } = useCollab()
+  const [leaving, setLeaving] = useState(false)
   const [code, setCode] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
@@ -171,10 +185,11 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
                   <li key={m.id}>
                     <span className="collab-dot" style={{ background: (isSelf ? profile.color : live?.color) || m.color || 'var(--text-muted)' }} />
                     <span className="collab-person">
-                      {(isSelf ? profile.name : live?.name) || m.name || 'Someone'} {isSelf && <span className="muted">{T.you}</span>}
+                      {(isSelf ? profile.name : live?.name) || m.name || 'Someone'} {isSelf && <span className="muted">{T.you}</span>}{' '}
+                      {m.id === hostId && <span className="muted">{T.host}</span>}
                     </span>
                     <span className={`collab-state${isOnline ? ' online' : ''}`}>{isOnline ? T.online : T.offline}</span>
-                    {!isSelf && (
+                    {isHost && !isSelf && (
                       <button
                         className="icon-btn"
                         title={T.remove}
@@ -198,23 +213,29 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
           </div>
 
           <div className="modal-actions collab-actions">
-            <button
-              className="btn btn-ghost collab-danger"
-              onClick={async () => {
-                const ok = await confirmDialog({
-                  title: 'Stop sharing on this computer?',
-                  message: 'The project stays here with everything in it, but stops syncing with the others. To work together again you need a new invite.',
-                  confirmLabel: 'Stop sharing',
-                  danger: true,
-                })
-                if (ok) {
-                  await stopSharingHere()
-                  onClose()
-                }
-              }}
-            >
-              {T.stopSharing}
-            </button>
+            {isHost ? (
+              <button
+                className="btn btn-ghost collab-danger"
+                onClick={async () => {
+                  const ok = await confirmDialog({
+                    title: 'Stop sharing for everyone?',
+                    message: 'Everyone connected is disconnected and asked whether to keep their copy. The project stays here with everything in it.',
+                    confirmLabel: 'Stop sharing',
+                    danger: true,
+                  })
+                  if (ok) {
+                    await stopSharingHere()
+                    onClose()
+                  }
+                }}
+              >
+                {T.stopSharing}
+              </button>
+            ) : (
+              <button className="btn btn-ghost collab-danger" onClick={() => setLeaving(true)}>
+                {T.leave}
+              </button>
+            )}
             <button className="btn btn-primary" onClick={onClose}>
               {T.close}
             </button>
@@ -222,7 +243,68 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
         </>
       )}
       {(message || error) && <div className="collab-error">{message ?? error}</div>}
+      {leaving && (
+        <KeepCopyDialog
+          title={T.leaveTitle}
+          text={T.leaveText}
+          onDone={async (choice) => {
+            setLeaving(false)
+            if (!choice) return
+            const root = useProjectStore.getState().root
+            await stopSharingHere()
+            onClose()
+            if (choice === 'delete' && root) await deleteOpenProject(root)
+          }}
+        />
+      )}
     </Modal>
+  )
+}
+
+/** Close the project, delete its folder and go back to the start screen. */
+async function deleteOpenProject(root: string) {
+  await backToProjects()
+  await deleteProject(root)
+  await removeRecent(root)
+}
+
+/** Keep or delete this computer's copy (leaving, or after the host ended the project). */
+function KeepCopyDialog({ title, text, onDone }: { title: string; text: string; onDone: (choice: 'keep' | 'delete' | null) => void }) {
+  const [sure, setSure] = useState(false)
+  return (
+    <Modal onClose={() => onDone(null)}>
+      <h3 className="collab-title">{title}</h3>
+      <p className="muted">{text}</p>
+      <div className="modal-actions">
+        <button className={`btn btn-danger${sure ? ' armed' : ''}`} onClick={() => (sure ? onDone('delete') : setSure(true))}>
+          {sure ? 'Press again to delete' : T.deleteCopy}
+        </button>
+        <button className="btn btn-primary" autoFocus onClick={() => onDone('keep')}>
+          {T.keepCopy}
+        </button>
+      </div>
+    </Modal>
+  )
+}
+
+/** Shown when the host closes the shared project: everyone else is disconnected and decides what to do with their copy. */
+export function SharingEndedHost() {
+  const ended = useCollab((s) => s.ended)
+  if (!ended) return null
+  return (
+    <KeepCopyDialog
+      title={T.endedTitle(ended.host)}
+      text={T.endedText(ended.projectName)}
+      onDone={async (choice) => {
+        if (choice === 'delete') {
+          clearEnded()
+          await deleteOpenProject(ended.root)
+        } else {
+          // Closing the dialog keeps the copy too: deleting is never the default.
+          await forgetSharing(ended.root)
+        }
+      }}
+    />
   )
 }
 
