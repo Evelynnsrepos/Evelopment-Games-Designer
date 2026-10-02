@@ -345,4 +345,63 @@ mod tests {
     assert_eq!(a.public(), b.public());
     let _ = std::fs::remove_dir_all(dir);
   }
+
+  /// Cross-OS check: the CI workflow `cross-os.yml` runs this at the same time
+  /// on Windows, macOS and Linux. Each runner derives every runner's identity
+  /// from the run id, dials the others over the internet, and waits until it
+  /// has heard from all of them.
+  #[tokio::test(flavor = "multi_thread")]
+  #[ignore]
+  async fn cross_os_mesh() {
+    let Ok(me) = std::env::var("EGD_MESH_SELF") else {
+      eprintln!("EGD_MESH_SELF not set, skipping");
+      return;
+    };
+    let run = std::env::var("EGD_MESH_RUN").unwrap_or_default();
+    let all = ["linux", "windows", "macos"];
+    let key = |name: &str| {
+      use std::hash::{Hash, Hasher};
+      let mut bytes = [0u8; 32];
+      for (i, chunk) in bytes.chunks_mut(8).enumerate() {
+        let mut h = std::collections::hash_map::DefaultHasher::new();
+        (run.as_str(), name, i).hash(&mut h);
+        chunk.copy_from_slice(&h.finish().to_le_bytes());
+      }
+      SecretKey::from_bytes(&bytes)
+    };
+
+    let (tx, mut rx) = mpsc::unbounded_channel();
+    let node = Node::start(key(&me), Arc::new(tx), NetMode::Internet).await.unwrap();
+    node.addr_json(true).await.unwrap();
+    let others: Vec<String> = all.iter().filter(|n| **n != me).map(|n| key(n).public().to_string()).collect();
+    let deadline = tokio::time::Instant::now() + Duration::from_secs(600);
+
+    let mut heard = std::collections::HashSet::new();
+    let mut last_dial = tokio::time::Instant::now() - Duration::from_secs(60);
+    while heard.len() < others.len() {
+      assert!(tokio::time::Instant::now() < deadline, "only heard from {heard:?}");
+      if last_dial.elapsed() > Duration::from_secs(20) {
+        last_dial = tokio::time::Instant::now();
+        for id in &others {
+          if let Err(e) = node.connect(id).await {
+            eprintln!("dial {id}: {e}");
+          }
+        }
+      }
+      let Ok(Some(event)) = tokio::time::timeout(Duration::from_secs(5), rx.recv()).await else {
+        continue;
+      };
+      let conn = u32::from_be_bytes(event[1..5].try_into().unwrap());
+      if event[0] == EventKind::Connected as u8 {
+        let _ = node.send(conn, format!("hello from {me}").into_bytes()).await;
+      } else if event[0] == EventKind::Message as u8 {
+        let text = String::from_utf8_lossy(&event[5..]).to_string();
+        eprintln!("{me} got: {text}");
+        heard.insert(text);
+      }
+    }
+    // Stay up a little so slower runners can still reach us.
+    tokio::time::sleep(Duration::from_secs(30)).await;
+    node.stop().await;
+  }
 }
