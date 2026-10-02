@@ -21,7 +21,7 @@
 
 ### 1.1 Goals
 1. One program for the whole design process, so designers stop juggling a dozen separate apps.
-2. Completely free, open source, published on GitHub.
+2. Completely free, source-available (PolyForm Strict), published on GitHub.
 3. Components that know about each other (shared items, characters, towns, categories).
 4. A calm, non-intrusive interface: the content is the focus, window chrome stays out of the way.
 5. Never lose work: everything auto-saves.
