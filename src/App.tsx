@@ -5,6 +5,7 @@ import { EditorScreen } from '@/shell/editor/EditorScreen'
 import { Launcher } from '@/shell/launcher/Launcher'
 import { NewProjectWizard } from '@/shell/launcher/NewProjectWizard'
 import { DialogHost } from '@/shared/ui'
+import { HelpHost } from '@/shell/help/HelpHost'
 
 export default function App() {
   const screen = useAppStore((s) => s.screen)
@@ -25,6 +26,7 @@ export default function App() {
       {screen === 'new-project' && <NewProjectWizard />}
       {screen === 'editor' && <EditorScreen />}
       <DialogHost />
+      <HelpHost />
     </>
   )
 }

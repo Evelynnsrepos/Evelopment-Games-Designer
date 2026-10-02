@@ -16,6 +16,7 @@ export function Workspace() {
     return (
       <div
         className={`workspace workspace-empty${emptyDrop ? ' drop-target' : ''}`}
+        data-tour="workspace"
         onDragOver={(e) => {
           if (e.dataTransfer.types.includes(DRAG_MIME)) {
             e.preventDefault()
@@ -37,7 +38,7 @@ export function Workspace() {
   }
 
   return (
-    <div className={`workspace${layoutMode ? ' layout-mode' : ''}`}>
+    <div className={`workspace${layoutMode ? ' layout-mode' : ''}`} data-tour="workspace">
       <Node node={layout} path={[]} />
     </div>
   )

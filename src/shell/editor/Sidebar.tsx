@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -6,6 +6,7 @@ import { useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type DragPayload } from './actions'
 import { leaves } from '../workspace/layoutTree'
+import { useHelp } from '../help/help'
 import { ProjectThemeDialog } from './projectTheme'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
@@ -39,7 +40,7 @@ export function Sidebar() {
         {!collapsed && <div className="sidebar-project" title={meta.name}>{meta.name}</div>}
       </div>
 
-      <div className="sidebar-list">
+      <div className="sidebar-list" data-tour="sidebar-list">
         {enabled.map((m) => {
           const docs = meta.documents.filter((d) => d.type === m.type)
           const isOpen = expanded[m.type] ?? true
@@ -109,7 +110,7 @@ export function Sidebar() {
 
       <div className="sidebar-bottom">
         {available.length > 0 && (
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative' }} data-tour="add-component">
             <button className="sidebar-row" title="Add component" onClick={() => setAddOpen(!addOpen)}>
               <Plus size={16} />
               {!collapsed && <span>Add component</span>}
@@ -131,11 +132,15 @@ export function Sidebar() {
             )}
           </div>
         )}
-        <button className="sidebar-row" title="Project look" onClick={() => setThemeOpen(true)}>
+        <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>
           <Palette size={16} />
           {!collapsed && <span>Project look</span>}
         </button>
         {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
+        <button className="sidebar-row" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
+          <CircleHelp size={16} />
+          {!collapsed && <span>Help</span>}
+        </button>
         <button
           className="sidebar-row"
           title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}

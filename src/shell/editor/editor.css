@@ -67,6 +67,9 @@
 .sidebar.collapsed .sidebar-row {
   justify-content: center;
 }
+.sidebar-row svg {
+  flex: none; /* keep icons full size in the narrow collapsed sidebar */
+}
 .sidebar-docs {
   margin-left: 18px;
   padding-left: 8px;

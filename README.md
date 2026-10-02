@@ -1,4 +1,18 @@
-# Evelopment Games Designer
+<p align="center">
+  <img src="docs/images/logo.png" width="128" alt="Evelopment Games Designer logo">
+</p>
+
+<h1 align="center">Evelopment Games Designer</h1>
+
+<p align="center">
+  <a href="https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/latest"><b>Download</b></a> ·
+  <a href="#features">Features</a> ·
+  <a href="#install">Install</a>
+</p>
+
+<p align="center">
+  <img src="docs/images/items.jpg" width="800" alt="The Item List with item cards">
+</p>
 
 **One program for designing your whole game.** Story, lore wiki, characters, towns, items, enemies, maps,
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
@@ -14,12 +28,22 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 
 ## Features
 
+| | |
+|---|---|
+| <img src="docs/images/story.jpg" alt="Story Branch Writer"> | <img src="docs/images/timeline.jpg" alt="Timeline with a branch"> |
+| **Story Branch Writer**: branching stories as a mind map | **Timeline**: history with alternative branches |
+| <img src="docs/images/brainstorm.jpg" alt="Brainstorm Board"> | <img src="docs/images/launcher.jpg" alt="Project launcher"> |
+| **Brainstorm Board**: notes, pins, string and areas | **Launcher**: all your game projects at a glance |
+| <img src="docs/images/tour.jpg" alt="First-launch tour"> | <img src="docs/images/guide.jpg" alt="In-app user guide"> |
+| **Guided tour** on first launch | **User guide** for every tool, built in (F1) |
+
 ### Workspace
 - **Project launcher**: all your games at a glance, with word and image counts.
 - **Tiling editor**: open several tools side by side, drag a tool from the sidebar to split the screen, and resize the splits.
 - **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets.
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
-- **Light and dark themes** (dark by default).
+- **Light and dark themes** (dark by default), plus a **Project look** per project: accent, background and wallpaper.
+- **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
 
 ### The tools
 

@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useAppStore } from '@/core/state'
+import { maybeStartTour } from '../help/help'
 import { Workspace } from '../workspace/Workspace'
 import { openInitialLayout } from './actions'
 import { ProjectWallpaper, useProjectTheme } from './projectTheme'
@@ -11,6 +12,7 @@ export function EditorScreen() {
   useProjectTheme()
   useEffect(() => {
     openInitialLayout()
+    maybeStartTour('editor')
   }, [])
 
   useEffect(() => {
