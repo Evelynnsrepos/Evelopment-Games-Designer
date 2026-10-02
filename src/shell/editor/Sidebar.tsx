@@ -4,7 +4,7 @@ import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
 import { useProjectStore } from '@/core/state'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
-import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, type DragPayload } from './actions'
+import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, replaceWithComponent, type DragPayload } from './actions'
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
@@ -80,8 +80,8 @@ export function Sidebar() {
               <div className="sidebar-item">
                 <button
                   className="sidebar-row"
-                  title={m.name}
-                  onClick={() => openComponent(m.type)}
+                  title={`${m.name} (Shift-click to open next to the others)`}
+                  onClick={(e) => (e.shiftKey ? openComponent(m.type) : void replaceWithComponent(m.type))}
                   onContextMenu={(e) => {
                     e.preventDefault()
                     setToolMenu({ manifest: m, x: e.clientX, y: e.clientY })
@@ -103,7 +103,7 @@ export function Sidebar() {
                     <div key={d.id} className="sidebar-item">
                       <button
                         className="sidebar-row sidebar-doc"
-                        onClick={() => openComponent(m.type, d.id)}
+                        onClick={(e) => (e.shiftKey ? openComponent(m.type, d.id) : void replaceWithComponent(m.type, d.id))}
                         onDoubleClick={async () => {
                           const title = await promptDialog('Rename document', d.title)
                           if (title?.trim()) useProjectStore.getState().renameDocument(d.id, title.trim())

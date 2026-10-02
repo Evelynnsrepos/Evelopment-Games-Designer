@@ -16,15 +16,18 @@ export const BASICS: Record<string, GuideTopic> = {
     body: [
       'Every game you design is a project. Click New Project on the start screen, give it a name and pick the tools you want. You can add more tools later.',
       'A project is a normal folder in Documents/Evelopment Games Designer, full of readable JSON files and an assets folder for images and audio. Back it up like any other folder.',
-      'Inside a project, the sidebar on the left lists your tools. Click one to open it; tools that hold several documents (boards, maps, timelines…) list them underneath.',
+      'Inside a project, the sidebar on the left lists your tools. Click one to show only that tool; Shift-click to open it next to the ones already open. Tools that hold several documents (boards, maps, timelines…) list them underneath.',
     ],
     tips: ['Questions or ideas? Join the Evelopment Games Discord, linked at the bottom of this list.', 'Press F1 anywhere to open this guide.', 'Use the Projects button at the top of the sidebar to go back to the start screen.'],
   },
   workspace: {
     title: 'Workspace and Layout Mode',
     body: [
-      'You can open several tools side by side. Drag a tool or document from the sidebar onto an open panel to split the screen, and drag the dividers to resize.',
+      'You can open several tools side by side. Shift-click a tool in the sidebar, or drag a tool or document from the sidebar onto an open panel to split the screen, and drag the dividers to resize.',
       'Press Esc to enter Layout Mode. Every panel shows big buttons to close it or move it around. Layout Mode ends after your next click or key press.',
+      'Settings at the bottom of the sidebar (or the gear on the start screen) has spell check for English and German, your own word list, and an optional AI helper you can download for better suggestions.',
+      'Right-click an underlined word for suggestions or to add it to your dictionary. Names of your items, characters, towns and enemies are never marked as wrong.',
+      'Export a project as a zip from its menu on the start screen, and bring one back with Import zip.',
       'Single-letter shortcuts only work in the panel you clicked last, so typing in one tool never triggers another.',
     ],
     tips: ['Collapse the sidebar with the button at its bottom to get more room.'],
