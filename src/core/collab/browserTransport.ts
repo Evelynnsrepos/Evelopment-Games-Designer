@@ -95,8 +95,9 @@ export class BrowserTransport implements CollabTransport {
     if (p.to !== this.id) return
     switch (p.kind) {
       case 'dial':
-        this.open(p.link, p.from)
+        // Accept first: the dialer must know the link before our first message arrives.
         this.post({ kind: 'accept', from: this.id, to: p.from, link: p.link })
+        this.open(p.link, p.from)
         break
       case 'accept': {
         const done = this.dialing.get(p.link)
