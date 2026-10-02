@@ -7,7 +7,15 @@
 <p align="center">
   <a href="https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/latest"><b>Download</b></a> ·
   <a href="#features">Features</a> ·
-  <a href="#install">Install</a>
+  <a href="#install">Install</a> ·
+  <a href="#community">Community</a>
+</p>
+
+<p align="center">
+  <a href="https://discord.gg/AGfaBwNKfN"><img src="https://img.shields.io/badge/Discord-join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
+  <a href="https://www.youtube.com/@EvelopmentGames"><img src="https://img.shields.io/badge/YouTube-Evelopment%20Games-FF0000?logo=youtube&logoColor=white" alt="YouTube"></a>
+  <a href="https://www.instagram.com/evelopmentgames/"><img src="https://img.shields.io/badge/Instagram-evelopmentgames-E4405F?logo=instagram&logoColor=white" alt="Instagram"></a>
+  <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0">
 </p>
 
 <p align="center">
@@ -16,7 +24,7 @@
 
 **One program for designing your whole game.** Story, lore wiki, characters, towns, items, enemies, maps,
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
-know about each other. Free, offline, for Windows, macOS and Linux.
+know about each other. Free, open source, offline, for Windows, macOS and Linux.
 
 > **Status:** early development. All 14 tools work, but expect rough edges and changes to the project format.
 
@@ -72,6 +80,14 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 ### Your data stays yours
 Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 `Documents/Evelopment Games Designer/`. Easy to back up and readable, it works fully offline, and the app sends no telemetry.
+
+## Community
+
+Made by **Evelopment Games**. Follow along, share what you build, and suggest features:
+
+- Discord: https://discord.gg/AGfaBwNKfN
+- YouTube: https://www.youtube.com/@EvelopmentGames
+- Instagram: https://www.instagram.com/evelopmentgames/
 
 ## Install
 
@@ -199,12 +215,12 @@ npm run lint         # oxlint
 Built with [Tauri 2](https://tauri.app), React, TypeScript, [Konva](https://konvajs.org) and [TipTap](https://tiptap.dev).
 The product spec is in [`docs/SPEC.md`](docs/SPEC.md), and [`AGENTS.md`](AGENTS.md) explains how the code is organised.
 
-Found a bug or have an idea? Please [open an issue](../../issues). Because of the license below, code changes
-can only come from the author.
+Found a bug or have an idea? Please [open an issue](../../issues) or come say hi on [Discord](https://discord.gg/AGfaBwNKfN).
+Pull requests are welcome.
 
 ## License
 
-[PolyForm Strict 1.0.0](LICENSE) © 2026 Evelynn.
+[GNU General Public License v3.0](LICENSE) © 2026 Evelopment Games.
 
-You may download, read, build and use this software for free for noncommercial purposes. You may **not**
-share copies (modified or not) or make changes to it. The project is source-available, not open source.
+Evelopment Games Designer is free and open source. You may use, study, share and change it. If you share a
+changed version, it must also be released under the GPL-3.0 with its source code.

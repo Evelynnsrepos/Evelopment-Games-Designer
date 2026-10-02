@@ -21,7 +21,7 @@
 
 ### 1.1 Goals
 1. One program for the whole design process, so designers stop juggling a dozen separate apps.
-2. Completely free, source-available (PolyForm Strict), published on GitHub.
+2. Completely free and open source (GPL-3.0), published on GitHub.
 3. Components that know about each other (shared items, characters, towns, categories).
 4. A calm, non-intrusive interface: the content is the focus, window chrome stays out of the way.
 5. Never lose work: everything auto-saves.
@@ -47,7 +47,7 @@ Solo and small-team game designers, writers and worldbuilders, especially people
 | Packaging | Windows: `.msi` and `.exe` (NSIS) installers. Linux: **AppImage** (runs on any distro) plus `.deb`. Built automatically by GitHub Actions on every release. | Covers the common ways people install on both systems. |
 | Platform rules | Use Tauri's path APIs for all file paths (never hard-code `\` or `/`). Treat file names as case-sensitive (Linux) and avoid characters Windows forbids (`<>:"/\|?*`) when creating folders from project names. Test every release on both Windows and Linux. | Avoids the usual cross-platform bugs. |
 | Storage | Each project is a normal folder on disk with JSON files plus an `assets/` folder | Easy to back up, readable, works with Git. |
-| License | PolyForm Strict 1.0.0 | Decided by Evelynn (2026-10-02): free to download and view, no redistribution or modified versions. |
+| License | GPL-3.0 | Decided by Evelynn (2026-10-02): open source; changed versions must stay open source. Replaces PolyForm Strict. |
 | Language | English UI, text stored so it can be translated later | |
 
 ### 2.1 Project Folder Layout [Default]
@@ -478,7 +478,7 @@ Each step should end with a working, usable app, so the tool is useful long befo
 The current [Default] is in brackets; one-word answers are fine. None of these block starting the build.
 
 1. **Sharing:** is v1 single-user on one computer, or do you want sharing/teamwork? [Single-user; projects are folders you can share via GitHub]
-2. ~~**License** for the GitHub release?~~ Decided: PolyForm Strict 1.0.0 (2026-10-02).
+2. ~~**License** for the GitHub release?~~ Decided: GPL-3.0 (2026-10-02, replacing PolyForm Strict).
 3. **Name:** is "Evelopment Games Designer" the final name for the app and repository?
 4. **Town List and Regular Writer:** anything specific you want beyond the defaults in 8.12 and 8.6?
 5. **Multiple documents:** can a project have several timelines, moodboards, maps, etc.? [Yes for canvases and writer docs; one shared Item/Character/Town/Enemy List and one Wiki]

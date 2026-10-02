@@ -31,6 +31,8 @@
     }
   },
   "bundle": {
+    "publisher": "Evelopment Games",
+    "copyright": "© 2026 Evelopment Games. GPL-3.0",
     "active": true,
     "targets": [
       "msi",
