@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core'
+import { isChangeOrigin } from '@tiptap/extension-collaboration'
 import { Placeholder } from '@tiptap/extensions'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
@@ -19,8 +20,10 @@ import {
   Undo2,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { useCollab } from '@/core/collab'
 import { promptDialog } from '../dialogs'
+import { liveTextExtensions, openLiveText } from './collab'
 import { normalizeRichText } from './doc'
 import { RichImage } from './imageExtension'
 import { RefExtension } from './refExtension'
@@ -47,6 +50,12 @@ export interface RichTextEditorProps {
   className?: string
   /** Gives advanced consumers the TipTap editor (exports, custom commands). */
   onEditor?: (editor: Editor | null) => void
+  /**
+   * In a shared project, teammates type in this text live, with carets.
+   * Pass `collabNames.text(collabNames.document(type, id), field)`. The
+   * editor keeps calling `onChange` so the JSON stays saved as before.
+   */
+  liveTextName?: string
 }
 
 const UI = {
@@ -81,11 +90,16 @@ interface LiveProps {
   placeholder: string
 }
 
-function buildExtensions(live: RefObject<LiveProps>) {
+/** After a teammate's edit, save the merged text once things are quiet. */
+const SETTLE_MS = 800
+
+function buildExtensions(live: RefObject<LiveProps>, shared = false) {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
       link: { openOnClick: false, autolink: true },
+      // Shared text has its own undo that only takes back your own typing.
+      ...(shared ? { undoRedo: false as const } : {}),
     }),
     Placeholder.configure({ placeholder: () => live.current.placeholder }),
     RichImage.configure({ getResolveSrc: () => live.current.resolveImageSrc }),
@@ -111,6 +125,7 @@ export function RichTextEditor({
   autoFocus = false,
   className,
   onEditor,
+  liveTextName,
 }: RichTextEditorProps) {
   const entityRefs = useEntityRefProvider()
   const provider = refs ?? entityRefs
@@ -123,28 +138,57 @@ export function RichTextEditor({
   const lastEmitted = useRef<RichTextDoc | null>(null)
   // The extensions only read `live` inside editor callbacks, never during render.
   // oxlint-disable-next-line react/refs
-  const [extensions] = useState(() => buildExtensions(live))
+  const [localExtensions] = useState(() => buildExtensions(live))
 
-  const editor = useEditor({
-    extensions,
-    content: normalizeRichText(value),
-    editable,
-    autofocus: autoFocus ? 'end' : false,
-    immediatelyRender: true,
-    shouldRerenderOnTransaction: false,
-    onUpdate: ({ editor }) => {
-      const next = editor.getJSON()
-      lastEmitted.current = next
-      live.current.onChange?.(next)
+  // Shared projects: the editor is rebuilt on the live text when sharing starts or stops.
+  const shared = useCollab((s) => s.shared)
+  const liveText = useMemo(
+    // Seeded from the value at that moment; afterwards the live text is the truth.
+    // oxlint-disable-next-line react/refs
+    () => (shared && liveTextName ? openLiveText(liveTextName, normalizeRichText(value), buildExtensions(live, true)) : null),
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+    [shared, liveTextName],
+  )
+  const extensions = useMemo(
+    // oxlint-disable-next-line react/refs
+    () => (liveText ? [...buildExtensions(live, true), ...liveTextExtensions(liveText)] : localExtensions),
+    [liveText, localExtensions],
+  )
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => void (settleTimer.current && clearTimeout(settleTimer.current)), [])
+
+  const editor = useEditor(
+    {
+      extensions,
+      content: liveText ? undefined : normalizeRichText(value),
+      editable,
+      autofocus: autoFocus ? 'end' : false,
+      immediatelyRender: true,
+      shouldRerenderOnTransaction: false,
+      onUpdate: ({ editor, transaction }) => {
+        const emit = () => {
+          if (editor.isDestroyed) return
+          const next = editor.getJSON()
+          lastEmitted.current = next
+          live.current.onChange?.(next)
+        }
+        if (settleTimer.current) clearTimeout(settleTimer.current)
+        settleTimer.current = null
+        // A teammate's typing: they save it themselves, we save the merged result once quiet.
+        if (isChangeOrigin(transaction)) settleTimer.current = setTimeout(emit, SETTLE_MS)
+        else emit()
+      },
     },
-  })
+    [extensions],
+  )
 
   // Outside changes (document undo, another panel showing the same doc) replace the content.
+  // Live text is kept in sync by the collaboration extension instead.
   useEffect(() => {
-    if (!editor || value === lastEmitted.current) return
+    if (!editor || liveText || value === lastEmitted.current) return
     lastEmitted.current = value ?? null
     editor.commands.setContent(normalizeRichText(value), { emitUpdate: false })
-  }, [editor, value])
+  }, [editor, value, liveText])
 
   useEffect(() => {
     editor?.setEditable(editable, false)
