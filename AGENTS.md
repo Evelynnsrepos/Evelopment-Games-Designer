@@ -101,6 +101,16 @@ export default function View({ documentId, active }: PanelProps) {
 - Never build paths with `/` or `\`. Use `getFs().join(...)` and the helpers in `core/project/paths.ts`.
 - Never write files directly; use `writeVersioned`, `writeDocument`, or the stores. Writes are atomic (temp file + rename).
 
+### Collaboration (shared projects)
+
+Projects can be shared and edited live by several people (`src/core/collab/`, see [`docs/COLLABORATION.md`](docs/COLLABORATION.md)).
+Components get this for free as long as they follow the data rules above and:
+- Give every list item a unique string `id`. Lists with ids merge per item; other arrays are replaced whole.
+- Change data only through the stores (`useDocument`, `useProjectStore`), never by writing files.
+- Use `RichTextEditor` with `liveTextName={collabNames.text(collabNames.document(type, id), field)}` for prose, so teammates can type in it together.
+- Canvas tools get teammates' pointers and selections from `CanvasEditor` automatically.
+- Do not create documents with fixed ids on load unless needed (two offline teammates may both create one).
+
 ### UI rules (spec 10)
 
 - Use the CSS variables in `src/index.css` (`--bg`, `--text`, `--accent`, ...). No hard-coded colors except user content colors.

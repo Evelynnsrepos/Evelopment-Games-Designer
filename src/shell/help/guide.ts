@@ -45,6 +45,22 @@ export const BASICS: Record<string, GuideTopic> = {
       'Before you delete something, the app shows every place it is used, so nothing breaks silently.',
     ],
   },
+  together: {
+    title: 'Working together',
+    body: [
+      'Several people can edit one project at the same time, each on their own computer, on Windows, Mac or Linux. There is no account and no server: the computers connect directly.',
+      'To invite someone, open the project and click Work together at the bottom of the sidebar. Enter your name, pick a color and click Share project. Copy the invite code and send it to your teammate.',
+      'Your teammate clicks Join project on their start screen, pastes the code and picks a folder. You are asked to let them in. After that, the project is copied to their computer and changes show up for both of you within a moment.',
+      'You see where the others are: colored dots in the sidebar show who is in which tool, canvases show their pointer and what they selected, and in the Writer and Wiki you type in the same text live and see their cursor.',
+      'Everyone keeps a full copy. If you work offline, your changes are saved as usual and merge automatically the next time you are both online. Undo only takes back your own changes.',
+      'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared.',
+    ],
+    tips: [
+      'The project has to be open on at least one computer that is already in it when someone joins or catches up.',
+      'Making a new invite code stops older codes from working. Removing someone from the list stops their computer from connecting; they keep their copy.',
+      'Stop sharing on this computer turns your copy back into a normal project.',
+    ],
+  },
   look: {
     title: 'Project look (theming)',
     body: [
