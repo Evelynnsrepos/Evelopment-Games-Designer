@@ -13,6 +13,9 @@ export const projectPaths = {
   imagesDir: (root: string) => getFs().join(root, 'assets', 'images'),
   audioDir: (root: string) => getFs().join(root, 'assets', 'audio'),
   backupsDir: (root: string) => getFs().join(root, '.backups'),
+  /** Collaboration state of a shared project (Yjs), see core/collab. */
+  collabDir: (root: string) => getFs().join(root, 'collab'),
+  collabState: (root: string) => getFs().join(root, 'collab', 'state.bin'),
 }
 
 export const APP_FOLDER_NAME = 'Evelopment Games Designer'

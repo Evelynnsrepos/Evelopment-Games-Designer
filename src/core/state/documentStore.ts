@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { create } from 'zustand'
+import { getFs } from '../fs'
 import type { ComponentType, Id } from '../model'
-import { readDocument, writeDocument } from '../project'
+import { projectPaths, readDocument, writeDocument } from '../project'
 import { flush, scheduleSave } from './autosave'
+import { collabNames, getCollabBinding } from './collabBinding'
 import { History } from './history'
 import { useProjectStore } from './projectStore'
 
@@ -33,13 +35,24 @@ async function ensureLoaded<T>(root: string, type: ComponentType, id: Id, create
   if (!loading.has(key)) {
     loading.set(
       key,
-      readDocument(root, type, id, createDefault).then((data) => {
+      loadDocument(root, type, id, createDefault).then((data) => {
         useDocs.setState((s) => ({ docs: { ...s.docs, [key]: data } }))
         loading.delete(key)
       }),
     )
   }
   await loading.get(key)
+}
+
+/** In a shared project the shared copy wins; a file that is not shared yet is added to it. */
+async function loadDocument<T>(root: string, type: ComponentType, id: Id, createDefault: () => T): Promise<T> {
+  const collab = getCollabBinding(root)
+  const name = collabNames.document(type, id)
+  const shared = collab?.read(name)
+  if (shared !== undefined) return shared as T
+  const data = await readDocument(root, type, id, createDefault)
+  if (collab && (await getFs().exists(await projectPaths.document(root, type, id)))) collab.importDocument(name, data)
+  return data
 }
 
 function setDoc(root: string, type: ComponentType, id: Id, data: unknown) {
@@ -75,37 +88,86 @@ export function useDocument<T>(type: ComponentType, id: Id, createDefault: () =>
 
   const update = useCallback(
     (recipe: (current: T) => T, options?: { undoable?: boolean }) => {
-      if (!root) return
-      const current = useDocs.getState().docs[key] as T | undefined
-      if (current === undefined) return
-      const next = recipe(current)
-      if (next === current) return
-      if (options?.undoable !== false) historyFor(key).record(current)
-      setDoc(root, type, id, next)
+      if (root) updateDocument(root, type, id, recipe, options)
     },
-    [root, key, type, id],
+    [root, type, id],
   )
-
   const undo = useCallback(() => {
-    if (!root) return
-    const prev = historyFor(key).undo(useDocs.getState().docs[key])
-    if (prev !== undefined) setDoc(root, type, id, prev)
-  }, [root, key, type, id])
-
+    if (root) undoDocument(root, type, id)
+  }, [root, type, id])
   const redo = useCallback(() => {
-    if (!root) return
-    const next = historyFor(key).redo(useDocs.getState().docs[key])
-    if (next !== undefined) setDoc(root, type, id, next)
-  }, [root, key, type, id])
+    if (root) redoDocument(root, type, id)
+  }, [root, type, id])
 
+  const collab = root ? getCollabBinding(root) : null
+  if (collab) {
+    const name = collabNames.document(type, id)
+    return { data, update, undo, redo, canUndo: collab.canUndo(name), canRedo: collab.canRedo(name) }
+  }
   const h = key ? historyFor(key) : null
   return { data, update, undo, redo, canUndo: !!h?.canUndo, canRedo: !!h?.canRedo }
+}
+
+/** What `useDocument().update` does, usable outside React. No-op until the document is loaded. */
+export function updateDocument<T>(
+  root: string,
+  type: ComponentType,
+  id: Id,
+  recipe: (current: T) => T,
+  options?: { undoable?: boolean },
+) {
+  const key = keyOf(root, type, id)
+  const current = useDocs.getState().docs[key] as T | undefined
+  if (current === undefined) return
+  const next = recipe(current)
+  if (next === current) return
+  const collab = getCollabBinding(root)
+  if (collab) collab.write(collabNames.document(type, id), current, next, options)
+  else if (options?.undoable !== false) historyFor(key).record(current)
+  setDoc(root, type, id, next)
+}
+
+export function undoDocument(root: string, type: ComponentType, id: Id) {
+  const collab = getCollabBinding(root)
+  if (collab) return collab.undo(collabNames.document(type, id))
+  const key = keyOf(root, type, id)
+  const prev = historyFor(key).undo(useDocs.getState().docs[key])
+  if (prev !== undefined) setDoc(root, type, id, prev)
+}
+
+export function redoDocument(root: string, type: ComponentType, id: Id) {
+  const collab = getCollabBinding(root)
+  if (collab) return collab.redo(collabNames.document(type, id))
+  const key = keyOf(root, type, id)
+  const next = historyFor(key).redo(useDocs.getState().docs[key])
+  if (next !== undefined) setDoc(root, type, id, next)
+}
+
+/** Load a document outside React (tests, background work). */
+export async function loadDocumentNow<T>(root: string, type: ComponentType, id: Id, createDefault: () => T): Promise<T> {
+  await ensureLoaded(root, type, id, createDefault)
+  return useDocs.getState().docs[keyOf(root, type, id)] as T
+}
+
+/** Current in-memory copy of a loaded document. */
+export function peekDocument<T>(root: string, type: ComponentType, id: Id): T | undefined {
+  return useDocs.getState().docs[keyOf(root, type, id)] as T | undefined
 }
 
 /** Save a document now (ED-8: closing a component saves it). */
 export async function flushDocument(type: ComponentType, id: Id) {
   const root = useProjectStore.getState().root
   if (root) await flush(keyOf(root, type, id))
+}
+
+/**
+ * A shared document changed on another device (or by undo). Updates the open
+ * copy, if any, and saves the file either way so the folder stays readable.
+ */
+export function receiveSharedDocument(root: string, type: ComponentType, id: Id, data: unknown) {
+  const key = keyOf(root, type, id)
+  if (key in useDocs.getState().docs) setDoc(root, type, id, data)
+  else scheduleSave(key, () => writeDocument(root, type, id, data))
 }
 
 /** Drop cached documents when a project closes. */
