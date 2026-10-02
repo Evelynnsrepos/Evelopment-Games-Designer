@@ -96,7 +96,12 @@ export class CollabSession implements CollabBinding {
   }
 
   /** Start sharing a project: copy everything on disk into the shared state. */
-  static async create(root: string, project: Pick<LoadedProject, 'meta' | 'entities' | 'categories'>, share: ShareInfo, self: Member) {
+  static async create(
+    root: string,
+    project: Pick<LoadedProject, 'meta' | 'entities' | 'categories'>,
+    share: ShareInfo,
+    self: Member | null,
+  ) {
     const session = new CollabSession(root)
     const docs = await readAllDocuments(root)
     session.doc.transact(() => {
@@ -105,7 +110,7 @@ export class CollabSession implements CollabBinding {
       writeTop(session.doc, collabNames.categories, undefined, project.categories)
       for (const [name, data] of docs) writeTop(session.doc, name, undefined, data)
       writeTop(session.doc, SHARE_INFO, undefined, share)
-      writeTop(session.doc, MEMBERS, undefined, [self])
+      writeTop(session.doc, MEMBERS, undefined, self ? [self] : [])
     }, ORIGIN.import)
     await session.saveNow()
     return session

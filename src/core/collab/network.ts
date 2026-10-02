@@ -164,6 +164,18 @@ export class CollabNetwork {
     }
   }
 
+  /** Disconnect a device (e.g. removed from the project). */
+  dropDevice(id: string) {
+    for (const peer of [...this.peers.values()]) if (peer.remoteId === id) this.drop(peer)
+  }
+
+  /** After the member list changed: disconnect devices that are no longer in it. */
+  dropNonMembers() {
+    if (this.mode.kind !== 'member') return
+    const members = new Set(this.mode.session.members.map((m) => m.id))
+    for (const peer of this.readyPeers()) if (!members.has(peer.remoteId)) this.drop(peer)
+  }
+
   // ---- transport events -----------------------------------------------------
 
   private onTransport(e: TransportEvent) {

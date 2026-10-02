@@ -153,9 +153,9 @@ describe('collab network', () => {
   })
 
   it('refuses peers on another schema version', async () => {
-    const { net } = await host()
+    const { net, invite } = await host()
     const events: string[] = []
-    const odd = new CollabNetwork(new MemoryTransport(hub, 'odd'), new Y.Doc(), { kind: 'join', invite: { projectId: 'x', projectName: '', address: 'host', secret: newSecret() } }, profile('Odd'), {
+    const odd = new CollabNetwork(new MemoryTransport(hub, 'odd'), new Y.Doc(), { kind: 'join', invite: decodeInvite(invite)! }, profile('Odd'), {
       rejected: (r, _p, byUs) => events.push(`${byUs ? 'we' : 'they'}:${r.reason}`),
     })
     networks.push(odd)

@@ -18,7 +18,8 @@ export class BrowserTransport implements CollabTransport {
   readonly kind = 'browser' as const
   private channel: BroadcastChannel | null = null
   private onEvent: ((e: TransportEvent) => void) | null = null
-  private readonly id = `tab-${crypto.randomUUID()}`
+  /** Stable per tab, so reloading a tab keeps its membership. */
+  private readonly id = tabId()
   private readonly byLink = new Map<string, { conn: ConnId; remote: string }>()
   private readonly byConn = new Map<ConnId, { link: string; remote: string }>()
   private readonly dialing = new Map<string, (conn: ConnId) => void>()
@@ -113,5 +114,18 @@ export class BrowserTransport implements CollabTransport {
         this.drop(p.link)
         break
     }
+  }
+}
+
+function tabId(): string {
+  const key = 'egd.collab.tabId'
+  try {
+    const existing = sessionStorage.getItem(key)
+    if (existing) return existing
+    const id = `tab-${crypto.randomUUID()}`
+    sessionStorage.setItem(key, id)
+    return id
+  } catch {
+    return `tab-${crypto.randomUUID()}`
   }
 }
