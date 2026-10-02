@@ -26,7 +26,7 @@
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
 know about each other. Free, open source, offline, for Windows, macOS and Linux.
 
-> **Status:** early development. All 15 tools work, but expect rough edges and changes to the project format.
+> **Status:** early development. All 18 tools work, but expect rough edges and changes to the project format.
 
 ## Why
 
@@ -59,7 +59,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that picks the best spelling for the sentence.
 - **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
 - **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
-- **Pen size and smoothing** sliders on every drawing canvas.
+- **Pen size, opacity and smoothing** sliders on every drawing canvas.
 
 ### The tools
 
@@ -80,6 +80,9 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 | **Level Calculator** | XP curves, stat growth, and damage per level against a fixed defense or an enemy from your Enemy List. |
 | **Resource Calculator** | How many resources and how much play time a goal takes, using level-up costs and enemy drop rates. |
 | **Cosmos Creator** | Universes, galaxies, solar systems, planets, moons and more in an isometric view: a node graph at the top level and orbits inside galaxies and solar systems, with moons around their planets and your own pictures for any body. |
+| **Sketch** | Draw and paint like in Procreate: pressure brushes (pencil, ink, marker, paint, airbrush), layers with blend modes, alpha lock and clipping masks, selection, mirror, reference images, PNG export, and Send to other tools. |
+| **Design Language** | The look of your game on one board: images as layers, painted over with the Sketch brushes, plus a named palette and style rules. |
+| **Asset Pool** | Every asset the game still needs (icons, sprites, models, sounds, music…) with status and pictures. Add one for every item, character, town or enemy at once, or paste a checklist. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.

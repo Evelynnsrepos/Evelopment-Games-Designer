@@ -192,7 +192,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   useEffect(() => {
     if (!root) return
-    let cancelled = false
+    // No cancel on cleanup: a stale result is dropped by the path check below, and
+    // cancelling would lose loads when effects run twice (React strict mode).
     for (const layer of doc.layers) {
       if (dirty.current.has(layer.id) || loaded.current.get(layer.id) === layer.image) continue
       if (loaded.current.has(layer.id) && engine.stroking) continue
@@ -208,7 +209,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         .then((abs) => getFs().readBinary(abs))
         .then((bytes) => createImageBitmap(new Blob([bytes as BlobPart])))
         .then((bmp) => {
-          if (cancelled || loaded.current.get(layer.id) !== path) return
+          if (loaded.current.get(layer.id) !== path) return
           engine.setLayerImage(layer.id, bmp)
           setVersion(engine.version)
         })
@@ -219,9 +220,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         loaded.current.delete(id)
         engine.dropLayer(id)
       }
-    }
-    return () => {
-      cancelled = true
     }
   }, [doc.layers, root, engine])
 
