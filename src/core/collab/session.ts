@@ -1,6 +1,6 @@
 import * as Y from 'yjs'
 import { getFs } from '../fs'
-import { ENTITY_TYPES, type Category, type Entity, type EntityType, type ProjectMeta } from '../model'
+import { ENTITY_TYPES, type Category, type ComponentType, type Entity, type EntityType, type ProjectMeta } from '../model'
 import { projectPaths, readVersioned, type LoadedProject } from '../project'
 import {
   collabNames,
@@ -182,6 +182,11 @@ export class CollabSession implements CollabBinding {
       }
     }, ORIGIN.untracked)
     this.undoManagers.get(name)?.clear()
+  }
+
+  removeDocumentsOfType(type: ComponentType) {
+    const prefix = collabNames.document(type, '')
+    for (const name of [...this.doc.share.keys()]) if (name.startsWith(prefix)) this.removeDocument(name)
   }
 
   importDocument(name: string, value: unknown) {

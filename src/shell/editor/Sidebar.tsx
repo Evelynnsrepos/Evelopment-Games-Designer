@@ -9,6 +9,8 @@ import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { ProjectThemeDialog } from './projectTheme'
 import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
+import { CloseToolDialog, RestoreToolDialog, type CloseChoice, type RestoreChoice } from './ToolDialogs'
+import { deleteToolContent, hideTool, toolHasContent } from './toolContent'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
 export function Sidebar() {
@@ -18,10 +20,38 @@ export function Sidebar() {
   const [addOpen, setAddOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [toolMenu, setToolMenu] = useState<{ manifest: ComponentManifest; x: number; y: number } | null>(null)
+  const [closing, setClosing] = useState<ComponentManifest | null>(null)
+  const [restoring, setRestoring] = useState<ComponentManifest | null>(null)
   if (!meta) return null
   const collapsed = meta.sidebarCollapsed
   const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m)
   const available = allManifests().filter((m) => !meta.enabledComponents.includes(m.type))
+
+  const addTool = async (m: ComponentManifest) => {
+    setAddOpen(false)
+    if (await toolHasContent(m.type)) setRestoring(m)
+    else useProjectStore.getState().enableComponent(m.type)
+  }
+  const finishRestore = async (choice: RestoreChoice) => {
+    const m = restoring
+    setRestoring(null)
+    if (!m || !choice) return
+    if (choice === 'delete') await deleteToolContent(m.type)
+    useProjectStore.getState().enableComponent(m.type)
+  }
+  const closeTool = async (m: ComponentManifest) => {
+    setToolMenu(null)
+    if (await toolHasContent(m.type)) setClosing(m)
+    else await hideTool(m.type)
+  }
+  const finishClose = async (choice: CloseChoice) => {
+    const m = closing
+    setClosing(null)
+    if (!m || !choice) return
+    await hideTool(m.type)
+    if (choice === 'delete') await deleteToolContent(m.type)
+  }
 
   const dragProps = (type: ComponentType, documentId: Id | null) => ({
     draggable: true,
@@ -53,6 +83,10 @@ export function Sidebar() {
                   className="sidebar-row"
                   title={m.name}
                   onClick={() => openComponent(m.type)}
+                  onContextMenu={(e) => {
+                    e.preventDefault()
+                    setToolMenu({ manifest: m, x: e.clientX, y: e.clientY })
+                  }}
                   {...dragProps(m.type, m.multiDocument ? (docs[0]?.id ?? null) : null)}
                 >
                   <m.icon size={16} />
@@ -113,27 +147,29 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-bottom">
-        {available.length > 0 && (
-          <div style={{ position: 'relative' }} data-tour="add-component">
-            <button className="sidebar-row" title="Add component" onClick={() => setAddOpen(!addOpen)}>
-              <Plus size={16} />
-              {!collapsed && <span>Add component</span>}
-            </button>
-            {addOpen && (
-              <div className="menu" style={{ bottom: '100%', left: 4 }} onMouseLeave={() => setAddOpen(false)}>
-                {available.map((m) => (
-                  <button
-                    key={m.type}
-                    onClick={() => {
-                      setAddOpen(false)
-                      useProjectStore.getState().enableComponent(m.type)
-                    }}
-                  >
-                    {m.name}
-                  </button>
-                ))}
-              </div>
-            )}
+        <div style={{ position: 'relative' }} data-tour="add-component">
+          <button className="sidebar-row" title="Add tool" onClick={() => setAddOpen(!addOpen)}>
+            <Plus size={16} />
+            {!collapsed && <span>Add tool</span>}
+          </button>
+          {addOpen && (
+            <div className="menu" style={{ bottom: '100%', left: 4 }} onMouseLeave={() => setAddOpen(false)}>
+              {available.map((m) => (
+                <button key={m.type} onClick={() => void addTool(m)}>
+                  {m.name}
+                </button>
+              ))}
+              {available.length === 0 && <div className="sidebar-menu-note">Every tool is already added.</div>}
+            </div>
+          )}
+        </div>
+        {toolMenu && (
+          <div className="menu-backdrop" onMouseDown={() => setToolMenu(null)} onContextMenu={(e) => e.preventDefault()}>
+            <div className="menu" style={{ position: 'fixed', left: toolMenu.x, top: toolMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
+              <button className="danger" onClick={() => void closeTool(toolMenu.manifest)}>
+                Close tool
+              </button>
+            </div>
           </div>
         )}
         <button className="sidebar-row" title="Work together" data-tour="share" onClick={() => setShareOpen(true)}>
@@ -142,6 +178,8 @@ export function Sidebar() {
           {!collapsed && <PresenceDots />}
         </button>
         {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
+        {closing && <CloseToolDialog manifest={closing} onDone={(c) => void finishClose(c)} />}
+        {restoring && <RestoreToolDialog manifest={restoring} onDone={(c) => void finishRestore(c)} />}
         <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>
           <Palette size={16} />
           {!collapsed && <span>Project look</span>}

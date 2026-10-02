@@ -177,4 +177,16 @@ describe('collab session', () => {
     expect(readTop(remote, `doc:brainstorm/${board.id}`)).toBeUndefined()
     expect(remote.getMap(`doc:brainstorm/${board.id}`).get(REMOVED)).toBe(true)
   })
+
+  it('removes every document of a deleted tool for teammates', async () => {
+    const { root, session } = await sharedProject()
+    const { remote } = connect(session)
+    for (const id of ['a', 'b']) {
+      await loadDocumentNow<Board>(root, 'brainstorm', id, () => ({ title: id, nodes: [] }))
+      updateDocument<Board>(root, 'brainstorm', id, (d) => ({ ...d, nodes: [{ id: 'n', x: 1 }] }))
+    }
+    session.removeDocumentsOfType('brainstorm')
+    expect(readTop(remote, 'doc:brainstorm/a')).toBeUndefined()
+    expect(readTop(remote, 'doc:brainstorm/b')).toBeUndefined()
+  })
 })

@@ -29,6 +29,14 @@ export const BASICS: Record<string, GuideTopic> = {
     ],
     tips: ['Collapse the sidebar with the button at its bottom to get more room.'],
   },
+  tools: {
+    title: 'Adding and closing tools',
+    body: [
+      'Add tool at the bottom of the sidebar is always there. Click it to add any tool your project does not have yet.',
+      'Right-click a tool in the sidebar and choose Close tool. Hide removes it from the sidebar but keeps everything you made in it. Delete contents removes the tool and everything in it; the red button has to be pressed twice, and this cannot be undone.',
+      'If you add a hidden tool again, the app asks whether to bring its contents back or delete them and start empty (again with the red button pressed twice).',
+    ],
+  },
   saving: {
     title: 'Saving, undo and backups',
     body: [
@@ -155,6 +163,16 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Draw maps with cities, streets and terrain stamps such as mountains, forests, water and deserts.',
       'Every city is a town from the Town List. Export the finished map as a PNG.',
     ],
+  },
+  cosmos: {
+    title: 'Cosmos Creator',
+    body: [
+      'Mark out where everything is in the universe you are creating: universes, galaxies, nebulae, star clusters, solar systems, stars, black holes, planets, moons, asteroid belts, comets and stations.',
+      'The list on the left shows everything nested inside each other. Drag an entry onto another to move it inside, or onto the empty space below to move it to the top level.',
+      'The middle shows the place you are looking at with everything inside it on its own orbit. Click to select, double-click to look inside, and use the breadcrumb or the up arrow to go back out.',
+      'Add places a new body where you are looking; it picks a sensible kind (planets in a solar system, moons around a planet) and you can choose another in the drop-down. Give each body a name, a color and notes on the right.',
+    ],
+    tips: ['Each cosmos is its own document, so you can keep several (for example one per game or era).', 'Ctrl+Z undoes, including deletes.'],
   },
   'damage-calculator': {
     title: 'Damage Calculator',

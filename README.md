@@ -26,7 +26,7 @@
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
 know about each other. Free, open source, offline, for Windows, macOS and Linux.
 
-> **Status:** early development. All 14 tools work, but expect rough edges and changes to the project format.
+> **Status:** early development. All 15 tools work, but expect rough edges and changes to the project format.
 
 ## Why
 
@@ -47,6 +47,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 
 ### Workspace
 - **Project launcher**: all your games at a glance, with word and image counts.
+- **Add tool** at the bottom of the sidebar; right-click a tool to hide it (keeps its contents) or delete its contents.
 - **Tiling editor**: open several tools side by side, drag a tool from the sidebar to split the screen, and resize the splits.
 - **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets.
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
@@ -72,6 +73,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 | **Damage Calculator** | A library of game damage formulas (elemental reactions, armor, crits, damage over time, resistances), plus your own formulas. |
 | **Level Calculator** | XP curves, stat growth, and damage per level against a fixed defense or an enemy from your Enemy List. |
 | **Resource Calculator** | How many resources and how much play time a goal takes, using level-up costs and enemy drop rates. |
+| **Cosmos Creator** | Universes, galaxies, solar systems, planets, moons and more, nested inside each other on an orbit view, to mark out where everything is in your universe. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.

@@ -30,6 +30,8 @@ export interface CollabBinding {
   boundary(scope: string): void
   /** A document was deleted: remove it on every device. */
   removeDocument?(name: string): void
+  /** Every document of a tool was deleted (Delete tool): remove them on every device. */
+  removeDocumentsOfType?(type: ComponentType): void
 }
 
 let binding: CollabBinding | null = null
