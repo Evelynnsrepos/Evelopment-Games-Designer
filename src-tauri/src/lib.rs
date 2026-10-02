@@ -1,3 +1,5 @@
+use tauri::Manager;
+
 mod llm;
 mod plugins;
 mod spell;
@@ -19,6 +21,11 @@ pub fn run() {
       plugins::plugin_download
     ])
     .setup(|app| {
+      // Version in the title bar, e.g. "Evelopment Games Designer 0.4.0".
+      if let Some(window) = app.get_webview_window("main") {
+        let title = format!("{} {}", app.package_info().name, app.package_info().version);
+        let _ = window.set_title(&title);
+      }
       if cfg!(debug_assertions) {
         app.handle().plugin(
           tauri_plugin_log::Builder::default()

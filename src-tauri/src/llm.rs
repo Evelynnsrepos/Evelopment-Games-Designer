@@ -206,15 +206,16 @@ fn ensure_server(app: &AppHandle) -> Result<u16, String> {
   Err("The AI helper did not start.".into())
 }
 
-/// Ask the model for corrected spellings of `word` as used in `context`.
+/// Ask the model for corrected spellings of `word` as used in `context`. The dictionary's
+/// candidates go along: a small model is much better at picking than at spelling (German especially).
 #[tauri::command]
-pub async fn llm_suggest(app: AppHandle, word: String, context: String) -> Result<Vec<String>, String> {
+pub async fn llm_suggest(app: AppHandle, word: String, context: String, candidates: Vec<String>) -> Result<Vec<String>, String> {
   tauri::async_runtime::spawn_blocking(move || {
     let port = ensure_server(&app)?;
     let body = serde_json::json!({
       "messages": [
-        { "role": "system", "content": "You correct spelling in English or German text. Reply with up to 3 corrected spellings of the given word, one per line, and nothing else." },
-        { "role": "user", "content": format!("Text: {context}\nMisspelled word: {word}") }
+        { "role": "system", "content": "You fix one misspelled word in English or German text. Reply with the best corrected word for this sentence, then up to 2 other likely words, one per line, nothing else." },
+        { "role": "user", "content": format!("Text: {context}\nMisspelled word: {word}\nDictionary suggestions: {}", candidates.join(", ")) }
       ],
       "temperature": 0.2,
       "max_tokens": 40
@@ -238,7 +239,7 @@ fn parse_suggestions(text: &str, word: &str) -> Vec<String> {
       .trim()
       .trim_start_matches(|c: char| c.is_ascii_digit() || matches!(c, '.' | ')' | '-' | '*' | ' '))
       .trim_matches(|c: char| matches!(c, '"' | '\'' | '`' | '.' | ',' | ' '));
-    if !s.is_empty() && !s.contains(' ') && s != word && !out.iter().any(|o| o == s) {
+    if !s.is_empty() && !s.contains(' ') && s != word && !out.iter().any(|o| o.eq_ignore_ascii_case(s)) {
       out.push(s.to_string());
     }
   }

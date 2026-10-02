@@ -11,6 +11,7 @@ const UI = {
   add: 'Add to dictionary',
   ai: 'Ask the AI helper',
   aiThinking: 'AI helper is thinking…',
+  aiPicks: 'AI helper suggests',
   aiFailed: 'The AI helper could not answer.',
 }
 
@@ -25,8 +26,8 @@ export function SpellMenu({ editor, hit, onClose }: { editor: Editor; hit: Missp
   const askAi = async () => {
     setAi('busy')
     const context = editor.state.doc.resolve(hit.from).parent.textContent.slice(0, 600)
-    const found = await aiSuggest(hit.word, context).catch(() => null)
-    setAi(found ? found.filter((f) => !options?.includes(f)) : 'failed')
+    const found = await aiSuggest(hit.word, context, options ?? []).catch(() => null)
+    setAi(found ?? 'failed')
   }
 
   useEffect(() => {
@@ -53,6 +54,14 @@ export function SpellMenu({ editor, hit, onClose }: { editor: Editor; hit: Missp
     <div className="menu spell-menu" style={{ position: 'fixed', left: hit.x, top: hit.y }} role="menu">
       {options === null && <div className="spell-menu-note">{UI.loading}</div>}
       {options?.length === 0 && <div className="spell-menu-note">{UI.none}</div>}
+      {Array.isArray(ai) && <div className="spell-menu-note">{UI.aiPicks}</div>}
+      {Array.isArray(ai) &&
+        ai.map((o) => (
+          <button key={`ai-${o}`} role="menuitem" className="spell-menu-suggestion" onClick={() => replace(o)}>
+            {o}
+          </button>
+        ))}
+      {Array.isArray(ai) && <hr className="spell-menu-sep" />}
       {options?.map((o) => (
         <button key={o} role="menuitem" className="spell-menu-suggestion" onClick={() => replace(o)}>
           {o}
@@ -65,12 +74,6 @@ export function SpellMenu({ editor, hit, onClose }: { editor: Editor; hit: Missp
       )}
       {ai === 'busy' && <div className="spell-menu-note">{UI.aiThinking}</div>}
       {ai === 'failed' && <div className="spell-menu-note">{UI.aiFailed}</div>}
-      {Array.isArray(ai) &&
-        ai.map((o) => (
-          <button key={`ai-${o}`} role="menuitem" className="spell-menu-suggestion" onClick={() => replace(o)}>
-            {o}
-          </button>
-        ))}
       <hr className="spell-menu-sep" />
       <button
         role="menuitem"
