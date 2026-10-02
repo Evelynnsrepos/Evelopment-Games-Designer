@@ -56,7 +56,7 @@ export function PanelFrame({ panel }: { panel: Panel }) {
       {drop && <div className={`drop-zone drop-${drop}`} />}
 
       {layoutMode && (
-        <div className="layout-overlay" onMouseDown={(e) => e.target === e.currentTarget && useAppStore.getState().setLayoutMode(false)}>
+        <div className="layout-overlay">
           <button className="layout-close" title="Close" onClick={() => void closePanel(panel.id)}>
             <X size={64} strokeWidth={1.5} />
           </button>

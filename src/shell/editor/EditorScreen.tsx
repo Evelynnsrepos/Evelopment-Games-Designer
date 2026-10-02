@@ -23,6 +23,22 @@ export function EditorScreen() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
+  const layoutMode = useAppStore((s) => s.layoutMode)
+  useEffect(() => {
+    if (!layoutMode) return
+    // Layout Mode is one action long: any click (after the X or arrow has run), other key or leaving the window ends it.
+    const exit = () => useAppStore.getState().setLayoutMode(false)
+    const onKey = (e: KeyboardEvent) => e.key !== 'Escape' && exit()
+    window.addEventListener('click', exit)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('blur', exit)
+    return () => {
+      window.removeEventListener('click', exit)
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('blur', exit)
+    }
+  }, [layoutMode])
+
   return (
     <div className="editor">
       <Sidebar />
