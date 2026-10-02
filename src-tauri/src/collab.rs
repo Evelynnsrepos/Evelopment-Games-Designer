@@ -56,6 +56,7 @@ impl EventSink for mpsc::UnboundedSender<Vec<u8>> {
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg_attr(not(test), allow(dead_code))]
 pub enum NetMode {
   /// Direct connections with relay fallback and peer lookup by id (the app).
   Internet,
