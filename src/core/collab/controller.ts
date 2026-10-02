@@ -21,6 +21,7 @@ import {
   type SharedMeta,
 } from '../state'
 import { AssetSync } from './assetSync'
+import { attachPresence } from './presence'
 import { invalidate, readTop } from './bridge'
 import { BrowserTransport } from './browserTransport'
 import { CollabNetwork, type JoinRequest, type Peer, type Profile } from './network'
@@ -155,6 +156,7 @@ async function goOnline(session: CollabSession) {
   useCollab.setState({ shared: true, members: session.members, error: null })
   try {
     await network.start()
+    attachPresence(network.awareness)
     useCollab.setState({ online: true, selfId: network.selfId })
   } catch (error) {
     console.error('Collaboration could not start', error)
@@ -167,6 +169,7 @@ async function goOffline() {
   active = null
   setCollabBinding(null)
   useCollab.setState({ shared: false, online: false, peers: [], members: [], error: null })
+  attachPresence(null)
   if (!a) return
   a.unsubscribe()
   a.assets.stop()
