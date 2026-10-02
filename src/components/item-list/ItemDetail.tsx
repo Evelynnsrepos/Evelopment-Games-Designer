@@ -1,10 +1,9 @@
-import { ArrowLeft, Copy, ImageOff, ImagePlus, Plus, Skull, Trash2, X } from 'lucide-react'
+import { ArrowLeft, BookOpen, Copy, Plus, Skull, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { Category, Enemy, Id, Item } from '@/core/model'
-import { openComponent } from '@/shell/editor/actions'
 import { CategoryFields, NumberInput } from '@/shared/categories'
-import { PlaceholderImage } from '@/shared/ui'
-import { imageUrl } from './image'
+import { ImagePicker, openEntity } from '@/shared/entityList'
+import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
 import { droppedBy, formatDrop, nextStatName, renameStat } from './query'
 
@@ -20,9 +19,7 @@ const T = {
   addStat: 'Add number',
   droppedBy: 'Dropped by',
   droppedByEmpty: 'No enemy drops this item yet. Add it to a drop table in the Enemy List.',
-  chooseImage: 'Choose image',
-  chooseImageSoon: 'Image import arrives with the shared asset helper.',
-  removeImage: 'Remove image',
+  wiki: 'Open or create wiki article',
   duplicate: 'Duplicate',
   delete: 'Delete',
   fallbackName: 'Untitled item',
@@ -73,6 +70,9 @@ export function ItemDetail({
         >
           <Copy size={15} />
         </button>
+        <button className="icon-btn" title={T.wiki} aria-label={T.wiki} onClick={() => openWikiArticleForEntity('item', item.id)}>
+          <BookOpen size={15} />
+        </button>
         <button className="icon-btn item-danger" title={T.delete} aria-label={T.delete} onClick={onDelete}>
           <Trash2 size={15} />
         </button>
@@ -80,17 +80,7 @@ export function ItemDetail({
 
       <div className="item-detail-head">
         <div className="item-detail-image">
-          <PlaceholderImage src={imageUrl(item.image)} alt={item.name} size={96} />
-          <div className="item-image-actions">
-            <button className="icon-btn" title={T.chooseImageSoon} aria-label={T.chooseImage} disabled>
-              <ImagePlus size={15} />
-            </button>
-            {item.image && (
-              <button className="icon-btn" title={T.removeImage} aria-label={T.removeImage} onClick={() => updateItem(item.id, { image: null })}>
-                <ImageOff size={15} />
-              </button>
-            )}
-          </div>
+          <ImagePicker path={item.image} alt={item.name} onChange={(image) => updateItem(item.id, { image })} />
         </div>
         <div className="item-detail-name">
           <label className="item-label" htmlFor={`item-name-${item.id}`}>
@@ -151,7 +141,7 @@ export function ItemDetail({
           <ul className="item-drops">
             {drops.map((d, i) => (
               <li key={`${d.enemyId}-${i}`}>
-                <button className="item-link" onClick={() => openComponent('enemy-list')}>
+                <button className="item-link" onClick={() => openEntity('enemy', d.enemyId)}>
                   {d.enemyName || 'Unnamed enemy'}
                 </button>
                 <span className="item-muted">{formatDrop(d)}</span>

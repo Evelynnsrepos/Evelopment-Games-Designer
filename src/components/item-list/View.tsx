@@ -1,5 +1,5 @@
 import { ArrowDownAZ, ArrowUpZA, LayoutGrid, Package, Plus, Redo2, Search, Table2, Tags, Trash2, Undo2, X } from 'lucide-react'
-import { useCallback, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react'
 import { categoryAppliesTo, type Id, type Item } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useProjectStore } from '@/core/state'
@@ -13,7 +13,9 @@ import {
   type CategoryFilter,
 } from '@/shared/categories'
 import { confirmDialog } from '@/shared/dialogs'
-import { PlaceholderImage } from '@/shared/ui'
+import { AssetImage } from '@/shared/AssetImage'
+import { confirmEntityDelete } from '@/shared/entityDelete'
+import { takeEntityFocus, useEntityNavigation } from '@/shared/entityList'
 import {
   addCategoryToItems,
   addItem,
@@ -27,7 +29,6 @@ import {
   undo,
   useItemHistoryVersion,
 } from './actions'
-import { imageUrl } from './image'
 import { ItemDetail } from './ItemDetail'
 import { DEFAULT_QUERY, droppedBy, queryItems, rangeBetween, type ItemQuery, type SortKey } from './query'
 import './item-list.css'
@@ -109,6 +110,22 @@ export default function View({ active }: PanelProps) {
   // A new item's name field gets focus so the user can type the name straight away.
   const [justAdded, setJustAdded] = useState<Id | null>(null)
 
+  // Another tool asked to show one of our items ("Dropped by", wiki info box, [[link]]).
+  // The request may arrive before this panel mounts, so check once on mount, then on every change.
+  useEffect(() => {
+    const take = () => {
+      const req = takeEntityFocus('item')
+      if (!req) return
+      setSearch('')
+      setFilter(null)
+      setSelected([req.id])
+      setAnchorId(req.id)
+      setFocusId(req.id)
+    }
+    take()
+    return useEntityNavigation.subscribe((s) => s.focus?.type === 'item' && take())
+  }, [])
+
   const itemCategories = useMemo(() => categories.filter((c) => isUsedFor(c, 'item')), [categories])
   const query: ItemQuery = { ...DEFAULT_QUERY, search, filter, sort: prefs.sort, desc: prefs.desc }
   // Ignore a sort or filter on a category that no longer exists.
@@ -156,6 +173,14 @@ export default function View({ active }: PanelProps) {
   const onDelete = useCallback(
     async (ids: Id[]) => {
       if (!ids.length) return
+      // One item: list every place it is used (spec 3.3), not just drop tables.
+      if (ids.length === 1) {
+        if (!(await confirmEntityDelete('item', ids[0]))) return
+        deleteItems(ids)
+        setSelected([])
+        if (focusId === ids[0]) setFocusId(null)
+        return
+      }
       const names = ids.map((id) => items.find((i) => i.id === id)?.name ?? '').filter(Boolean)
       const users = [...new Set(ids.flatMap((id) => droppedBy(id, enemies).map((d) => d.enemyName || 'Unnamed enemy')))]
       const what = ids.length === 1 ? `"${names[0]}"` : `${ids.length} items`
@@ -438,7 +463,7 @@ function ItemGrid({ items, selected, focusId, onSelect, onToggle }: ListProps) {
               onClick={(e) => e.stopPropagation()}
               onChange={() => onToggle(item.id)}
             />
-            <PlaceholderImage src={imageUrl(item.image)} alt={item.name} size={72} />
+            <AssetImage path={item.image} alt={item.name} size={72} />
             <div className="item-card-name" title={item.name}>
               {item.name || 'Untitled item'}
             </div>
@@ -515,7 +540,7 @@ function ItemTable({ items, selected, focusId, onSelect, onToggle, onSetSelected
                   />
                 </td>
                 <td className="item-col-image">
-                  <PlaceholderImage src={imageUrl(item.image)} alt={item.name} size={26} />
+                  <AssetImage path={item.image} alt={item.name} size={26} />
                 </td>
                 <td className="item-col-name">
                   <button className="item-link" onClick={(e) => onSelect(item.id, e)}>
