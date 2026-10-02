@@ -1,6 +1,6 @@
 # Evelopment Games Designer
 
-A free, open source, all-in-one desktop tool for designing games: story, lore wiki, characters, towns,
+A free, all-in-one desktop tool for designing games: story, lore wiki, characters, towns,
 items, enemies, maps, timelines, mood and brainstorm boards, and balancing calculators, all in one project
 and all aware of each other. Runs on Windows and Linux.
 
@@ -37,4 +37,5 @@ Projects are saved as normal folders in `Documents/Evelopment Games Designer/`.
 
 ## License
 
-MIT, see [LICENSE](LICENSE).
+[PolyForm Strict 1.0.0](LICENSE). You may download, read and use the code for free for noncommercial purposes.
+You may not share copies (modified or not) or make changes to it. This makes the project source-available, not open source.
