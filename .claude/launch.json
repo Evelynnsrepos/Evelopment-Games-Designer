@@ -1,0 +1,121 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "app",
+        "run",
+        "dev"
+      ],
+      "port": 5173
+    },
+    {
+      "name": "project-services",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/project-services/node_modules/vite/bin/vite.js",
+        "worktrees/project-services",
+        "--port",
+        "5187"
+      ],
+      "port": 5187
+    },
+    {
+      "name": "canvas",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/canvas/node_modules/vite/bin/vite.js",
+        "worktrees/canvas",
+        "--port",
+        "5189"
+      ],
+      "port": 5189
+    },
+    {
+      "name": "item-list",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/item-list/node_modules/vite/bin/vite.js",
+        "worktrees/item-list",
+        "--port",
+        "5193"
+      ],
+      "port": 5193
+    },
+    {
+      "name": "story-timeline",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/story-timeline/node_modules/vite/bin/vite.js",
+        "worktrees/story-timeline",
+        "--port",
+        "5195",
+        "--strictPort"
+      ],
+      "port": 5195
+    },
+    {
+      "name": "lists",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/lists/node_modules/vite/bin/vite.js",
+        "worktrees/lists",
+        "--port",
+        "5197",
+        "--strictPort"
+      ],
+      "port": 5197
+    },
+    {
+      "name": "boards",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/boards/node_modules/vite/bin/vite.js",
+        "worktrees/boards",
+        "--port",
+        "5207",
+        "--strictPort"
+      ],
+      "port": 5207
+    },
+    {
+      "name": "writer-wiki",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/writer-wiki/node_modules/vite/bin/vite.js",
+        "worktrees/writer-wiki",
+        "--port",
+        "5211",
+        "--strictPort"
+      ],
+      "port": 5211
+    },
+    {
+      "name": "map",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/map/node_modules/vite/bin/vite.js",
+        "worktrees/map",
+        "--port",
+        "5213",
+        "--strictPort"
+      ],
+      "port": 5213
+    },
+    {
+      "name": "calculators",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "worktrees/calculators/node_modules/vite/bin/vite.js",
+        "worktrees/calculators",
+        "--port",
+        "5219",
+        "--strictPort"
+      ],
+      "port": 5219
+    }
+  ]
+}
