@@ -1,5 +1,5 @@
-.plugin-warning {
-  max-width: 560px;
+.modal:has(.plugin-warning) {
+  width: min(580px, calc(100vw - 32px));
 }
 .plugin-warning h3 {
   display: flex;

@@ -52,6 +52,16 @@ fn server_exe() -> &'static str {
   if cfg!(windows) { "llama-server.exe" } else { "llama-server" }
 }
 
+/// Windows' own bsdtar (System32) also reads zip; a GNU tar earlier on PATH (Git Bash) would not.
+fn tar_exe() -> PathBuf {
+  if cfg!(windows) {
+    let root = std::env::var_os("SystemRoot").unwrap_or_else(|| r"C:\Windows".into());
+    Path::new(&root).join("System32").join("tar.exe")
+  } else {
+    PathBuf::from("tar")
+  }
+}
+
 fn find_file(dir: &Path, name: &str) -> Option<PathBuf> {
   for entry in fs::read_dir(dir).ok()?.flatten() {
     let path = entry.path();
@@ -108,7 +118,7 @@ fn install(dir: &Path, progress: &Channel<Progress>) -> Result<(), String> {
     let _ = fs::remove_dir_all(&bin);
     fs::create_dir_all(&bin).map_err(|e| e.to_string())?;
     // `tar` ships with Windows 10+, macOS and Linux and unpacks both .zip and .tar.gz.
-    let status = Command::new("tar").arg("-xf").arg(&archive).arg("-C").arg(&bin).status().map_err(|e| e.to_string())?;
+    let status = Command::new(tar_exe()).arg("-xf").arg(&archive).arg("-C").arg(&bin).status().map_err(|e| e.to_string())?;
     let _ = fs::remove_file(&archive);
     if !status.success() || find_file(&bin, server_exe()).is_none() {
       return Err("Could not unpack the AI helper program.".into());

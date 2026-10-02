@@ -1,6 +1,8 @@
+.modal:has(.settings) {
+  width: min(600px, calc(100vw - 32px));
+}
 .settings {
-  width: min(560px, 90vw);
-  max-height: 85vh;
+  max-height: 80vh;
   overflow: auto;
   display: flex;
   flex-direction: column;
