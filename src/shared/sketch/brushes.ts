@@ -365,8 +365,10 @@ export class StrokeStamper {
   add(p: StrokePoint) {
     const prev = this.points[this.points.length - 1]
     this.points.push(p)
-    if (!prev) this.stamp(p, 0, 0, Infinity)
-    else this.segment(prev, p, Infinity)
+    if (!prev) {
+      this.stamp(p, 0, 0, Infinity)
+      this.carry = this.stepAt(p.pressure, 0, Infinity)
+    } else this.segment(prev, p, Infinity)
   }
 
   /** Clear and draw the whole stroke again with the end taper (the stroke length is known now). */
@@ -382,28 +384,32 @@ export class StrokeStamper {
     for (const p of pts) {
       const prev = this.points[this.points.length - 1]
       this.points.push(p)
-      if (!prev) this.stamp(p, 0, 0, total)
-      else this.segment(prev, p, total)
+      if (!prev) {
+        this.stamp(p, 0, 0, total)
+        this.carry = this.stepAt(p.pressure, 0, total)
+      } else this.segment(prev, p, total)
     }
+  }
+
+  /** Distance to the next stamp, for the size at `pressure` / position `at`. */
+  private stepAt(pressure: number, at: number, total: number) {
+    const size = this.sizeAt(pressure, at, total)
+    return Math.max(0.4, size * this.brush.spacing * (1 + (this.rand() - 0.5) * 2 * this.brush.spacingJitter))
   }
 
   private segment(a: StrokePoint, b: StrokePoint, total: number) {
     const d = Math.hypot(b.x - a.x, b.y - a.y)
     if (d === 0) return
     const angle = Math.atan2(b.y - a.y, b.x - a.x)
+    // `carry` is how far into this segment the next stamp goes, so spacing stays even across points.
     let t = this.carry
-    for (;;) {
-      const p = lerp(a.pressure, b.pressure, Math.min(1, t / d))
-      const size = this.sizeAt(p, this.dist + t, total)
-      const step = Math.max(0.4, size * this.brush.spacing * (1 + (this.rand() - 0.5) * 2 * this.brush.spacingJitter))
-      if (t + step > d) {
-        this.carry = t + step - d
-        break
-      }
-      t += step
+    while (t <= d) {
       const k = t / d
-      this.stamp({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), pressure: lerp(a.pressure, b.pressure, k) }, angle, this.dist + t, total)
+      const pressure = lerp(a.pressure, b.pressure, k)
+      this.stamp({ x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), pressure }, angle, this.dist + t, total)
+      t += this.stepAt(pressure, this.dist + t, total)
     }
+    this.carry = t - d
     this.dist += d
   }
 

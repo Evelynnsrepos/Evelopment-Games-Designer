@@ -117,6 +117,17 @@ export class SketchEngine {
     this.version++
   }
 
+  /** Replace the stroke being drawn with new points (QuickShape). */
+  restroke(points: InputPoint[]) {
+    if (!this.stroke || !this.strokeOpts) return
+    this.stroke.ctx.clearRect(0, 0, this.width, this.height)
+    const opts = this.strokeOpts
+    const mirror = (q: { x: number; y: number }) => mirrored(q, this.width, this.height, opts.symmetry)
+    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, mirror, 1)
+    for (const p of points) this.stamper.add(p)
+    this.version++
+  }
+
   /** Draw the stroke into `ctx` the way it will land on the layer. */
   private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
     colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)

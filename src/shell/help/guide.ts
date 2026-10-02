@@ -201,6 +201,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Brushes: Pencil, Ink, Marker, Paint and Airbrush. With a pen tablet, pressing harder makes lines thicker or stronger. Size, opacity and smoothing are on the right; [ and ] change the size.',
       'Layers have opacity, blend modes (Multiply, Screen, Overlay and more), alpha lock (paint only on what is there), clipping masks, duplicate, merge down and reordering. Double-click a layer to rename it.',
       'Selection: lasso (L) or rectangle (M). Painting, fill, clear, flip and move (V) only affect the selection. Ctrl+D deselects.',
+      'QuickShape: draw a rough line, circle, rectangle or triangle and keep holding at the end. It snaps to a clean shape; keep holding and drag to resize it, and hold Shift for a perfect one (straight 15° lines, circles, squares). This works with the pen on every canvas too.',
       'Mirror draws left/right, top/bottom or four ways at once. The eyedropper (I, or hold Alt) picks a color from the picture.',
       'Insert an image as a new layer, or add a reference image that floats over the canvas without being part of the picture; references can come from any image in the project.',
       'Export as PNG, or use Send to… to put the picture on a Moodboard, a Design Language board or into the Asset Pool.',

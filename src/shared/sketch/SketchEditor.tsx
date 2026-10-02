@@ -49,6 +49,7 @@ import {
   type SketchLayer,
   type SymmetryMode,
 } from './model'
+import { HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
 import { ReferencePicker } from './ReferencePicker'
 import './sketch.css'
 
@@ -325,7 +326,17 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   // ---- Pointer input ------------------------------------------------------
 
   const gesture = useRef<
-    | { kind: 'paint'; smooth: InputPoint }
+    | {
+        kind: 'paint'
+        smooth: InputPoint
+        /** Every point so far, for QuickShape. */
+        pts: InputPoint[]
+        /** Where the pointer rests; the hold timer restarts when it moves. */
+        rest: { x: number; y: number }
+        timer?: ReturnType<typeof setTimeout>
+        /** Set once the stroke snapped to a shape; further moves resize it. */
+        snapped?: { shape: Shape; at: { x: number; y: number }; pressure: number }
+      }
     | { kind: 'pan'; sx: number; sy: number; vx: number; vy: number }
     | { kind: 'select'; pts: { x: number; y: number }[]; rect: boolean }
     | { kind: 'move'; from: { x: number; y: number }; to: { x: number; y: number } }
@@ -351,7 +362,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if (!activeLayer.visible) return
       const pt = { ...p, pressure: pressureOf(e) }
       engine.beginStroke({ layer: activeLayer, brush, color, symmetry, erase: t === 'eraser' }, pt)
-      gesture.current = { kind: 'paint', smooth: pt }
+      gesture.current = { kind: 'paint', smooth: pt, pts: [pt], rest: pt }
+      armHold()
       setVersion(engine.version)
     } else if (t === 'lasso' || t === 'rect') {
       gesture.current = { kind: 'select', pts: [p], rect: t === 'rect' }
@@ -373,11 +385,22 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (g.kind === 'pan') {
       setView({ ...view, x: g.vx + e.clientX - g.sx, y: g.vy + e.clientY - g.sy })
     } else if (g.kind === 'paint') {
+      if (g.snapped) {
+        g.snapped.at = g.snapped.at ?? p
+        drawShape(g, p)
+        return
+      }
       const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent]
       for (const ev of events.length ? events : [e.nativeEvent]) {
         const raw = { ...toDoc(ev), pressure: pressureOf(ev) }
         g.smooth = stabilize(g.smooth, raw, brush.streamline)
         engine.strokeTo(g.smooth)
+        g.pts.push(g.smooth)
+      }
+      // QuickShape: the hold timer restarts whenever the pointer really moves.
+      if (Math.hypot(p.x - g.rest.x, p.y - g.rest.y) * (view?.scale ?? 1) > 4) {
+        g.rest = p
+        armHold()
       }
       setVersion(engine.version)
     } else if (g.kind === 'select') {
@@ -395,7 +418,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     const g = gesture.current
     gesture.current = null
     if (!g) return
-    if (g.kind === 'paint') markDirty(engine.endStroke())
+    if (g.kind === 'paint') {
+      clearTimeout(g.timer)
+      markDirty(engine.endStroke())
+    }
     else if (g.kind === 'select') {
       setDraftSel(null)
       if (g.pts.length < 3) return setSelection(null)
@@ -407,6 +433,30 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       markDirty(engine.endMove())
       if (selectionPts && (dx || dy)) setSelection(selectionPts.map((q) => ({ x: q.x + dx, y: q.y + dy })))
     }
+  }
+
+  /** QuickShape: after resting HOLD_MS at the end of a stroke it snaps to a clean shape. */
+  const armHold = () => {
+    const g = gesture.current
+    if (g?.kind !== 'paint') return
+    clearTimeout(g.timer)
+    g.timer = setTimeout(() => {
+      if (gesture.current !== g || g.snapped) return
+      const shape = recognize(g.pts)
+      if (!shape) return
+      const pressure = g.pts.reduce((s, q) => s + q.pressure, 0) / g.pts.length
+      g.snapped = { shape, at: g.rest, pressure }
+      drawShape(g, g.rest)
+    }, HOLD_MS)
+  }
+
+  /** Draw the snapped shape, resized toward `to`; Shift makes it perfect. */
+  const drawShape = (g: Extract<NonNullable<typeof gesture.current>, { kind: 'paint' }>, to: { x: number; y: number }) => {
+    if (!g.snapped) return
+    let shape = resize(g.snapped.shape, g.snapped.at, to)
+    if (keys.shift) shape = perfect(shape)
+    engine.restroke(shapeOutline(shape, 2, g.pts[0]).map((q) => ({ ...q, pressure: g.snapped!.pressure })))
+    setVersion(engine.version)
   }
 
   const setSelection = (pts: { x: number; y: number }[] | null) => {
@@ -513,6 +563,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   // ---- Keyboard -------------------------------------------------------------
 
+  const drawShapeRef = useRef(drawShape)
+  const cursorRef = useRef<{ x: number; y: number } | null>(null)
+  useEffect(() => {
+    drawShapeRef.current = drawShape
+    cursorRef.current = cursor
+  })
   const commands = useRef({ undo, redo, fit, deselect: () => setSelection(null), clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)) })
   useEffect(() => {
     commands.current = { undo, redo, fit, deselect: () => setSelection(null), clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)) }
@@ -524,6 +580,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if ((e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable]')) return
       const ctrl = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()
+      if (k === 'shift' && gesture.current?.kind === 'paint' && gesture.current.snapped) {
+        keys.shift = true
+        drawShapeRef.current(gesture.current, cursorRef.current ?? gesture.current.snapped.at)
+      }
       if (k === ' ') {
         spaceDown.current = true
         e.preventDefault()
@@ -545,6 +605,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       e.preventDefault()
     }
     const up = (e: KeyboardEvent) => {
+      if (e.key === 'Shift' && gesture.current?.kind === 'paint' && gesture.current.snapped) {
+        keys.shift = false
+        drawShapeRef.current(gesture.current, cursorRef.current ?? gesture.current.snapped.at)
+      }
       if (e.key === ' ') spaceDown.current = false
       if (e.key === 'Alt') altDown.current = false
     }
