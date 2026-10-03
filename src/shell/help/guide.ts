@@ -68,6 +68,8 @@ export const BASICS: Record<string, GuideTopic> = {
     body: [
       'Type [[ in the Wiki, Writer, Story Branch Writer or Timeline to link to an article, item, character, town or enemy. Links follow renames.',
       'Custom categories such as Element or Faction are created once and shared by the Item, Character, Town and Enemy lists.',
+      'Rarities: the Rarity category comes with colors, borders and icons from Common to Legendary. Items and characters show them on their cards, in tables, on their page, in the wiki and in [[links]].',
+      'Open Categories to change the looks: pick a color, a border (solid, double or glow) and an icon for each option, or add your own rarities. Tick "Colors, borders and icons" to give any dropdown (like Element) looks too.',
       'Before you delete something, the app shows every place it is used, so nothing breaks silently.',
     ],
   },
@@ -79,12 +81,13 @@ export const BASICS: Record<string, GuideTopic> = {
       'Your teammate clicks Join project on their start screen, pastes the code and picks a folder. You are asked to let them in. After that, the project is copied to their computer and changes show up for both of you within a moment.',
       'You see where the others are: colored dots in the sidebar show who is in which tool, canvases show their pointer and what they selected, and in the Writer and Wiki you type in the same text live and see their cursor.',
       'Everyone keeps a full copy. If you work offline, your changes are saved as usual and merge automatically the next time you are both online. Undo only takes back your own changes.',
-      'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared.',
+      'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared, except Sketch drawings: those stay on each computer. Pictures made from them, like stickers on a Moodboard, are shared.',
+      'The person who shared the project is the host. When the host closes the project or stops sharing, everyone else is disconnected and asked whether to keep their copy as a normal project or delete it.',
+      'Only the host can remove people. Everyone else can Leave project, keeping or deleting their copy.',
     ],
     tips: [
       'The project has to be open on at least one computer that is already in it when someone joins or catches up.',
       'Making a new invite code stops older codes from working. Removing someone from the list stops their computer from connecting; they keep their copy.',
-      'Stop sharing on this computer turns your copy back into a normal project.',
     ],
   },
   look: {
