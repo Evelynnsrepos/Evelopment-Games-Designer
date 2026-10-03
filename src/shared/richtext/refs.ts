@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
-import { ENTITY_TYPES, type Entity, type EntityType } from '@/core/model'
+import { ENTITY_TYPES, type Category, type Entity, type EntityType } from '@/core/model'
 import { allEntities, useProjectStore } from '@/core/state'
 import { openEntity } from '@/shared/entityList/navigation'
 import type { RefItem, RefProvider, RefTarget } from './types'
+import { entityLook } from '../categories/styles'
 
 export const MAX_REF_RESULTS = 20
 
@@ -52,22 +53,29 @@ export function combineRefProviders(...providers: RefProvider[]): RefProvider {
 const ENTITY_HINT: Record<EntityType, string> = { item: 'Item', character: 'Character', town: 'Town', enemy: 'Enemy' }
 
 const isEntityType = (kind: string): kind is EntityType => (ENTITY_TYPES as readonly string[]).includes(kind)
-const toItem = (e: Entity): RefItem => ({ kind: e.type, id: e.id, label: e.name || 'Untitled', hint: ENTITY_HINT[e.type] })
+const toItem = (e: Entity, categories: Category[] = []): RefItem => ({
+  kind: e.type,
+  id: e.id,
+  label: e.name || 'Untitled',
+  hint: ENTITY_HINT[e.type],
+  color: entityLook(categories, e.type, e)?.style.color,
+})
 
 /** Links to items, characters, towns and enemies of the open project. Clicking one opens its list. */
 export function useEntityRefProvider(options?: { open?: (target: RefTarget) => void }): RefProvider {
   const entities = useProjectStore((s) => s.entities)
+  const categories = useProjectStore((s) => s.categories)
   const open = options?.open
   return useMemo<RefProvider>(() => {
     const all = allEntities(entities)
     return {
-      search: (query) => rankRefItems(all.map(toItem), query),
+      search: (query) => rankRefItems(all.map((e) => toItem(e, categories)), query),
       resolve: (target) => {
         if (!isEntityType(target.kind)) return undefined
         const hit = (entities[target.kind] as Entity[]).find((e) => e.id === target.id)
-        return hit && toItem(hit)
+        return hit && toItem(hit, categories)
       },
       open: open ?? ((target) => isEntityType(target.kind) && openEntity(target.kind, target.id)),
     }
-  }, [entities, open])
+  }, [entities, categories, open])
 }

@@ -84,6 +84,7 @@ export const RefExtension = Node.create<RefOptions, RefStorage>({
         dom.textContent = item?.label ?? MISSING_REF_LABEL
         dom.title = item ? `${item.hint ? item.hint + ': ' : ''}${item.label} (click to open)` : 'The linked record was deleted'
         dom.classList.toggle('richtext-ref-missing', !item)
+        dom.style.color = item?.color ?? ''
       }
       dom.addEventListener('click', (e) => {
         e.preventDefault()

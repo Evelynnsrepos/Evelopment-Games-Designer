@@ -12,6 +12,7 @@ import {
   isUsedFor,
   type CategoryFilter,
 } from '@/shared/categories'
+import { entityLook, frameStyle, StyleBadge, StyleMark, styleOf } from '@/shared/categories'
 import { confirmDialog } from '@/shared/dialogs'
 import { AssetImage } from '@/shared/AssetImage'
 import { confirmEntityDelete } from '@/shared/entityDelete'
@@ -439,6 +440,8 @@ function ItemGrid({ items, selected, focusId, onSelect, onToggle }: ListProps) {
           .filter((x) => x.v)
           .slice(0, 3)
         const isSelected = selected.includes(item.id)
+        // v0.6: the rarity frames the card.
+        const look = entityLook(categories, 'item', item)
         return (
           <div
             key={item.id}
@@ -446,6 +449,7 @@ function ItemGrid({ items, selected, focusId, onSelect, onToggle }: ListProps) {
             aria-selected={isSelected}
             tabIndex={0}
             className={`item-card${isSelected ? ' selected' : ''}${item.id === focusId ? ' focused' : ''}`}
+            style={frameStyle(look?.style)}
             onClick={(e) => onSelect(item.id, e)}
             onKeyDown={(e) => {
               if (e.target !== e.currentTarget) return
@@ -464,16 +468,23 @@ function ItemGrid({ items, selected, focusId, onSelect, onToggle }: ListProps) {
               onChange={() => onToggle(item.id)}
             />
             <AssetImage path={item.image} alt={item.name} size={72} />
-            <div className="item-card-name" title={item.name}>
+            <div className="item-card-name" title={item.name} style={look ? { color: look.style.color } : undefined}>
               {item.name || 'Untitled item'}
             </div>
             {chips.length > 0 && (
               <div className="item-chips">
-                {chips.map(({ c, v }) => (
-                  <span key={c.id} className="item-chip" title={`${c.name}: ${v}`}>
-                    {v}
-                  </span>
-                ))}
+                {chips.map(({ c, v }) => {
+                  const style = styleOf(c, item.categories[c.id])
+                  return style ? (
+                    <span key={c.id} title={`${c.name}: ${v}`}>
+                      <StyleBadge style={style} label={v} small />
+                    </span>
+                  ) : (
+                    <span key={c.id} className="item-chip" title={`${c.name}: ${v}`}>
+                      {v}
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -543,9 +554,7 @@ function ItemTable({ items, selected, focusId, onSelect, onToggle, onSetSelected
                   <AssetImage path={item.image} alt={item.name} size={26} />
                 </td>
                 <td className="item-col-name">
-                  <button className="item-link" onClick={(e) => onSelect(item.id, e)}>
-                    {item.name || 'Untitled item'}
-                  </button>
+                  <ItemName item={item} onClick={(e) => onSelect(item.id, e)} />
                 </td>
                 {columns.map((c) => (
                   <td key={c.id}>
@@ -564,5 +573,15 @@ function ItemTable({ items, selected, focusId, onSelect, onToggle, onSetSelected
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** Name cell, colored and marked by rarity (v0.6). */
+function ItemName({ item, onClick }: { item: Item; onClick: (e: MouseEvent) => void }) {
+  const look = entityLook(useProjectStore((s) => s.categories), 'item', item)
+  return (
+    <button className="item-link" onClick={onClick} style={look ? { color: look.style.color } : undefined}>
+      {look && <StyleMark style={look.style} />} {item.name || 'Untitled item'}
+    </button>
   )
 }

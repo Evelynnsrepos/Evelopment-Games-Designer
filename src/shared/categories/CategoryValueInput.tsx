@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { Category, CategoryValue } from '@/core/model'
 import { coerceValue } from './logic'
+import { StyleMark, styleOf } from './styles'
 
 const EMPTY_LABEL = '—'
 
@@ -22,17 +23,34 @@ export function CategoryValueInput({
   const current = coerceValue(category.kind, value, category.options)
 
   switch (category.kind) {
-    case 'dropdown':
-      return (
-        <select id={id} aria-label={ariaLabel} className="input cat-input" value={current === null ? '' : String(current)} onChange={(e) => onChange(e.target.value || null)}>
+    case 'dropdown': {
+      const style = styleOf(category, current)
+      const select = (
+        <select
+          id={id}
+          aria-label={ariaLabel}
+          className="input cat-input"
+          style={style ? { color: style.color, borderColor: style.color } : undefined}
+          value={current === null ? '' : String(current)}
+          onChange={(e) => onChange(e.target.value || null)}
+        >
           <option value="">{EMPTY_LABEL}</option>
           {category.options.map((o) => (
-            <option key={o} value={o}>
+            <option key={o} value={o} style={styleOf(category, o) ? { color: styleOf(category, o)!.color } : undefined}>
               {o}
             </option>
           ))}
         </select>
       )
+      return style ? (
+        <span className="cat-styled-input">
+          <StyleMark style={style} />
+          {select}
+        </span>
+      ) : (
+        select
+      )
+    }
     case 'boolean':
       return (
         <select

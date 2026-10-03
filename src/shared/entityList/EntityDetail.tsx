@@ -9,6 +9,7 @@ import type { EntityActions } from './actions'
 import type { DetailContext, ListText } from './EntityList'
 import { TYPE_LABEL } from './links'
 import { nextStatName, renameStat } from './query'
+import { entityLook, frameStyle } from '../categories/styles'
 
 /** A labelled block on a detail page. */
 export function Section({ label, htmlFor, icon, children }: { label: string; htmlFor?: string; icon?: ReactNode; children: ReactNode }) {
@@ -51,6 +52,7 @@ export interface DetailFrameProps<T extends EntityType> {
 export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, text, categoriesLabel = 'Associations', onOpenWiki, children }: DetailFrameProps<T>) {
   const categories = useProjectStore((s) => s.categories)
   const nameEmpty = entity.name.trim() === ''
+  const look = entityLook(useProjectStore((st) => st.categories), type, entity)
   const fallback = `Untitled ${text.one}`
   const update = (patch: Partial<Entity>, group: string | null = null) => actions.update(entity.id, patch as Partial<EntityOf<T>>, group)
 
@@ -83,7 +85,9 @@ export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, 
       </div>
 
       <div className="elist-detail-head">
-        <ImagePicker path={entity.image} alt={entity.name} onChange={(image) => update({ image })} />
+        <div className="elist-detail-frame" style={frameStyle(look?.style)}>
+          <ImagePicker path={entity.image} alt={entity.name} onChange={(image) => update({ image })} />
+        </div>
         <div className="elist-detail-name">
           <label className="elist-label" htmlFor={`elist-name-${entity.id}`}>
             Name

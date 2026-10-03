@@ -23,6 +23,8 @@ export interface RefItem extends RefTarget {
   label: string
   /** Small grey text next to the label, e.g. "Character". */
   hint?: string
+  /** Text color, e.g. the entity's rarity color (v0.6). */
+  color?: string
 }
 
 /**

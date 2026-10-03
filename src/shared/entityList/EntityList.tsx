@@ -1,6 +1,6 @@
 import { ArrowDownAZ, ArrowUpZA, LayoutGrid, Plus, Redo2, Search, Table2, Tags, Trash2, Undo2, X, type LucideIcon } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
-import { categoryAppliesTo, type EntityOf, type EntityType, type Id, type StatBlock } from '@/core/model'
+import { categoryAppliesTo, type Category, type EntityBase, type EntityOf, type EntityType, type Id, type StatBlock } from '@/core/model'
 import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
 import {
@@ -20,6 +20,7 @@ import { isTyping } from './dom'
 import { takeEntityFocus, useEntityNavigation } from './navigation'
 import { DEFAULT_QUERY, queryEntities, rangeBetween, type EntityQuery, type SortKey, type StatFilter } from './query'
 import './entityList.css'
+import { entityLook, frameStyle, StyleBadge, StyleMark, styleOf } from '../categories/styles'
 
 /** User-visible words for one list; `one`/`many` are lower case ("character", "characters"). */
 export interface ListText {
@@ -506,13 +507,16 @@ function Grid<T extends EntityType>({ type, text, entities, selected, focusId, o
           .slice(0, 3)
         const isSelected = selected.includes(entity.id)
         const meta = cardMeta?.(entity)
+        // v0.6: rarity (or another styled category) frames the card and its picture.
+        const look = entityLook(categories, type, entity)
         return (
           <div
             key={entity.id}
             role="option"
             aria-selected={isSelected}
             tabIndex={0}
-            className={`elist-card${isSelected ? ' selected' : ''}${entity.id === focusId ? ' focused' : ''}`}
+            className={`elist-card${isSelected ? ' selected' : ''}${entity.id === focusId ? ' focused' : ''}${look && look.style.border !== 'none' ? ' styled' : ''}`}
+            style={frameStyle(look?.style)}
             onClick={(e) => onSelect(entity.id, e)}
             onKeyDown={(e) => {
               if (e.target !== e.currentTarget) return
@@ -531,17 +535,24 @@ function Grid<T extends EntityType>({ type, text, entities, selected, focusId, o
               onChange={() => onToggle(entity.id)}
             />
             <AssetImage path={entity.image} alt={entity.name} size={72} />
-            <div className="elist-card-name" title={entity.name}>
+            <div className="elist-card-name" title={entity.name} style={look ? { color: look.style.color } : undefined}>
               {entity.name || untitled(text)}
             </div>
             {meta && <div className="elist-card-meta">{meta}</div>}
             {chips.length > 0 && (
               <div className="elist-chips">
-                {chips.map(({ c, v }) => (
-                  <span key={c.id} className="elist-chip" title={`${c.name}: ${v}`}>
-                    {v}
-                  </span>
-                ))}
+                {chips.map(({ c, v }) => {
+                  const style = styleOf(c, entity.categories[c.id])
+                  return style ? (
+                    <span key={c.id} title={`${c.name}: ${v}`}>
+                      <StyleBadge style={style} label={v} small />
+                    </span>
+                  ) : (
+                    <span key={c.id} className="elist-chip" title={`${c.name}: ${v}`}>
+                      {v}
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -630,9 +641,7 @@ function Table<T extends EntityType>({
                   <AssetImage path={entity.image} alt={entity.name} size={26} />
                 </td>
                 <td className="elist-col-name">
-                  <button className="elist-link" onClick={(e) => onSelect(entity.id, e)}>
-                    {entity.name || untitled(text)}
-                  </button>
+                  <TableName categories={categories} type={type} entity={entity} label={entity.name || untitled(text)} onClick={(e) => onSelect(entity.id, e)} />
                 </td>
                 {columns.map((c) => (
                   <td key={c.id}>{c.render(entity)}</td>
@@ -659,5 +668,15 @@ function Table<T extends EntityType>({
         </tbody>
       </table>
     </div>
+  )
+}
+
+/** Name cell: colored and marked by the entity's rarity (v0.6). */
+function TableName({ categories, type, entity, label, onClick }: { categories: Category[]; type: EntityType; entity: EntityBase; label: string; onClick: (e: React.MouseEvent) => void }) {
+  const look = entityLook(categories, type, entity)
+  return (
+    <button className="elist-link" onClick={onClick} style={look ? { color: look.style.color } : undefined} title={look ? `${look.category.name}: ${look.value}` : undefined}>
+      {look && <StyleMark style={look.style} />} {label}
+    </button>
   )
 }

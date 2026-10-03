@@ -417,3 +417,13 @@
   color: var(--text-muted);
   margin-top: 4px;
 }
+
+/* v0.6: rarity frames */
+.elist-card.styled {
+  outline-offset: -2px;
+}
+.elist-detail-frame {
+  border-radius: 8px;
+  outline-offset: 2px;
+  flex: none;
+}

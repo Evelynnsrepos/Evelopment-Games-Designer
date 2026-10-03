@@ -2,16 +2,17 @@ import { ArrowDown, ArrowUp, Plus, X } from 'lucide-react'
 import { useState } from 'react'
 import { newId, type Category, type CategoryKind, type EntityType } from '@/core/model'
 import { cleanOptions, ENTITY_LABELS, findByName, KIND_LABELS, KINDS, newCategory, validateCategoryName } from './logic'
-import type { OptionRow } from './optionRows'
+import { NEW_STYLE, stylesFromRows, type OptionRow } from './optionRows'
+import { BORDERS, STYLE_ICONS } from './styles'
 
 /** Ordered list of dropdown options with add, remove and reorder (order drives sorting, e.g. Common < Rare). */
-export function OptionsEditor({ rows, onChange }: { rows: OptionRow[]; onChange: (rows: OptionRow[]) => void }) {
+export function OptionsEditor({ rows, onChange, styled = false }: { rows: OptionRow[]; onChange: (rows: OptionRow[]) => void; styled?: boolean }) {
   // The row added last gets focus when it mounts, so the user can keep typing.
   const [focusKey, setFocusKey] = useState<string | null>(null)
   const add = () => {
     const key = newId()
     setFocusKey(key)
-    onChange([...rows, { key, original: null, value: '' }])
+    onChange([...rows, { key, original: null, value: '', style: styled ? NEW_STYLE : undefined }])
   }
   const move = (i: number, by: number) => {
     const j = i + by
@@ -43,6 +44,7 @@ export function OptionsEditor({ rows, onChange }: { rows: OptionRow[]; onChange:
               }
             }}
           />
+          {styled && <StyleControls row={r} onChange={(style) => onChange(rows.map((x) => (x.key === r.key ? { ...x, style } : x)))} />}
           <button type="button" className="icon-btn" title="Move up" aria-label="Move option up" disabled={i === 0} onClick={() => move(i, -1)}>
             <ArrowUp size={14} />
           </button>
@@ -58,6 +60,40 @@ export function OptionsEditor({ rows, onChange }: { rows: OptionRow[]; onChange:
         <Plus size={14} /> Add option
       </button>
     </div>
+  )
+}
+
+/** Color, border and icon of one option (v0.6). */
+function StyleControls({ row, onChange }: { row: OptionRow; onChange: (style: NonNullable<OptionRow['style']>) => void }) {
+  const style = row.style ?? NEW_STYLE
+  return (
+    <span className="cat-style-controls">
+      <input type="color" className="cat-style-color" title="Color" aria-label="Color" value={style.color} onChange={(e) => onChange({ ...style, color: e.target.value })} />
+      <select className="input cat-style-select" title="Border" aria-label="Border" value={style.border} onChange={(e) => onChange({ ...style, border: e.target.value as typeof style.border })}>
+        {BORDERS.map((b) => (
+          <option key={b.id} value={b.id}>
+            {b.label}
+          </option>
+        ))}
+      </select>
+      <select className="input cat-style-select" title="Icon" aria-label="Icon" value={style.icon ?? ''} onChange={(e) => onChange({ ...style, icon: e.target.value || null })}>
+        <option value="">No icon</option>
+        {Object.keys(STYLE_ICONS).map((k) => (
+          <option key={k} value={k}>
+            {k[0].toUpperCase() + k.slice(1)}
+          </option>
+        ))}
+      </select>
+    </span>
+  )
+}
+
+/** "Colors, borders and icons" switch for a dropdown category. */
+export function StyledToggle({ checked, onChange }: { checked: boolean; onChange: (on: boolean) => void }) {
+  return (
+    <label className="cat-styled-toggle">
+      <input type="checkbox" checked={checked} onChange={(e) => onChange(e.target.checked)} /> Colors, borders and icons (like rarities)
+    </label>
   )
 }
 
@@ -97,6 +133,7 @@ export function NewCategoryForm({
   const [kind, setKind] = useState<CategoryKind>('dropdown')
   const [rows, setRows] = useState<OptionRow[]>([{ key: newId(), original: null, value: '' }])
   const [scope, setScope] = useState(defaultScope)
+  const [styled, setStyled] = useState(false)
   const [touched, setTouched] = useState(false)
   const error = validateCategoryName(categories, name)
   const existing = findByName(categories, name)
@@ -111,7 +148,8 @@ export function NewCategoryForm({
         e.preventDefault()
         setTouched(true)
         if (error || optionsError) return
-        onCreate(newCategory(name, kind, options, type, scope === 'all' ? { mode: 'all' } : { mode: 'selected', ids: [] }))
+        const created = newCategory(name, kind, options, type, scope === 'all' ? { mode: 'all' } : { mode: 'selected', ids: [] })
+        onCreate(kind === 'dropdown' && styled ? { ...created, styles: stylesFromRows(rows) } : created)
       }}
       onKeyDown={(e) => {
         if (e.key === 'Escape') {
@@ -133,7 +171,10 @@ export function NewCategoryForm({
       {kind === 'dropdown' && (
         <div className="cat-form-row">
           <span>Options</span>
-          <OptionsEditor rows={rows} onChange={setRows} />
+          <div>
+            <StyledToggle checked={styled} onChange={setStyled} />
+            <OptionsEditor rows={rows} onChange={setRows} styled={styled} />
+          </div>
         </div>
       )}
       <div className="cat-form-row">

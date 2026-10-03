@@ -4,6 +4,7 @@ import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
 import { openEntity } from '@/shared/entityList'
 import { categoriesFor, ENTITY_LABELS, formatValue } from '@/shared/categories'
+import { entityLook, frameStyle, StyleBadge } from '@/shared/categories'
 
 const UI = {
   deleted: (type: string) => `The ${type.toLowerCase()} that this article was pulled from has been deleted.`,
@@ -49,14 +50,16 @@ export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) 
     if (entity.foundIn.length) rows.push({ label: UI.foundIn, value: entity.foundIn.map((id) => nameOf('town', id)).join(', ') })
   }
   const stats = entity.type === 'item' || entity.type === 'enemy' ? Object.entries(entity.stats) : []
+  const look = entityLook(categories, kind, entity)
 
   return (
     <aside className="wiki-infobox" aria-label={`${typeName} info`}>
       <div className="wiki-infobox-head">
-        <strong>{entity.name || 'Untitled'}</strong>
+        <strong style={look ? { color: look.style.color } : undefined}>{entity.name || 'Untitled'}</strong>
         <span className="wiki-infobox-type">{typeName}</span>
       </div>
-      <div className="wiki-infobox-image">
+      {look && <StyleBadge style={look.style} label={look.value} />}
+      <div className="wiki-infobox-image" style={frameStyle(look?.style)}>
         <AssetImage path={entity.image} alt={entity.name} size={180} />
       </div>
       {entity.description.trim() && <p className="wiki-infobox-desc">{entity.description}</p>}

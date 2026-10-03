@@ -4,8 +4,9 @@ import { ENTITY_TYPES, newId, type Category, type EntityType, type Id } from '@/
 import { useProjectStore } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
 import { Modal } from '@/shared/ui'
-import { KindSelect, NewCategoryForm, OptionsEditor } from './CategoryForm'
-import { renamesFromRows, rowsFromOptions, type OptionRow } from './optionRows'
+import { KindSelect, NewCategoryForm, OptionsEditor, StyledToggle } from './CategoryForm'
+import { renamesFromRows, rowsFromOptions, stylesFromRows, type OptionRow } from './optionRows'
+import { DEFAULT_RARITY_STYLES, isRarity, isStyled } from './styles'
 import { cleanOptions, ENTITY_LABELS, isUsedFor, KIND_LABELS, scopeOf, setScopeMode, validateCategoryName, type ScopeMode } from './logic'
 import './categories.css'
 
@@ -110,11 +111,19 @@ function CategoryEditor({
   const entities = useProjectStore((s) => s.entities)
   const [name, setName] = useState(category.name)
   const [kind, setKind] = useState(category.kind)
-  const [rows, setRows] = useState<OptionRow[]>(() => rowsFromOptions(category.options))
+  const savedStyles = category.styles ?? (isRarity(category) ? DEFAULT_RARITY_STYLES : undefined)
+  const [rows, setRows] = useState<OptionRow[]>(() => rowsFromOptions(category.options, savedStyles))
+  const [styled, setStyled] = useState(isStyled(category))
   const options = cleanOptions(rows.map((r) => r.value))
   const nameError = validateCategoryName(categories, name, category.id)
   const optionsError = kind === 'dropdown' && options.length === 0 ? 'Add at least one option.' : null
-  const dirty = name.trim() !== category.name || kind !== category.kind || options.join('\n') !== category.options.join('\n')
+  const nextStyles = kind === 'dropdown' && styled ? stylesFromRows(rows) : undefined
+  const dirty =
+    name.trim() !== category.name ||
+    kind !== category.kind ||
+    options.join('\n') !== category.options.join('\n') ||
+    styled !== isStyled(category) ||
+    (styled && JSON.stringify(nextStyles) !== JSON.stringify(stylesFromRows(rowsFromOptions(category.options, savedStyles))))
   const types = [type, ...ENTITY_TYPES.filter((t) => t !== type)]
   const valueCount = ENTITY_TYPES.reduce(
     (n, t) => n + entities[t].filter((e) => e.categories[category.id] !== undefined && e.categories[category.id] !== null).length,
@@ -125,10 +134,12 @@ function CategoryEditor({
 
   const save = () => {
     if (nameError || optionsError) return
-    const next: Category = { ...category, name: name.trim(), kind, options: kind === 'dropdown' ? options : [] }
+    const next: Category = { ...category, name: name.trim(), kind, options: kind === 'dropdown' ? options : [], styles: nextStyles }
+    // Rarity without looks: store an empty map so the pre-saved defaults stay off.
+    if (!nextStyles && isRarity(category)) next.styles = {}
     const renamed = kind === 'dropdown' && category.kind === 'dropdown' ? renamesFromRows(rows) : {}
     onChange({ categories: replace(next), renamed: Object.keys(renamed).length ? { categoryId: category.id, renamed } : undefined })
-    setRows(rowsFromOptions(next.options))
+    setRows(rowsFromOptions(next.options, next.styles))
   }
 
   const remove = async () => {
@@ -175,7 +186,10 @@ function CategoryEditor({
       {kind === 'dropdown' && (
         <div className="cat-form-row">
           <span>Options</span>
-          <OptionsEditor rows={rows} onChange={setRows} />
+          <div>
+            <StyledToggle checked={styled} onChange={setStyled} />
+            <OptionsEditor rows={rows} onChange={setRows} styled={styled} />
+          </div>
         </div>
       )}
       {dirty && (nameError || optionsError) && <div className="cat-error">{nameError ?? optionsError}</div>}
@@ -192,7 +206,8 @@ function CategoryEditor({
           onClick={() => {
             setName(category.name)
             setKind(category.kind)
-            setRows(rowsFromOptions(category.options))
+            setRows(rowsFromOptions(category.options, savedStyles))
+            setStyled(isStyled(category))
           }}
         >
           Revert

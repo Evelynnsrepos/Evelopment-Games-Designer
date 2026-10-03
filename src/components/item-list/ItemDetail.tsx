@@ -1,7 +1,7 @@
 import { ArrowLeft, BookOpen, Copy, Plus, Skull, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { Category, Enemy, Id, Item } from '@/core/model'
-import { CategoryFields, NumberInput } from '@/shared/categories'
+import { CategoryFields, entityLook, frameStyle, NumberInput } from '@/shared/categories'
 import { ImagePicker, openEntity } from '@/shared/entityList'
 import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
@@ -79,7 +79,7 @@ export function ItemDetail({
       </div>
 
       <div className="item-detail-head">
-        <div className="item-detail-image">
+        <div className="item-detail-image" style={frameStyle(entityLook(categories, 'item', item)?.style)}>
           <ImagePicker path={item.image} alt={item.name} onChange={(image) => updateItem(item.id, { image })} />
         </div>
         <div className="item-detail-name">

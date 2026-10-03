@@ -51,7 +51,17 @@ export function builtInCategories(): Category[] {
     builtIn: true,
   })
   return [
-    make('Rarity', 'dropdown', ['item'], ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']),
+    {
+      ...make('Rarity', 'dropdown', ['item', 'character'], ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary']),
+      // Pre-saved looks (v0.6); kept in step with DEFAULT_RARITY_STYLES in shared/categories/styles.tsx.
+      styles: {
+        Common: { color: '#9aa0a6', border: 'none', icon: null },
+        Uncommon: { color: '#30a46c', border: 'solid', icon: null },
+        Rare: { color: '#3e8ef7', border: 'solid', icon: 'gem' },
+        Epic: { color: '#a855f7', border: 'double', icon: 'sparkles' },
+        Legendary: { color: '#f5a623', border: 'glow', icon: 'crown' },
+      },
+    },
     make('Value', 'number', ['item']),
     make('State of Repair', 'dropdown', ['item'], ['Broken', 'Worn', 'Good', 'Pristine']),
     make('Family', 'text', ['character']),

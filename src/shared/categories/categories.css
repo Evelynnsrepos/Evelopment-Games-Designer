@@ -115,7 +115,7 @@
 
 /* Manager modal */
 .modal:has(.cat-manager) {
-  width: min(760px, calc(100vw - 32px));
+  width: min(860px, calc(100vw - 32px));
   padding: 0;
 }
 .cat-manager {
@@ -221,4 +221,65 @@
 }
 .cat-existing .btn {
   padding: 3px 10px;
+}
+
+/* v0.6: option styles (rarities) */
+.cat-style-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cat-style-badge.small {
+  padding: 0 6px;
+  font-size: 11px;
+}
+.cat-style-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  vertical-align: middle;
+}
+.cat-style-mark {
+  vertical-align: -2px;
+}
+.cat-styled-input {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+}
+.cat-style-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cat-style-color {
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.cat-style-select {
+  width: auto;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+.cat-styled-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.cat-option:has(.cat-style-controls) {
+  grid-template-columns: minmax(70px, 1fr) auto auto auto auto;
 }

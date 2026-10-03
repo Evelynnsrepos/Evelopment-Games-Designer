@@ -101,12 +101,23 @@ export type CategoryKind = 'dropdown' | 'text' | 'number' | 'boolean'
 
 export type CategoryScope = { mode: 'all' } | { mode: 'selected'; ids: Id[] } | { mode: 'none' }
 
+/** How one dropdown option looks (v0.6 rarities): stored per option name. */
+export interface OptionStyle {
+  /** User content color, e.g. '#f5a623'. */
+  color: string
+  border: 'none' | 'solid' | 'double' | 'glow'
+  /** One of the icon names in shared/categories/styles.tsx, or null. */
+  icon: string | null
+}
+
 export interface Category {
   id: Id
   name: string
   kind: CategoryKind
   /** Only used when kind === 'dropdown'. */
   options: string[]
+  /** Colors, borders and icons per option (dropdowns only). Missing = plain options. */
+  styles?: Record<string, OptionStyle>
   /** Which entities show this category, per entity type (IT-5). */
   appliesTo: Partial<Record<EntityType, CategoryScope>>
   builtIn: boolean
