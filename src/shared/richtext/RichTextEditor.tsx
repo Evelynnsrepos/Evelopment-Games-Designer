@@ -23,7 +23,7 @@ import {
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useCollab } from '@/core/collab'
 import { promptDialog } from '../dialogs'
-import { SpellCheck, SpellMenu, type ProofHit } from '../spell'
+import { ProofCard, SpellCheck, type ProofHit } from '../spell'
 import '../spell/spell.css'
 import { liveTextExtensions, openLiveText } from './collab'
 import { normalizeRichText } from './doc'
@@ -218,7 +218,7 @@ export function RichTextEditor({
       {toolbar && editable && <Toolbar editor={editor} onImage={insertImage} />}
       <EditorContent editor={editor} className="richtext-content" />
       {misspelling && editor && editable && (
-        <SpellMenu
+        <ProofCard
           hit={misspelling}
           replace={(from, to, text) => editor.chain().focus().insertContentAt({ from, to }, text).run()}
           onClose={() => setMisspelling(null)}

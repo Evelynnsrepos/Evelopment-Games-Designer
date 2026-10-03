@@ -23,6 +23,7 @@ pub fn run() {
       llm::llm_install,
       llm::llm_remove,
       llm::llm_check,
+      llm::llm_options,
       plugins::plugin_download,
       collab_commands::collab_start,
       collab_commands::collab_addr,

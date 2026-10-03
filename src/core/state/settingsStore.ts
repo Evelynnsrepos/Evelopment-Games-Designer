@@ -16,6 +16,8 @@ export interface AppSettings {
   personalWords: string[]
   /** Use the downloaded AI helper for suggestions when it is installed. */
   aiHelper: boolean
+  /** Which downloaded AI model checks grammar: see AI_MODELS in shared/spell/ai.ts. */
+  aiModel: 'small' | 'better'
   /** Pen tool on every canvas: line width in pixels and stabilizer strength 0..1. */
   penSize: number
   penSmoothing: number
@@ -23,7 +25,7 @@ export interface AppSettings {
   penOpacity: number
 }
 
-const defaults = (): AppSettings => ({ spellCheck: true, spellLanguages: ['en', 'de'], personalWords: [], aiHelper: true, penSize: 3, penSmoothing: 0.5, penOpacity: 1 })
+const defaults = (): AppSettings => ({ spellCheck: true, spellLanguages: ['en', 'de'], personalWords: [], aiHelper: true, aiModel: 'small', penSize: 3, penSmoothing: 0.5, penOpacity: 1 })
 
 async function settingsPath() {
   const fs = getFs()
@@ -52,8 +54,8 @@ export const useSettings = create<SettingsState>()((set, get) => ({
     // Sliders call this many times a second; write once they settle.
     clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
-      const { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity } = get()
-      void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, penSize, penSmoothing, penOpacity }))
+      const { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, penSize, penSmoothing, penOpacity } = get()
+      void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, penSize, penSmoothing, penOpacity }))
     }, 400)
   },
   addWord(word) {

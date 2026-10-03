@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { diffEdits } from './proof'
+import { cleanOptions, diffEdits, fixTitle, markedSentence } from './proof'
 
 const apply = (text: string, fixed: string) => {
   let out = text
@@ -28,5 +28,22 @@ describe('diffEdits', () => {
   })
   it('ignores translations and rewrites', () => {
     expect(diffEdits('Der Ritter gehen in die Burg.', 'The knight goes to the castle.')).toEqual([])
+  })
+})
+
+describe('fix options', () => {
+  it('marks the sentence around the spot', () => {
+    expect(markedSentence('It rained. The hero walk in. Then he sat.', 20, 24)).toBe('The hero [[walk]] in.')
+    expect(markedSentence('No end walk here', 7, 11)).toBe('No end [[walk]] here')
+  })
+  it('cleans model lines', () => {
+    expect(cleanOptions(['1. walked', '"walks"', 'walk', 'walked', 'The hero walked into the old tavern today.', '[[x]]', ''], 'walk')).toEqual(['walked', 'walks'])
+  })
+  it('titles fixes', () => {
+    expect(fixTitle('gehabt', 'gehabt,', false)).toBe('Fix the punctuation')
+    expect(fixTitle('walk', 'walked', false)).toBe('Change the word form')
+    expect(fixTitle('there', 'their', false)).toBe('Change the wording')
+    expect(fixTitle('castel', 'castle', true)).toBe('Correct the spelling')
+    expect(fixTitle('schwert', 'Schwert', false)).toBe('Fix the capitalization')
   })
 })
