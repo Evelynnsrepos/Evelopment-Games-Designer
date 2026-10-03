@@ -5,6 +5,7 @@ import { newId, type Entity, type EntityLink, type EntityOf, type EntityType, ty
 import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
 import { CategoryFields, NumberInput } from '@/shared/categories'
+import { ReviewButton } from '@/shared/reviews'
 import type { EntityActions } from './actions'
 import type { DetailContext, ListText } from './EntityList'
 import { TYPE_LABEL } from './links'
@@ -63,6 +64,7 @@ export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, 
           <ArrowLeft size={16} />
         </button>
         <span style={{ flex: 1 }} />
+        <ReviewButton target={{ kind: 'entity', type, id: entity.id }} title={entity.name || fallback} />
         {onOpenWiki && (
           <button className="btn btn-ghost elist-wiki" title="Create a wiki article about this" onClick={onOpenWiki}>
             <BookOpen size={14} /> Create wiki article
