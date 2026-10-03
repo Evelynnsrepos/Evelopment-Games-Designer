@@ -1,0 +1,48 @@
+.gacha-mode {
+  margin-bottom: 4px;
+}
+.gacha-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px 16px;
+  align-items: end;
+}
+.gacha-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.gacha-color {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.gacha-tiers td .input {
+  min-width: 90px;
+}
+.gacha-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+}
+.gacha-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.gacha-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gacha-enemy {
+  width: auto;
+}
+.gacha-opens {
+  max-width: 200px;
+}
