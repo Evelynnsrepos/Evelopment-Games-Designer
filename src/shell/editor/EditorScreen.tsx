@@ -3,6 +3,7 @@ import { useAppStore } from '@/core/state'
 import { maybeStartTour } from '../help/help'
 import { Workspace } from '../workspace/Workspace'
 import { openInitialLayout } from './actions'
+import { CommandPalette } from './CommandPalette'
 import { ProjectWallpaper, useProjectTheme } from './projectTheme'
 import { Sidebar } from './Sidebar'
 import './editor.css'
@@ -48,6 +49,7 @@ export function EditorScreen() {
       <ProjectWallpaper />
       <Sidebar />
       <Workspace />
+      <CommandPalette />
     </div>
   )
 }
