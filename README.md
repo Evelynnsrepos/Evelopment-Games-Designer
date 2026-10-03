@@ -93,6 +93,10 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 ### Your data stays yours
 Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 `Documents/Evelopment Games Designer/`. Easy to back up and readable, it works fully offline, and the app sends no telemetry.
+
+**Working together** connects computers directly (peer to peer, end-to-end encrypted). People you work with can see
+your IP address on direct connections, and when a direct connection is not possible the encrypted traffic goes
+through public relay servers run by n0, a US company (iroh).
 The app only goes online when you share a project: teammates' computers then connect to each other directly and encrypted,
 using public relay servers by [n0](https://n0.computer) only to find each other or when a direct connection is not possible. Relays cannot read your project.
 

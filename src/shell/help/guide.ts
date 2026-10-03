@@ -84,6 +84,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared, except Sketch drawings: those stay on each computer. Pictures made from them, like stickers on a Moodboard, are shared.',
       'The person who shared the project is the host. When the host closes the project or stops sharing, everyone else is disconnected and asked whether to keep their copy as a normal project or delete it.',
       'Only the host can remove people. Everyone else can Leave project, keeping or deleting their copy.',
+      'Privacy: computers connect directly, so the people you work with can see your IP address. When a direct connection is not possible, the encrypted traffic goes through public relay servers run by n0, a US company (the makers of iroh). The project contents stay end-to-end encrypted on the way.',
     ],
     tips: [
       'The project has to be open on at least one computer that is already in it when someone joins or catches up.',
