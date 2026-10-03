@@ -56,7 +56,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
 - **Click** a tool in the sidebar to show only that tool; **Shift-click** to open it next to the ones already open.
 - **Spell check** in English and German with suggestions on right-click, your own word list, and names from your project counted as correct.
-- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that picks the best spelling for the sentence.
+- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, like Grammarly, with blue underlines and one-click fixes.
 - **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
 - **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
 - **Pen size, opacity and smoothing** sliders on every drawing canvas.

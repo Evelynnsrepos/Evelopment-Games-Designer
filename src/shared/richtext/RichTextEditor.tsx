@@ -23,7 +23,7 @@ import {
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useCollab } from '@/core/collab'
 import { promptDialog } from '../dialogs'
-import { SpellCheck, SpellMenu, type MisspellingHit } from '../spell'
+import { SpellCheck, SpellMenu, type ProofHit } from '../spell'
 import '../spell/spell.css'
 import { liveTextExtensions, openLiveText } from './collab'
 import { normalizeRichText } from './doc'
@@ -95,7 +95,7 @@ interface LiveProps {
 /** After a teammate's edit, save the merged text once things are quiet. */
 const SETTLE_MS = 800
 
-function buildExtensions(live: RefObject<LiveProps>, onMisspelling: (hit: MisspellingHit) => void, shared = false) {
+function buildExtensions(live: RefObject<LiveProps>, onMisspelling: (hit: ProofHit) => void, shared = false) {
   return [
     StarterKit.configure({
       heading: { levels: [1, 2, 3] },
@@ -134,7 +134,7 @@ export function RichTextEditor({
   const provider = refs ?? entityRefs
 
   // Extensions are built once (rebuilding would reset the content); they read the latest props through `live`.
-  const [misspelling, setMisspelling] = useState<MisspellingHit | null>(null)
+  const [misspelling, setMisspelling] = useState<ProofHit | null>(null)
   const live = useRef<LiveProps>({ provider, resolveImageSrc, onChange, placeholder })
   useEffect(() => {
     live.current = { provider, resolveImageSrc, onChange, placeholder }
@@ -217,7 +217,13 @@ export function RichTextEditor({
     <div className={['richtext', className].filter(Boolean).join(' ')}>
       {toolbar && editable && <Toolbar editor={editor} onImage={insertImage} />}
       <EditorContent editor={editor} className="richtext-content" />
-      {misspelling && editor && editable && <SpellMenu editor={editor} hit={misspelling} onClose={() => setMisspelling(null)} />}
+      {misspelling && editor && editable && (
+        <SpellMenu
+          hit={misspelling}
+          replace={(from, to, text) => editor.chain().focus().insertContentAt({ from, to }, text).run()}
+          onClose={() => setMisspelling(null)}
+        />
+      )}
     </div>
   )
 }
