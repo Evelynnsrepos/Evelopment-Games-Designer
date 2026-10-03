@@ -2,7 +2,7 @@
 # AUR package that installs the prebuilt Linux release from GitHub (no compiling).
 pkgname=evelopment-games-designer-bin
 _pkgname=evelopment-games-designer
-pkgver=0.5.0
+pkgver=0.6.0
 pkgrel=1
 pkgdesc="All-in-one game design tool: writing, wiki, maps, boards, lists and calculators"
 arch=('x86_64')
@@ -14,7 +14,7 @@ conflicts=("$_pkgname")
 source=("$_pkgname-$pkgver.deb::$url/releases/download/v$pkgver/Evelopment.Games.Designer_${pkgver}_amd64.deb"
         "LICENSE-$pkgver::https://raw.githubusercontent.com/Evelynnsrepos/Evelopment-Games-Designer/v$pkgver/LICENSE")
 noextract=("$_pkgname-$pkgver.deb")
-sha256sums=('4345b0dbd78fa27d6422f74d6c4e3ef2de00dd33738b3cfe75946ee6dcac8d51'
+sha256sums=('c17f29345fbe9c16c2d46592a7f029c944f29e283758d80fc62fa493be4ded7b'
             '3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986')
 
 package() {
