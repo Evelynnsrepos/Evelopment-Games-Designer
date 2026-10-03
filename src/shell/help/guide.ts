@@ -295,6 +295,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     title: 'Reviews',
     body: [
       'Every tool window and every item, character, town and enemy has a small Review button. Give it a status (Idea, Draft, In review, Approved, Final) or write a comment.',
+      'On the Brainstorm Board, Moodboard, Design Language and Map, the Comment tool in the bottom toolbar pins a comment to a spot: click to drop a pin and write, click a pin to read and answer.',
       'The Reviews tool shows everything with a status or comments as a board. Needs review only shows what is waiting for review or has open comments. Click a card to read and answer the comments, or Open to jump there.',
       'Resolve a comment when it is done; resolved comments are hidden until you show them. When working together, everyone sees the same statuses and comments.',
     ],

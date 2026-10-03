@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useCollab } from '@/core/collab'
 import { Modal } from '@/shared/ui'
 import { openComments, STATUS_COLOR, STATUS_LABEL, STATUSES, useReviews, type ReviewTarget } from './reviews'
+import { usePinThread } from './commentTool'
 import './reviews.css'
 
 /** Status chips and the comment thread of one entity or document. */
@@ -124,5 +125,23 @@ export function ReviewButton({ target, title }: { target: ReviewTarget; title: s
         </Modal>
       )}
     </>
+  )
+}
+
+/** Mounted once in the editor: the comment thread of the clicked pin. */
+export function PinThreadHost() {
+  const target = usePinThread((s) => s.target)
+  if (!target) return null
+  const close = () => usePinThread.setState({ target: null })
+  return (
+    <Modal onClose={close}>
+      <h3 className="review-title">Comment</h3>
+      <ReviewThread target={target} />
+      <div className="modal-actions">
+        <button className="btn" onClick={close}>
+          Close
+        </button>
+      </div>
+    </Modal>
   )
 }

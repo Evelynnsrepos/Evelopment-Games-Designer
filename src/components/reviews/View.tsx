@@ -20,13 +20,15 @@ function useLabel() {
       return e ? { name: e.name || 'Untitled', kind: TYPE_LABEL[t.type] } : null
     }
     const tool = getManifest(t.type)?.name ?? t.type
-    if (t.id === null) return { name: tool, kind: 'Tool' }
-    const d = documents.find((x) => x.id === t.id)
-    return d ? { name: d.title, kind: tool } : null
+    const docId = t.kind === 'pin' ? t.doc : t.id
+    const d = docId === null ? null : documents.find((x) => x.id === docId)
+    if (docId !== null && !d) return null
+    const name = d ? d.title : tool
+    return t.kind === 'pin' ? { name: `Comment on ${name}`, kind: tool } : { name, kind: d ? tool : 'Tool' }
   }
 }
 
-const open = (t: ReviewTarget) => (t.kind === 'entity' ? openEntity(t.type, t.id) : openComponent(t.type, t.id))
+const open = (t: ReviewTarget) => (t.kind === 'entity' ? openEntity(t.type, t.id) : openComponent(t.type, t.kind === 'pin' ? t.doc : t.id))
 
 /** Reviews (v0.7): everything with a status or comments, as a board from Idea to Final. */
 export default function ReviewsView(_props: PanelProps) {

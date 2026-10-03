@@ -14,7 +14,11 @@ export type ReviewStatus = (typeof STATUSES)[number]
 export const STATUS_LABEL: Record<ReviewStatus, string> = { idea: 'Idea', draft: 'Draft', review: 'In review', approved: 'Approved', final: 'Final' }
 export const STATUS_COLOR: Record<ReviewStatus, string> = { idea: '#9aa0a6', draft: '#3e8ef7', review: '#f08c00', approved: '#2f9e44', final: '#9c36b5' }
 
-export type ReviewTarget = { kind: 'entity'; type: EntityType; id: Id } | { kind: 'doc'; type: ComponentType; id: Id | null }
+export type ReviewTarget =
+  | { kind: 'entity'; type: EntityType; id: Id }
+  | { kind: 'doc'; type: ComponentType; id: Id | null }
+  /** A comment pin on a canvas: `doc` is the board's document (null for single-document tools). */
+  | { kind: 'pin'; type: ComponentType; doc: Id | null; id: Id }
 
 export interface ReviewComment {
   id: Id
@@ -39,7 +43,8 @@ export interface ReviewsDoc {
 export const REVIEWS_DOC = { type: 'reviews' as const, id: 'reviews' }
 
 /** Stable key per target; single-document tools use their type as id. */
-export const reviewKey = (t: ReviewTarget) => (t.kind === 'entity' ? `entity:${t.type}:${t.id}` : `doc:${t.type}:${t.id ?? t.type}`)
+export const reviewKey = (t: ReviewTarget) =>
+  t.kind === 'entity' ? `entity:${t.type}:${t.id}` : t.kind === 'pin' ? `pin:${t.type}:${t.doc ?? t.type}:${t.id}` : `doc:${t.type}:${t.id ?? t.type}`
 
 export const openComments = (e: ReviewEntry | undefined) => e?.comments.filter((c) => !c.resolved).length ?? 0
 

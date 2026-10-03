@@ -1,8 +1,9 @@
 import Konva from 'konva'
 import { useEffect, useState } from 'react'
-import { Arrow, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from 'react-konva'
+import { Arrow, Circle, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from 'react-konva'
 import { expandRect, pointsBounds, rectCenter, rectEdgePoint } from './geometry'
 import type {
+  CommentPinNode,
   ConnectorNode,
   EllipseNode,
   ImageNode,
@@ -278,7 +279,22 @@ const connectorType: NodeType<ConnectorNode> = {
   },
 }
 
+const PIN_R = 13
+const commentPinType: NodeType<CommentPinNode> = {
+  label: 'Comment',
+  render: () => (
+    <Group>
+      <Line points={[-6, 8, 0, PIN_R + 8, 6, 8]} closed fill="#f08c00" />
+      <Circle radius={PIN_R} fill="#f08c00" stroke="#fff" strokeWidth={2} />
+      <Text text="…" x={-PIN_R} y={-PIN_R - 3} width={PIN_R * 2} height={PIN_R * 2} align="center" verticalAlign="middle" fontSize={18} fontStyle="bold" fill="#fff" />
+    </Group>
+  ),
+  bounds: () => ({ x: -PIN_R, y: -PIN_R, width: PIN_R * 2, height: PIN_R * 2 + 8 }),
+  transformable: false,
+}
+
 export const BUILTIN_NODE_TYPES: NodeTypes = {
+  'comment-pin': commentPinType,
   rect: rectType,
   ellipse: ellipseType,
   line: lineType,

@@ -1,2 +1,3 @@
 export * from './reviews'
-export { ReviewButton, ReviewThread } from './ReviewUI'
+export { PinThreadHost, ReviewButton, ReviewThread } from './ReviewUI'
+export { commentTool } from './commentTool'
