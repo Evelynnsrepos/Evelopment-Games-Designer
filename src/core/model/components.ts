@@ -22,6 +22,11 @@ export const COMPONENT_TYPES = [
   'sketch',
   'design-language',
   'asset-pool',
+  'wave-planner',
+  'quests',
+  'dialogue',
+  'gacha',
+  'reviews',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]
