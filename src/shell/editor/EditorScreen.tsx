@@ -4,6 +4,7 @@ import { maybeStartTour } from '../help/help'
 import { Workspace } from '../workspace/Workspace'
 import { openInitialLayout } from './actions'
 import { CommandPalette } from './CommandPalette'
+import { DesignBookHost } from '../designBook/DesignBook'
 import { ProjectWallpaper, useProjectTheme } from './projectTheme'
 import { Sidebar } from './Sidebar'
 import './editor.css'
@@ -50,6 +51,7 @@ export function EditorScreen() {
       <Sidebar />
       <Workspace />
       <CommandPalette />
+      <DesignBookHost />
     </div>
   )
 }

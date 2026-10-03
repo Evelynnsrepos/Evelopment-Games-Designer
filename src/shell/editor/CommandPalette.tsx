@@ -7,6 +7,7 @@ import { combineRefProviders, rankRefItems, useEntityRefProvider, type RefItem }
 import { useArticleRefProvider } from '@/shared/wiki'
 import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
+import { openDesignBook } from '../designBook/open'
 import { backToProjects, newDocument, openComponent, replaceWithComponent } from './actions'
 
 /**
@@ -56,6 +57,7 @@ function Palette({ onClose }: { onClose(): void }) {
     const cmd = (id: string, label: string, run: () => void) => out.push({ kind: 'cmd', id, label, hint: 'Command', run })
     cmd('settings', 'Settings', openSettings)
     cmd('rarities', 'Rarities', openRarities)
+    cmd('book', 'Design Book (export as web page or PDF)', openDesignBook)
     cmd('help', 'Help and user guide', () => useHelp.getState().openGuide())
     cmd('layout', 'Layout mode (move and close windows)', () => setTimeout(() => useAppStore.getState().setLayoutMode(true)))
     cmd('home', 'Back to projects', () => void backToProjects())
