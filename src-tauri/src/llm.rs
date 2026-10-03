@@ -1,6 +1,6 @@
 //! Optional AI helper for spelling and grammar suggestions (v0.4). Nothing ships with the
 //! app: the user downloads llama.cpp's `llama-server` and a small model from
-//! Settings into `<app data>/llm/`. The server runs on 127.0.0.1 only while
+//! Settings into `<app data>/llm/`; "better" is a bigger optional model. The server runs on 127.0.0.1 only while
 //! the app is open and is started on the first request.
 
 use serde::Serialize;
@@ -16,13 +16,21 @@ use tauri::{AppHandle, Manager};
 
 /// Pinned so the archive layout and server flags stay known.
 const LLAMA_TAG: &str = "b11347";
-const MODEL_URL: &str =
-  "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf";
-const MODEL_FILE: &str = "model.gguf";
+/// The models Settings offers: id, download URL, file name in `<app data>/llm/`.
+/// "small" keeps the v0.4 file name so existing downloads still count.
+const MODELS: [(&str, &str, &str); 2] = [
+  ("small", "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf", "model.gguf"),
+  ("better", "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf", "model-better.gguf"),
+];
+
+fn model_entry(model: &str) -> Result<(&'static str, &'static str), String> {
+  MODELS.iter().find(|m| m.0 == model).map(|m| (m.1, m.2)).ok_or_else(|| format!("Unknown AI model: {model}"))
+}
 
 #[derive(Default)]
 pub struct LlmState {
-  server: Mutex<Option<(Child, u16)>>,
+  /// The running server, its port and which model it loaded.
+  server: Mutex<Option<(Child, u16, String)>>,
   installing: Mutex<bool>,
 }
 
@@ -76,8 +84,8 @@ fn find_file(dir: &Path, name: &str) -> Option<PathBuf> {
   None
 }
 
-fn installed(dir: &Path) -> Option<(PathBuf, PathBuf)> {
-  let model = dir.join(MODEL_FILE);
+fn installed(dir: &Path, model: &str) -> Option<(PathBuf, PathBuf)> {
+  let model = dir.join(model_entry(model).ok()?.1);
   let server = find_file(&dir.join("bin"), server_exe())?;
   model.is_file().then_some((server, model))
 }
@@ -107,7 +115,8 @@ fn download(url: &str, dest: &Path, stage: &'static str, progress: &Channel<Prog
   fs::rename(&part, dest).map_err(|e| e.to_string())
 }
 
-fn install(dir: &Path, progress: &Channel<Progress>) -> Result<(), String> {
+fn install(dir: &Path, model: &str, progress: &Channel<Progress>) -> Result<(), String> {
+  let (model_url, model_file) = model_entry(model)?;
   fs::create_dir_all(dir).map_err(|e| e.to_string())?;
   let bin = dir.join("bin");
   if find_file(&bin, server_exe()).is_none() {
@@ -124,19 +133,19 @@ fn install(dir: &Path, progress: &Channel<Progress>) -> Result<(), String> {
       return Err("Could not unpack the AI helper program.".into());
     }
   }
-  if !dir.join(MODEL_FILE).is_file() {
-    download(MODEL_URL, &dir.join(MODEL_FILE), "model", progress)?;
+  if !dir.join(model_file).is_file() {
+    download(model_url, &dir.join(model_file), "model", progress)?;
   }
   Ok(())
 }
 
 #[tauri::command]
-pub async fn llm_status(app: AppHandle) -> Result<bool, String> {
-  Ok(installed(&llm_dir(&app)?).is_some())
+pub async fn llm_status(app: AppHandle, model: String) -> Result<bool, String> {
+  Ok(installed(&llm_dir(&app)?, &model).is_some())
 }
 
 #[tauri::command]
-pub async fn llm_install(app: AppHandle, progress: Channel<Progress>) -> Result<(), String> {
+pub async fn llm_install(app: AppHandle, model: String, progress: Channel<Progress>) -> Result<(), String> {
   let state = app.state::<LlmState>();
   {
     let mut busy = state.installing.lock().unwrap();
@@ -146,7 +155,7 @@ pub async fn llm_install(app: AppHandle, progress: Channel<Progress>) -> Result<
     *busy = true;
   }
   let dir = llm_dir(&app)?;
-  let result = tauri::async_runtime::spawn_blocking(move || install(&dir, &progress)).await.map_err(|e| e.to_string())?;
+  let result = tauri::async_runtime::spawn_blocking(move || install(&dir, &model, &progress)).await.map_err(|e| e.to_string())?;
   *state.installing.lock().unwrap() = false;
   result
 }
@@ -163,21 +172,27 @@ pub async fn llm_remove(app: AppHandle) -> Result<(), String> {
 
 /// Stop the server; called on remove and when the app exits.
 pub fn stop(app: &AppHandle) {
-  if let Some((mut child, _)) = app.state::<LlmState>().server.lock().unwrap().take() {
+  if let Some((mut child, _, _)) = app.state::<LlmState>().server.lock().unwrap().take() {
     let _ = child.kill();
     let _ = child.wait();
   }
 }
 
-fn ensure_server(app: &AppHandle) -> Result<u16, String> {
+/// The port of a server running `model`; starts it, or restarts it when the user picked another model.
+fn ensure_server(app: &AppHandle, model: &str) -> Result<u16, String> {
   let state = app.state::<LlmState>();
   let mut server = state.server.lock().unwrap();
-  if let Some((child, port)) = server.as_mut() {
-    if child.try_wait().map_err(|e| e.to_string())?.is_none() {
+  if let Some((child, port, loaded)) = server.as_mut() {
+    if loaded == model && child.try_wait().map_err(|e| e.to_string())?.is_none() {
       return Ok(*port);
     }
   }
-  let (exe, model) = installed(&llm_dir(app)?).ok_or("The AI helper is not downloaded.")?;
+  if let Some((mut child, _, _)) = server.take() {
+    let _ = child.kill();
+    let _ = child.wait();
+  }
+  let model_name = model;
+  let (exe, model) = installed(&llm_dir(app)?, model).ok_or("This AI model is not downloaded.")?;
   let port = TcpListener::bind("127.0.0.1:0").and_then(|l| l.local_addr()).map_err(|e| e.to_string())?.port();
   let mut cmd = Command::new(&exe);
   cmd
@@ -192,7 +207,7 @@ fn ensure_server(app: &AppHandle) -> Result<u16, String> {
     cmd.creation_flags(0x0800_0000); // CREATE_NO_WINDOW
   }
   let child = cmd.spawn().map_err(|e| format!("Could not start the AI helper: {e}"))?;
-  *server = Some((child, port));
+  *server = Some((child, port, model_name.to_string()));
   drop(server);
 
   let started = Instant::now();
@@ -211,9 +226,9 @@ fn ensure_server(app: &AppHandle) -> Result<u16, String> {
 /// app diffs the answer itself. `lang` is "en" or "de"; asking in the text's language stops the
 /// model from translating German into English.
 #[tauri::command]
-pub async fn llm_check(app: AppHandle, text: String, lang: String) -> Result<String, String> {
+pub async fn llm_check(app: AppHandle, text: String, lang: String, model: String) -> Result<String, String> {
   tauri::async_runtime::spawn_blocking(move || {
-    let port = ensure_server(&app)?;
+    let port = ensure_server(&app, &model)?;
     let (system, example, fixed) = if lang == "de" {
       (
         "Du korrigierst deutschen Text. Gib den Text mit korrigierter Rechtschreibung, Grammatik und Zeichensetzung zurück. Behalte Bedeutung, Wortwahl, Namen und erfundene Wörter. Formuliere korrekten Text nicht um. Antworte nur mit dem korrigierten deutschen Text, niemals auf Englisch.",
@@ -242,6 +257,50 @@ pub async fn llm_check(app: AppHandle, text: String, lang: String) -> Result<Str
       .map_err(|e| format!("The AI helper failed: {e}"))?;
     let json: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
     Ok(json["choices"][0]["message"]["content"].as_str().unwrap_or_default().trim().to_string())
+  })
+  .await
+  .map_err(|e| e.to_string())?
+}
+
+/// Up to 3 ways to write the spot marked with `[[ ]]` in `sentence`, best first, one per line as the
+/// model wrote them (the app cleans them up). Asked when the suggestion card opens.
+#[tauri::command]
+pub async fn llm_options(app: AppHandle, sentence: String, lang: String, model: String) -> Result<Vec<String>, String> {
+  tauri::async_runtime::spawn_blocking(move || {
+    let port = ensure_server(&app, &model)?;
+    let (system, example, options) = if lang == "de" {
+      (
+        "Du hilfst beim Korrigieren einer Stelle im Satz. Die Stelle ist mit [[ ]] markiert. Gib 3 verschiedene korrekte Schreibweisen für die markierten Wörter, sodass der ganze Satz stimmt, eine pro Zeile, nur die Ersatzwörter, sonst nichts. Die beste zuerst. Behalte die Bedeutung. Niemals Englisch.",
+        "Die Goblins [[rennt]] weg.",
+        "rennen
+rannten
+sind gerannt",
+      )
+    } else {
+      (
+        "You help a writer fix one spot in a sentence. The spot is marked with [[ ]]. Give 3 different ways to write the marked words correctly so the whole sentence is right, one per line, only the replacement words, nothing else. Put the best one first. Keep the meaning.",
+        "The goblins [[runned]] away.",
+        "ran
+had run
+were running",
+      )
+    };
+    let body = serde_json::json!({
+      "messages": [
+        { "role": "system", "content": system },
+        { "role": "user", "content": example },
+        { "role": "assistant", "content": options },
+        { "role": "user", "content": sentence }
+      ],
+      "temperature": 0.3,
+      "max_tokens": 60
+    });
+    let mut resp = ureq::post(&format!("http://127.0.0.1:{port}/v1/chat/completions"))
+      .send_json(&body)
+      .map_err(|e| format!("The AI helper failed: {e}"))?;
+    let json: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
+    let text = json["choices"][0]["message"]["content"].as_str().unwrap_or_default();
+    Ok(text.lines().map(str::to_string).collect())
   })
   .await
   .map_err(|e| e.to_string())?

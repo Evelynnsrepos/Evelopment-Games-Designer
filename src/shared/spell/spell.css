@@ -8,21 +8,86 @@
   text-decoration-skip-ink: none;
   text-underline-offset: 3px;
 }
-.spell-menu-bad {
+.grammar-error,
+.spell-error {
+  cursor: pointer;
+}
+.proof-card {
+  z-index: 1000;
+  width: 300px;
+  padding: 10px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.proof-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
   color: var(--text-muted);
-  font-weight: 400;
 }
-.spell-menu-suggestion {
-  font-weight: 600;
+.proof-card-head span:nth-child(2) {
+  flex: 1;
 }
-.spell-menu-note {
-  padding: 6px 10px;
+.proof-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--focus);
+}
+.proof-dot-spell {
+  background: var(--danger);
+}
+.proof-card-bad {
+  text-decoration: line-through;
   color: var(--text-muted);
 }
-.spell-menu-sep {
-  margin: 4px 0;
+.proof-card-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.proof-card-option {
+  padding: 4px 10px;
   border: none;
+  border-radius: var(--radius-sm);
+  background: var(--focus);
+  color: var(--bg);
+  font-weight: 600;
+  cursor: pointer;
+}
+.proof-card-option:hover,
+.proof-card-option:focus-visible {
+  filter: brightness(1.15);
+}
+.proof-card-note {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.proof-card-foot {
+  display: flex;
+  gap: 12px;
+  padding-top: 6px;
   border-top: 1px solid var(--border);
+}
+.proof-card-foot button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+.proof-card-foot button:hover {
+  color: var(--text);
 }
 .proof-copy {
   position: absolute;

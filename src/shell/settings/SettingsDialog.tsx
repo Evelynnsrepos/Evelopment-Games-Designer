@@ -2,7 +2,7 @@ import { X } from 'lucide-react'
 import { useEffect } from 'react'
 import { SPELL_LANGUAGES, useSettings } from '@/core/state'
 import { confirmDialog } from '@/shared/dialogs'
-import { AI_DOWNLOAD_SIZE, spellAvailable, useAiHelper } from '@/shared/spell'
+import { AI_MODELS, spellAvailable, useAiHelper } from '@/shared/spell'
 import { Modal } from '@/shared/ui'
 import { PluginsSection } from '../plugins/PluginsSection'
 import './settings.css'
@@ -19,10 +19,11 @@ const UI = {
   wordsHint: 'Words you added with "Add to dictionary". Names of your items, characters, towns and enemies are always known.',
   noWords: 'No words yet.',
   ai: 'AI helper',
-  aiAbout: `A small AI model that runs on this computer and checks your grammar and spelling as you write, like Grammarly. Its suggestions get a blue underline; right-click to fix. Nothing is sent to the internet. Download size: ${AI_DOWNLOAD_SIZE}.`,
-  aiDownload: 'Download AI helper',
+  aiAbout: 'An AI model that runs on this computer and checks your grammar and spelling as you write, like Grammarly. Click a blue underline for its suggestions. Nothing is sent to the internet.',
+  aiModels: 'Model',
+  aiDownload: 'Download',
   aiRemove: 'Remove AI helper',
-  aiRemoveAsk: 'Delete the downloaded AI helper from this computer?',
+  aiRemoveAsk: 'Delete the downloaded AI helper and its models from this computer?',
   aiUse: 'Check grammar with the AI helper',
   aiProgram: 'Downloading program',
   aiModel: 'Downloading model',
@@ -104,24 +105,42 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
                 {UI.aiUse}
               </label>
             )}
-            {ai.progress ? (
-              <div className="settings-progress">
-                <span>
-                  {ai.progress.stage === 'program' ? UI.aiProgram : UI.aiModel}… {mb(ai.progress.done)}
-                  {ai.progress.total > 0 && ` / ${mb(ai.progress.total)}`}
-                </span>
-                <progress value={ai.progress.done} max={ai.progress.total || undefined} />
+            <h4>{UI.aiModels}</h4>
+            {AI_MODELS.map((m) => (
+              <div key={m.id} className="settings-model">
+                <label className="settings-check">
+                  <input
+                    type="radio"
+                    name="ai-model"
+                    checked={s.aiModel === m.id}
+                    disabled={!ai.models[m.id]}
+                    onChange={() => s.update({ aiModel: m.id })}
+                  />
+                  <span>
+                    <strong>{m.name}</strong> <span className="muted">· {m.size} · {m.about}</span>
+                  </span>
+                </label>
+                {ai.downloading === m.id && ai.progress ? (
+                  <div className="settings-progress">
+                    <span>
+                      {ai.progress.stage === 'program' ? UI.aiProgram : UI.aiModel}… {mb(ai.progress.done)}
+                      {ai.progress.total > 0 && ` / ${mb(ai.progress.total)}`}
+                    </span>
+                    <progress value={ai.progress.done} max={ai.progress.total || undefined} />
+                  </div>
+                ) : (
+                  !ai.models[m.id] && (
+                    <button className="btn btn-primary" disabled={!!ai.progress} onClick={() => void ai.install(m.id)}>
+                      {UI.aiDownload} ({m.size})
+                    </button>
+                  )
+                )}
               </div>
-            ) : ai.installed ? (
+            ))}
+            {(ai.models.small || ai.models.better) && !ai.progress && (
               <button className="btn" onClick={() => void removeAi()}>
                 {UI.aiRemove}
               </button>
-            ) : (
-              ai.installed === false && (
-                <button className="btn btn-primary" onClick={() => void ai.install()}>
-                  {UI.aiDownload}
-                </button>
-              )
             )}
             {ai.error && <p className="settings-error">{ai.error}</p>}
           </section>

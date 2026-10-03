@@ -6,10 +6,10 @@ import { useSettings } from '@/core/state'
 import { useAiHelper } from './ai'
 import { findIssues, onAiResult, type Issue } from './proof'
 import { spellAvailable } from './spell'
-import type { ProofHit } from './SpellMenu'
+import type { ProofHit } from './ProofCard'
 
 interface SpellOptions {
-  /** Right-click on underlined text; positions are document positions. */
+  /** Click or right-click on underlined text; positions are document positions. */
   onMisspelling: (hit: ProofHit) => void
 }
 
@@ -46,9 +46,22 @@ function docParagraphs(doc: PMNode): Paragraph[] {
   return out
 }
 
-const spec = (p: Paragraph, issue: Issue) => ({ ...issue, bad: p.text.slice(issue.from, issue.to) })
+type Spec = Issue & { para: string }
+const spec = (p: Paragraph, issue: Issue): Spec => ({ ...issue, para: p.text })
 
-/** Underlines misspelled words (wavy red) and AI grammar suggestions (wavy blue), and reports right-clicks on them. */
+/** The card for the underline at `pos`: the AI fix if there is one, the spelling otherwise. */
+function hitAt(view: EditorView, pos: number, event: MouseEvent): ProofHit | null {
+  const found = key.getState(view.state)?.find(pos, pos) ?? []
+  const ai = found.find((d) => (d.spec as Spec).fix !== undefined)
+  const spell = found.find((d) => (d.spec as Spec).fix === undefined)
+  const main = ai ?? spell
+  if (!main) return null
+  const s = main.spec as Spec
+  const word = spell && spell.from === main.from && spell.to === main.to ? (spell.spec as Spec).word : undefined
+  return { x: event.clientX, y: event.clientY, from: main.from, to: main.to, bad: s.para.slice(s.from, s.to), fix: s.fix, word, para: s.para, at: s.from }
+}
+
+/** Underlines misspelled words (wavy red) and AI grammar suggestions (wavy blue), and reports clicks on them. */
 export const SpellCheck = Extension.create<SpellOptions>({
   name: 'spellCheck',
   addOptions: () => ({ onMisspelling: () => {} }),
@@ -86,19 +99,18 @@ export const SpellCheck = Extension.create<SpellOptions>({
         props: {
           decorations: (state) => key.getState(state),
           attributes: (): Record<string, string> => (spellAvailable() ? { spellcheck: 'false' } : {}),
+          // A click opens the card like Grammarly and still places the caret.
+          handleClick: (view, pos, event) => {
+            const hit = hitAt(view, pos, event)
+            if (hit) options.onMisspelling(hit)
+            return false
+          },
           handleDOMEvents: {
             contextmenu: (view, event) => {
               const at = view.posAtCoords({ left: event.clientX, top: event.clientY })
-              if (!at) return false
-              const found = key.getState(view.state)?.find(at.pos, at.pos) ?? []
-              if (!found.length) return false
+              const hit = at && hitAt(view, at.pos, event)
+              if (!hit) return false
               event.preventDefault()
-              const hit: ProofHit = { x: event.clientX, y: event.clientY }
-              for (const d of found) {
-                const s = d.spec as Issue & { bad: string }
-                if (s.fix !== undefined) hit.ai = { from: d.from, to: d.to, bad: s.bad, fix: s.fix }
-                else hit.spell = { from: d.from, to: d.to, word: s.word! }
-              }
               options.onMisspelling(hit)
               return true
             },

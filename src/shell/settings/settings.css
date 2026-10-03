@@ -71,3 +71,10 @@
 .settings-error {
   color: var(--danger);
 }
+.settings-model {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 10px;
+}

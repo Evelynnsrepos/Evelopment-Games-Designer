@@ -1,34 +1,44 @@
-import { useEffect, useState } from 'react'
+import { BookPlus, Trash2, X } from 'lucide-react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useSettings } from '@/core/state'
-import { ignoreFix } from './proof'
-import { suggest } from './spell'
+import { aiReady, fixOptions, fixTitle, ignoreFix } from './proof'
 
-/** A right-click on underlined text: a misspelled word, an AI suggestion, or both. Positions are the caller's own. */
+/** A click on underlined text. `from`/`to` are the caller's own positions; `para`/`at` locate the spot in its paragraph. */
 export interface ProofHit {
   x: number
   y: number
-  spell?: { from: number; to: number; word: string }
-  ai?: { from: number; to: number; bad: string; fix: string }
+  from: number
+  to: number
+  bad: string
+  /** The AI helper's fix, when it underlined this spot. */
+  fix?: string
+  /** Set when the dictionary does not know this word. */
+  word?: string
+  para: string
+  at: number
 }
 
 const UI = {
-  loading: 'Looking for suggestions…',
+  kind: 'Correctness',
+  more: 'Looking for more options…',
   none: 'No suggestions',
+  dismiss: 'Dismiss',
   add: 'Add to dictionary',
-  aiPicks: 'AI helper suggests',
-  ignore: 'Ignore',
+  close: 'Close',
 }
 
-/** Right-click menu on underlined text: the AI fix, dictionary suggestions and "Add to dictionary". */
-export function SpellMenu({ hit, replace, onClose }: { hit: ProofHit; replace: (from: number, to: number, text: string) => void; onClose: () => void }) {
-  const [options, setOptions] = useState<string[] | null>(hit.spell ? null : [])
-  const { spell, ai } = hit
+/** Grammarly-style card on an underline: what kind of mistake, about 3 fixes, Dismiss and Add to dictionary. */
+export function ProofCard({ hit, replace, onClose }: { hit: ProofHit; replace: (from: number, to: number, text: string) => void; onClose: () => void }) {
+  const [options, setOptions] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
+  const card = useRef<HTMLDivElement>(null)
+  const [pos, setPos] = useState({ left: hit.x, top: hit.y + 14 })
 
   useEffect(() => {
     let live = true
-    if (spell) void suggest(spell.word).then((s) => live && setOptions(s))
+    void fixOptions(hit.para, hit.at, hit.at + hit.bad.length, hit.fix, hit.word, (o) => live && setOptions(o)).then(() => live && setLoading(false))
     const close = (e: MouseEvent | KeyboardEvent) => {
-      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !(e.target as Element).closest?.('.spell-menu')) onClose()
+      if (e instanceof KeyboardEvent ? e.key === 'Escape' : !(e.target as Element).closest?.('.proof-card')) onClose()
     }
     window.addEventListener('mousedown', close)
     window.addEventListener('keydown', close)
@@ -37,54 +47,65 @@ export function SpellMenu({ hit, replace, onClose }: { hit: ProofHit; replace: (
       window.removeEventListener('mousedown', close)
       window.removeEventListener('keydown', close)
     }
-  }, [spell, onClose])
+  }, [hit, onClose])
 
-  const pick = (from: number, to: number, text: string) => {
-    replace(from, to, text)
-    onClose()
-  }
+  // Stay on screen: below the word, or above it near the bottom edge.
+  useLayoutEffect(() => {
+    const r = card.current!.getBoundingClientRect()
+    const left = Math.max(8, Math.min(hit.x - 16, window.innerWidth - r.width - 8))
+    const top = hit.y + 14 + r.height > window.innerHeight - 8 ? Math.max(8, hit.y - r.height - 14) : hit.y + 14
+    if (left !== pos.left || top !== pos.top) setPos({ left, top })
+  }, [hit, options, loading, pos])
 
+  const spelling = hit.fix === undefined
   return (
-    <div className="menu spell-menu" style={{ position: 'fixed', left: hit.x, top: hit.y }} role="menu">
-      {ai && (
-        <>
-          <div className="spell-menu-note">{UI.aiPicks}</div>
-          <button role="menuitem" className="spell-menu-suggestion" onClick={() => pick(ai.from, ai.to, ai.fix)}>
-            <s className="spell-menu-bad">{ai.bad}</s> {ai.fix}
-          </button>
+    <div ref={card} className="proof-card" style={{ position: 'fixed', ...pos }} role="dialog" aria-label={UI.kind}>
+      <header className="proof-card-head">
+        <span className={spelling ? 'proof-dot proof-dot-spell' : 'proof-dot'} />
+        <span>
+          {UI.kind} · {fixTitle(hit.bad, hit.fix, hit.word !== undefined && hit.fix === undefined)}
+        </span>
+        <button className="icon-btn" title={UI.close} onClick={onClose}>
+          <X size={14} />
+        </button>
+      </header>
+      <div className="proof-card-bad">{hit.bad}</div>
+      <div className="proof-card-options">
+        {options.map((o) => (
           <button
-            role="menuitem"
+            key={o}
+            className="proof-card-option"
             onClick={() => {
-              ignoreFix(ai.bad, ai.fix)
+              replace(hit.from, hit.to, o)
               onClose()
             }}
           >
-            {UI.ignore}
+            {o}
           </button>
-        </>
-      )}
-      {ai && spell && <hr className="spell-menu-sep" />}
-      {spell && (
-        <>
-          {options === null && <div className="spell-menu-note">{UI.loading}</div>}
-          {options?.length === 0 && <div className="spell-menu-note">{UI.none}</div>}
-          {options?.map((o) => (
-            <button key={o} role="menuitem" className="spell-menu-suggestion" onClick={() => pick(spell.from, spell.to, o)}>
-              {o}
-            </button>
-          ))}
-          <hr className="spell-menu-sep" />
+        ))}
+        {!loading && options.length === 0 && <span className="muted">{UI.none}</span>}
+      </div>
+      {loading && aiReady() && <div className="proof-card-note">{UI.more}</div>}
+      <footer className="proof-card-foot">
+        <button
+          onClick={() => {
+            ignoreFix(hit.fix === undefined ? (hit.word ?? hit.bad) : hit.bad, hit.fix ?? '')
+            onClose()
+          }}
+        >
+          <Trash2 size={14} /> {UI.dismiss}
+        </button>
+        {hit.word && (
           <button
-            role="menuitem"
             onClick={() => {
-              useSettings.getState().addWord(spell.word)
+              useSettings.getState().addWord(hit.word!)
               onClose()
             }}
           >
-            {UI.add}
+            <BookPlus size={14} /> {UI.add}
           </button>
-        </>
-      )}
+        )}
+      </footer>
     </div>
   )
 }

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useSettings } from '@/core/state'
 import { findIssues, onAiResult, type Issue } from './proof'
 import { spellAvailable } from './spell'
-import { SpellMenu, type ProofHit } from './SpellMenu'
+import { ProofCard, type ProofHit } from './ProofCard'
 import './spell.css'
 
 const DELAY_MS = 400
@@ -32,7 +32,7 @@ function segments(text: string, issues: Issue[]): Segment[] {
  * text sits on top and draws the underlines; right-click an underline for the fixes. Drop-in
  * replacement for a controlled `<textarea>`.
  */
-export function ProofTextarea({ ref, onScroll, onContextMenu, ...props }: ComponentProps<'textarea'>) {
+export function ProofTextarea({ ref, onScroll, onContextMenu, onClick, ...props }: ComponentProps<'textarea'>) {
   const el = useRef<HTMLTextAreaElement>(null)
   const copy = useRef<HTMLDivElement>(null)
   useImperativeHandle(ref, () => el.current!)
@@ -84,26 +84,26 @@ export function ProofTextarea({ ref, onScroll, onContextMenu, ...props }: Compon
     return () => watch.disconnect()
   })
 
-  if (!on) return <textarea ref={el} onScroll={onScroll} onContextMenu={onContextMenu} {...props} />
+  if (!on) return <textarea ref={el} onScroll={onScroll} onContextMenu={onContextMenu} onClick={onClick} {...props} />
 
   // Underlines only while they still match the text; they come back after the next check.
   const shown = issues.text === text ? issues.list : []
 
-  const openMenu = (e: React.MouseEvent<HTMLTextAreaElement>) => {
-    onContextMenu?.(e)
-    const spans = copy.current?.querySelectorAll<HTMLElement>('[data-at]') ?? []
-    for (const span of spans) {
+  /** The card for the underline under the mouse: the AI fix if there is one, the spelling otherwise. */
+  const hitAt = (e: React.MouseEvent): ProofHit | null => {
+    for (const span of copy.current?.querySelectorAll<HTMLElement>('[data-at]') ?? []) {
       if (![...span.getClientRects()].some((r) => e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom)) continue
       const at = Number(span.dataset.at)
-      const next: ProofHit = { x: e.clientX, y: e.clientY }
-      for (const i of shown.filter((i) => i.from <= at && i.to > at)) {
-        if (i.fix !== undefined) next.ai = { from: i.from, to: i.to, bad: text.slice(i.from, i.to), fix: i.fix }
-        else next.spell = { from: i.from, to: i.to, word: i.word! }
-      }
-      e.preventDefault()
-      setHit(next)
-      return
+      const here = shown.filter((i) => i.from <= at && i.to > at)
+      const main = here.find((i) => i.fix !== undefined) ?? here[0]
+      if (!main) return null
+      const spell = here.find((i) => i.fix === undefined && i.from === main.from && i.to === main.to)
+      const start = text.lastIndexOf('\n', main.from - 1) + 1
+      const end = text.indexOf('\n', main.to)
+      const para = text.slice(start, end < 0 ? text.length : end)
+      return { x: e.clientX, y: e.clientY, from: main.from, to: main.to, bad: text.slice(main.from, main.to), fix: main.fix, word: spell?.word, para, at: main.from - start }
     }
+    return null
   }
 
   const replace = (from: number, to: number, fix: string) => {
@@ -125,7 +125,19 @@ export function ProofTextarea({ ref, onScroll, onContextMenu, ...props }: Compon
           if (copy.current) copy.current.scrollTop = e.currentTarget.scrollTop
           onScroll?.(e)
         }}
-        onContextMenu={openMenu}
+        onContextMenu={(e) => {
+          onContextMenu?.(e)
+          const next = hitAt(e)
+          if (!next) return
+          e.preventDefault()
+          setHit(next)
+        }}
+        // A click opens the card like Grammarly and still places the caret.
+        onClick={(e) => {
+          onClick?.(e)
+          const next = hitAt(e)
+          if (next) setHit(next)
+        }}
       />
       <div ref={copy} className="proof-copy" aria-hidden>
         {segments(text, shown).map((s) =>
@@ -139,7 +151,7 @@ export function ProofTextarea({ ref, onScroll, onContextMenu, ...props }: Compon
         )}
         {'\n '}
       </div>
-      {hit && createPortal(<SpellMenu hit={hit} replace={replace} onClose={() => setHit(null)} />, document.body)}
+      {hit && createPortal(<ProofCard hit={hit} replace={replace} onClose={() => setHit(null)} />, document.body)}
     </>
   )
 }

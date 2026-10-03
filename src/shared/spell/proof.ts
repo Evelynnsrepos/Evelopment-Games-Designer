@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core'
 import { useSettings } from '@/core/state'
 import { useAiHelper } from './ai'
-import { findMisspelled, knownWords, tokenize } from './spell'
+import { findMisspelled, knownWords, suggest, tokenize } from './spell'
 
 /**
  * Spelling and AI grammar issues for plain paragraphs, shared by the rich text
@@ -101,7 +101,9 @@ export function guessLang(text: string): 'de' | 'en' {
   return score > 0 ? 'de' : 'en'
 }
 
+/** AI results per model and paragraph text, so switching to the better model checks everything again. */
 const fixes = new Map<string, Edit[]>()
+const fixKey = (text: string) => `${useSettings.getState().aiModel}\u0000${text}`
 const listeners = new Set<() => void>()
 let queue: string[] = []
 let busy = false
@@ -119,7 +121,7 @@ export function onAiResult(listener: () => void): () => void {
 
 /** Queue paragraphs for the AI helper; the newest request goes first. One paragraph at a time. */
 function want(texts: string[]) {
-  const fresh = texts.filter((t) => !fixes.has(t) && t.split(/\s+/).length >= 3)
+  const fresh = texts.filter((t) => !fixes.has(fixKey(t)) && t.split(/\s+/).length >= 3)
   queue = [...new Set([...fresh, ...queue])]
   void pump()
 }
@@ -130,9 +132,10 @@ async function pump() {
   try {
     while (queue.length && aiReady()) {
       const text = queue.shift()!
-      if (fixes.has(text)) continue
+      if (fixes.has(fixKey(text))) continue
       try {
-        fixes.set(text, diffEdits(text, await invoke<string>('llm_check', { text, lang: guessLang(text) })))
+        const model = useSettings.getState().aiModel
+        fixes.set(`${model}\u0000${text}`, diffEdits(text, await invoke<string>('llm_check', { text, lang: guessLang(text), model })))
       } catch (e) {
         // Do not hammer a broken helper; show why in Settings and try again on the next edit.
         useAiHelper.setState({ error: String(e) })
@@ -146,7 +149,7 @@ async function pump() {
   }
 }
 
-/** "Ignore" in the menu: this exact suggestion stays hidden until the app restarts. */
+/** "Dismiss" on the card: this exact suggestion (fix "" for a misspelled word) stays hidden until the app restarts. */
 const ignored = new Set<string>()
 export function ignoreFix(bad: string, fix: string) {
   ignored.add(`${bad}\u0000${fix}`)
@@ -163,8 +166,8 @@ export async function findIssues(paragraphs: string[]): Promise<Issue[][]> {
   if (ai) want(paragraphs)
   const known = knownWords()
   return paragraphs.map((text, p) => {
-    const out: Issue[] = words[p].filter((w) => bad.has(w.word)).map((w) => ({ from: w.from, to: w.to, word: w.word }))
-    for (const e of (ai && fixes.get(text)) || []) {
+    const out: Issue[] = words[p].filter((w) => bad.has(w.word) && !ignored.has(`${w.word}\u0000`)).map((w) => ({ from: w.from, to: w.to, word: w.word }))
+    for (const e of (ai && fixes.get(fixKey(text))) || []) {
       const was = text.slice(e.from, e.to)
       // Made-up names the user taught the app stay as they are.
       if (ignored.has(`${was}\u0000${e.fix}`) || (tokenize(was).length > 0 && tokenize(was).every((w) => known.has(w.word.toLowerCase())))) continue
@@ -172,4 +175,59 @@ export async function findIssues(paragraphs: string[]): Promise<Issue[][]> {
     }
     return out
   })
+}
+
+/** The sentence around text[from..to], with that spot marked `[[like this]]` for the AI helper. */
+export function markedSentence(text: string, from: number, to: number): string {
+  const start = Math.max(0, ...[...text.slice(0, from).matchAll(/[.!?]\s+/g)].map((m) => m.index + m[0].length))
+  const after = /[.!?](\s|$)/.exec(text.slice(to))
+  const end = after ? to + after.index + 1 : text.length
+  return `${text.slice(start, from)}[[${text.slice(from, to)}]]${text.slice(to, end)}`
+}
+
+/** Model lines → replacement options: no numbering or quotes, no repeats, nothing that rewrites the whole sentence. */
+export function cleanOptions(lines: string[], bad: string): string[] {
+  const max = bad.split(/\s+/).length + 3
+  const out: string[] = []
+  for (const line of lines) {
+    const o = line
+      .trim()
+      .replace(/^(\d+[.)]|[-*•])\s*/, '')
+      .replace(/^["'„“”`]+|["'„“”`]+$/g, '')
+      .trim()
+    if (o && o !== bad && !o.includes('[[') && !o.includes(']]') && o.split(/\s+/).length <= max && !out.includes(o)) out.push(o)
+  }
+  return out
+}
+
+/**
+ * About 3 ways to fix text[from..to], best first: the background fix, then the AI helper's
+ * options for this spot, then the dictionary's for a misspelled word. `onUpdate` gets the list
+ * again once the AI helper answered.
+ */
+export function fixOptions(text: string, from: number, to: number, fix: string | undefined, word: string | undefined, onUpdate: (options: string[]) => void) {
+  const bad = text.slice(from, to)
+  let ai: string[] = []
+  let dictionary: string[] = []
+  const emit = () => onUpdate([...new Set([...(fix === undefined ? [] : [fix]), ...ai, ...dictionary])].filter((o) => o !== bad).slice(0, 3))
+  emit()
+  if (word) void suggest(word).then((s) => ((dictionary = s), emit()))
+  if (!aiReady()) return Promise.resolve()
+  const sentence = markedSentence(text, from, to)
+  const { aiModel: model } = useSettings.getState()
+  return invoke<string[]>('llm_options', { sentence, lang: guessLang(sentence), model })
+    .then((lines) => ((ai = cleanOptions(lines, bad)), emit()))
+    .catch(() => {})
+}
+
+/** Grammarly-style card title for a fix. */
+export function fixTitle(bad: string, fix: string | undefined, misspelled: boolean): string {
+  if (misspelled || fix === undefined) return 'Correct the spelling'
+  const letters = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, '')
+  if (letters(bad) === letters(fix)) return bad.toLowerCase() === fix.toLowerCase() && bad !== fix && /^[\p{L}\s]+$/u.test(bad) ? 'Fix the capitalization' : 'Fix the punctuation'
+  if (bad.toLowerCase() === fix.toLowerCase()) return 'Fix the capitalization'
+  const a = bad.split(/\s+/)
+  const b = fix.split(/\s+/)
+  if (a.length === b.length && a.every((w, i) => w.slice(0, 4).toLowerCase() === b[i].slice(0, 4).toLowerCase())) return 'Change the word form'
+  return 'Change the wording'
 }
