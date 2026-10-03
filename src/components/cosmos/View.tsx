@@ -29,6 +29,7 @@ import {
   type Cosmos,
 } from './model'
 import './cosmos.css'
+import { ProofTextarea } from '@/shared/spell'
 
 const UI = {
   top: 'Cosmos',
@@ -285,7 +286,7 @@ export default function View({ documentId, active }: PanelProps) {
           </div>
           <label>
             {UI.notes}
-            <textarea
+            <ProofTextarea
               className="input cosmos-notes"
               placeholder={UI.notesHint}
               value={selected.notes}

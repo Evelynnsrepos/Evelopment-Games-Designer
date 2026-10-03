@@ -52,7 +52,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'Text editors underline misspelled words in English and German. Right-click an underlined word for suggestions or choose Add to dictionary.',
       'Names of your items, characters, towns and enemies are always counted as correct, so your made-up names are not flagged.',
       'Settings (bottom of the sidebar, or the gear on the start screen) turns spell check on or off, picks the languages and lists your own words.',
-      'The AI helper is optional. Download it in Settings (about 1.1 GB). It runs on your computer and adds Ask the AI helper to the right-click menu, which picks the spelling that fits the sentence.',
+      'The AI helper is optional. Download it in Settings (about 1.1 GB). It runs on your computer and checks grammar as you write, like Grammarly: wrong words for the sentence, verb forms, missing commas. Its suggestions get a blue underline; right-click one to fix it or choose Ignore. Spell check and the AI helper work in the Writer, the Wiki and the description and notes boxes.',
     ],
   },
   plugins: {

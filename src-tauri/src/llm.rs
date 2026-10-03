@@ -1,4 +1,4 @@
-//! Optional AI helper for spelling suggestions (v0.4). Nothing ships with the
+//! Optional AI helper for spelling and grammar suggestions (v0.4). Nothing ships with the
 //! app: the user downloads llama.cpp's `llama-server` and a small model from
 //! Settings into `<app data>/llm/`. The server runs on 127.0.0.1 only while
 //! the app is open and is started on the first request.
@@ -206,54 +206,43 @@ fn ensure_server(app: &AppHandle) -> Result<u16, String> {
   Err("The AI helper did not start.".into())
 }
 
-/// Ask the model for corrected spellings of `word` as used in `context`. The dictionary's
-/// candidates go along: a small model is much better at picking than at spelling (German especially).
+/// The paragraph with its spelling, grammar and punctuation fixed, for underlining what changed
+/// (like Grammarly). A small model is far better at rewriting text than at listing mistakes, so the
+/// app diffs the answer itself. `lang` is "en" or "de"; asking in the text's language stops the
+/// model from translating German into English.
 #[tauri::command]
-pub async fn llm_suggest(app: AppHandle, word: String, context: String, candidates: Vec<String>) -> Result<Vec<String>, String> {
+pub async fn llm_check(app: AppHandle, text: String, lang: String) -> Result<String, String> {
   tauri::async_runtime::spawn_blocking(move || {
     let port = ensure_server(&app)?;
+    let (system, example, fixed) = if lang == "de" {
+      (
+        "Du korrigierst deutschen Text. Gib den Text mit korrigierter Rechtschreibung, Grammatik und Zeichensetzung zurück. Behalte Bedeutung, Wortwahl, Namen und erfundene Wörter. Formuliere korrekten Text nicht um. Antworte nur mit dem korrigierten deutschen Text, niemals auf Englisch.",
+        "Die Wache sagen, das der König krank ist.",
+        "Die Wache sagt, dass der König krank ist.",
+      )
+    } else {
+      (
+        "You proofread English text. Return the text with spelling, grammar and punctuation mistakes fixed. Keep the meaning, wording, names and made-up words. Do not rephrase correct text. Return only the corrected text.",
+        "Their is to many goblin in the castel.",
+        "There are too many goblins in the castle.",
+      )
+    };
     let body = serde_json::json!({
       "messages": [
-        { "role": "system", "content": "You fix one misspelled word in English or German text. Reply with the best corrected word for this sentence, then up to 2 other likely words, one per line, nothing else." },
-        { "role": "user", "content": format!("Text: {context}\nMisspelled word: {word}\nDictionary suggestions: {}", candidates.join(", ")) }
+        { "role": "system", "content": system },
+        { "role": "user", "content": example },
+        { "role": "assistant", "content": fixed },
+        { "role": "user", "content": text }
       ],
-      "temperature": 0.2,
-      "max_tokens": 40
+      "temperature": 0,
+      "max_tokens": text.len() / 2 + 64
     });
     let mut resp = ureq::post(&format!("http://127.0.0.1:{port}/v1/chat/completions"))
       .send_json(&body)
       .map_err(|e| format!("The AI helper failed: {e}"))?;
     let json: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
-    let text = json["choices"][0]["message"]["content"].as_str().unwrap_or_default();
-    Ok(parse_suggestions(text, &word))
+    Ok(json["choices"][0]["message"]["content"].as_str().unwrap_or_default().trim().to_string())
   })
   .await
   .map_err(|e| e.to_string())?
-}
-
-/// One word per line; drops numbering, quotes, the original word and duplicates.
-fn parse_suggestions(text: &str, word: &str) -> Vec<String> {
-  let mut out: Vec<String> = Vec::new();
-  for line in text.lines() {
-    let s = line
-      .trim()
-      .trim_start_matches(|c: char| c.is_ascii_digit() || matches!(c, '.' | ')' | '-' | '*' | ' '))
-      .trim_matches(|c: char| matches!(c, '"' | '\'' | '`' | '.' | ',' | ' '));
-    if !s.is_empty() && !s.contains(' ') && s != word && !out.iter().any(|o| o.eq_ignore_ascii_case(s)) {
-      out.push(s.to_string());
-    }
-  }
-  out.truncate(3);
-  out
-}
-
-#[cfg(test)]
-mod tests {
-  use super::parse_suggestions;
-
-  #[test]
-  fn parses_model_replies() {
-    assert_eq!(parse_suggestions("1. castle\n2. \"cancel\"\ncastel\ncastle\n", "castel"), vec!["castle", "cancel"]);
-    assert!(parse_suggestions("Sure, here you go", "x").is_empty());
-  }
 }

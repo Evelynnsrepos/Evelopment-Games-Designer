@@ -1,7 +1,16 @@
+.grammar-error {
+  text-decoration: underline wavy var(--focus);
+  text-decoration-skip-ink: none;
+  text-underline-offset: 3px;
+}
 .spell-error {
   text-decoration: underline wavy var(--danger);
   text-decoration-skip-ink: none;
   text-underline-offset: 3px;
+}
+.spell-menu-bad {
+  color: var(--text-muted);
+  font-weight: 400;
 }
 .spell-menu-suggestion {
   font-weight: 600;
@@ -14,4 +23,15 @@
   margin: 4px 0;
   border: none;
   border-top: 1px solid var(--border);
+}
+.proof-copy {
+  position: absolute;
+  overflow: hidden;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  color: transparent;
+  border-style: solid;
+  border-color: transparent;
+  background: none;
+  pointer-events: none;
 }

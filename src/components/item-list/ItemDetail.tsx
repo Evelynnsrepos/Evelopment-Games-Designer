@@ -6,6 +6,7 @@ import { ImagePicker, openEntity } from '@/shared/entityList'
 import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
 import { droppedBy, formatDrop, nextStatName, renameStat } from './query'
+import { ProofTextarea } from '@/shared/spell'
 
 const T = {
   back: 'Back to list',
@@ -104,7 +105,7 @@ export function ItemDetail({
         <label className="item-label" htmlFor={`item-desc-${item.id}`}>
           {T.description}
         </label>
-        <textarea
+        <ProofTextarea
           id={`item-desc-${item.id}`}
           className="input item-textarea"
           rows={3}
@@ -155,7 +156,7 @@ export function ItemDetail({
         <label className="item-label" htmlFor={`item-notes-${item.id}`}>
           {T.notes}
         </label>
-        <textarea
+        <ProofTextarea
           id={`item-notes-${item.id}`}
           className="input item-textarea"
           rows={4}
