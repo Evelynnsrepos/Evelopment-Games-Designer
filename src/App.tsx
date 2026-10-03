@@ -11,6 +11,7 @@ import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
 import { loadAllPlugins } from '@/shell/plugins/plugins'
+import { ServerPluginOffer } from '@/shell/plugins/ServerPluginOffer'
 import { SharingEndedHost } from '@/shell/collab/CollabDialogs'
 import { useJoinRequests } from '@/shell/collab/joinRequests'
 
@@ -42,6 +43,7 @@ export default function App() {
       <DialogHost />
       <HelpHost />
       <SharingEndedHost />
+      <ServerPluginOffer />
       <RaritiesHost />
       <SettingsHost />
     </>

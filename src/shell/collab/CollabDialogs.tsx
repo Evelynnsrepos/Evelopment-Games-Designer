@@ -1,10 +1,11 @@
-import { Copy, Link2, RefreshCw, Users, X } from 'lucide-react'
+import { Copy, Link2, RefreshCw, Server, Users, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
   clearEnded,
   forgetSharing,
   inviteCode,
   joinProject,
+  moveToServer,
   newInviteCode,
   parseInvite,
   PROFILE_COLORS,
@@ -13,6 +14,7 @@ import {
   shareProject,
   stopSharingHere,
   useCollab,
+  usePresence,
   useTeammatesAt,
   type JoinHandle,
 } from '@/core/collab'
@@ -55,8 +57,9 @@ const T = {
   leaveText: 'You stop working together with the others. Keep your copy on this computer as a normal project, or delete it?',
   close: 'Close',
   joinTitle: 'Join a shared project',
-  joinIntro: 'Paste the invite code someone sent you. The project is copied to this computer and stays in sync while you are both online.',
-  codePlaceholder: 'EGD1-...',
+  joinIntro:
+    'Paste the invite code someone sent you, or a connect code from an Evelopment server. The project is copied to this computer and stays in sync.',
+  codePlaceholder: 'EGD1-... or EGS1-...',
   saveIn: 'Save in',
   change: 'Change…',
   join: 'Join',
@@ -65,6 +68,19 @@ const T = {
   waiting: (project: string) => `Waiting to be let in to "${project}"…`,
   invalidCode: 'That is not a valid invite code.',
   needName: 'Please enter your name so the others know who you are.',
+  serverTitle: 'Or work through a server',
+  serverIntro:
+    'With an Evelopment server, people can sync even when nobody else is online. Paste the connect code you got from the server’s admin; this project is copied to the server.',
+  serverPlaceholder: 'EGS1-...',
+  moveToServer: 'Move to server',
+  moving: 'Moving…',
+  movedP2pNote: 'People you shared with directly are disconnected and need their own connect code from the server’s admin.',
+  connectedVia: (server: string) => `Working through the server “${server}”.`,
+  viewOnly: 'Your connect code can only view this project. Changes you make here are not sent to anyone.',
+  serverInvite: 'New people get their own connect code from the server’s admin page.',
+  onlineNow: 'Online now',
+  nobodyElse: 'Nobody else is online.',
+  nameNote: 'Names are chosen by each person and not checked.',
 }
 
 function ProfileFields() {
@@ -94,7 +110,7 @@ function ProfileFields() {
 
 /** Sidebar dialog: start sharing, invite code, people. */
 export function ShareDialog({ onClose }: { onClose: () => void }) {
-  const { shared, online, peers, members, selfId, error, profile, isHost, hostId } = useCollab()
+  const { shared, online, peers, members, selfId, error, profile, isHost, hostId, server } = useCollab()
   const [leaving, setLeaving] = useState(false)
   const [code, setCode] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -102,7 +118,7 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    if (!shared || code) return
+    if (!shared || code || server) return
     let cancelled = false
     inviteCode()
       .then((c) => !cancelled && setCode(c))
@@ -110,7 +126,7 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
     return () => {
       cancelled = true
     }
-  }, [shared, online, code])
+  }, [shared, online, code, server])
 
   const run = async (fn: () => Promise<string | void>) => {
     setBusy(true)
@@ -142,7 +158,19 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
       {!shared && <p className="muted">{T.shareIntro}</p>}
       <ProfileFields />
 
-      {!shared ? (
+      {shared && server ? (
+        <>
+          <ServerInfo name={server.name} viewOnly={server.role === 'view'} />
+          <div className="modal-actions collab-actions">
+            <button className="btn btn-ghost collab-danger" onClick={() => setLeaving(true)}>
+              {T.leave}
+            </button>
+            <button className="btn btn-primary" onClick={onClose}>
+              {T.close}
+            </button>
+          </div>
+        </>
+      ) : !shared ? (
         <div className="modal-actions">
           <button className="btn" onClick={onClose}>
             {T.cancel}
@@ -242,6 +270,7 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
           </div>
         </>
       )}
+      {(!shared || (isHost && !server)) && <MoveToServer shared={shared} />}
       {(message || error) && <div className="collab-error">{message ?? error}</div>}
       {leaving && (
         <KeepCopyDialog
@@ -258,6 +287,71 @@ export function ShareDialog({ onClose }: { onClose: () => void }) {
         />
       )}
     </Modal>
+  )
+}
+
+/** Working through a server: who is online (from presence, since the only direct connection is the server). */
+function ServerInfo({ name, viewOnly }: { name: string; viewOnly: boolean }) {
+  const remotes = usePresence((s) => s.remotes)
+  return (
+    <div className="collab-field">
+      <p>
+        <Server size={14} /> {T.connectedVia(name)}
+      </p>
+      {viewOnly && <p className="collab-status">{T.viewOnly}</p>}
+      <span className="muted collab-small">{T.serverInvite}</span>
+      <span>{T.onlineNow}</span>
+      <ul className="collab-people">
+        {remotes.length === 0 && <li className="muted">{T.nobodyElse}</li>}
+        {remotes.map((r) => (
+          <li key={r.clientId}>
+            <span className="collab-dot" style={{ background: r.color || 'var(--text-muted)' }} />
+            <span className="collab-person">{r.name || 'Someone'}</span>
+          </li>
+        ))}
+      </ul>
+      <span className="muted collab-small">{T.nameNote}</span>
+    </div>
+  )
+}
+
+/** Paste a server connect code to move this project to the server. */
+function MoveToServer({ shared }: { shared: boolean }) {
+  const profile = useCollab((s) => s.profile)
+  const [code, setCode] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  return (
+    <details className="collab-field">
+      <summary>
+        <Server size={14} /> {T.serverTitle}
+      </summary>
+      <p className="muted collab-small">{T.serverIntro}</p>
+      {shared && <p className="muted collab-small">{T.movedP2pNote}</p>}
+      <textarea className="input collab-code" rows={3} placeholder={T.serverPlaceholder} value={code} onChange={(e) => setCode(e.target.value)} disabled={busy} />
+      <div className="modal-actions">
+        <button
+          className="btn btn-primary"
+          disabled={busy || !code.trim()}
+          onClick={async () => {
+            if (!profile.name.trim()) return setError(T.needName)
+            setBusy(true)
+            setError(null)
+            try {
+              await moveToServer(code)
+              setCode('')
+            } catch (e) {
+              setError((e as Error).message)
+            } finally {
+              setBusy(false)
+            }
+          }}
+        >
+          {busy ? T.moving : T.moveToServer}
+        </button>
+      </div>
+      {error && <div className="collab-error">{error}</div>}
+    </details>
   )
 }
 
@@ -392,7 +486,11 @@ export function JoinDialog({ onClose, onJoined }: { onClose: () => void; onJoine
 
 /** Small sidebar indicator: colored dots for who is online. */
 export function PresenceDots() {
-  const peers = useCollab((s) => s.peers)
+  const direct = useCollab((s) => s.peers)
+  const server = useCollab((s) => s.server)
+  const remotes = usePresence((s) => s.remotes)
+  // Through a server the only direct peer is the server itself; teammates are known from presence.
+  const peers = server ? remotes.map((r) => ({ id: String(r.clientId), name: r.name, color: r.color })) : direct
   if (peers.length === 0) return null
   return (
     <span className="collab-dots" title={peers.map((p) => p.name).join(', ')}>
