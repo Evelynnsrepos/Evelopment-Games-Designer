@@ -12,7 +12,9 @@ export {
   isRichTextEmpty,
   MISSING_REF_LABEL,
   normalizeRichText,
+  richTextToHtml,
   richTextToMarkdown,
+  escapeHtml,
   richTextToPlainText,
   type LabelResolver,
 } from './doc'

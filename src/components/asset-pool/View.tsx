@@ -9,6 +9,7 @@ import { openEntity } from '@/shared/entityList'
 import { Modal } from '@/shared/ui'
 import { ASSET_KINDS, createPool, newEntry, nextStatus, parseChecklist, progress, STATUSES, trackedIds, type AssetEntry, type AssetKind, type AssetPool, type Status } from './model'
 import './asset-pool.css'
+import { ProofTextarea } from '@/shared/spell'
 
 const UI = {
   title: 'Asset Pool',
@@ -233,7 +234,7 @@ export default function View({ active }: PanelProps) {
           </label>
           <label className="pool-field">
             {UI.notes}
-            <textarea className="input pool-notes" placeholder={UI.notesHint} value={selected.notes} onChange={(e) => edit(selected.id, { notes: e.target.value })} />
+            <ProofTextarea className="input pool-notes" placeholder={UI.notesHint} value={selected.notes} onChange={(e) => edit(selected.id, { notes: e.target.value })} />
           </label>
           <div className="pool-field">
             {UI.pictures}

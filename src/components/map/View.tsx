@@ -1,3 +1,4 @@
+import { commentTool } from '@/shared/reviews'
 import { Download, Eye, EyeOff, ImagePlus, Lock, Settings2, Trash2, Unlock } from 'lucide-react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type DragEvent } from 'react'
 import { assetUrl, dragHasFiles, importAssetsFromDataTransfer, pickAndImportAssets, useAssetUrls, type ImportedAsset } from '@/core/assets'
@@ -115,8 +116,9 @@ export default function View({ documentId, active }: PanelProps) {
       stampTool(host),
       textTool({ defaults: () => ({ textColor: INK, fontSize: 22 }) }),
       penTool({ defaults: () => ({ strokeColor: INK, strokeWidth: 2 }) }),
+      commentTool('map', documentId ?? null),
     ]
-  }, [])
+  }, [documentId])
 
   // Each tool draws into its own layer (terrain under streets under cities under labels).
   const { toolId, setActiveLayerId } = canvas

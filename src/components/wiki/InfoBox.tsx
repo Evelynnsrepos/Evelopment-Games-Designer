@@ -2,27 +2,17 @@ import { ExternalLink } from 'lucide-react'
 import type { Entity, EntityType, Id } from '@/core/model'
 import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
-import { openEntity } from '@/shared/entityList'
-import { categoriesFor, ENTITY_LABELS, formatValue } from '@/shared/categories'
-import { entityLook, fieldLines, frameStyle, ratingText, StyleBadge } from '@/shared/categories'
+import { entityInfoRows, openEntity } from '@/shared/entityList'
+import { ENTITY_LABELS, entityLook, frameStyle, ratingText, StyleBadge } from '@/shared/categories'
 
 const UI = {
   deleted: (type: string) => `The ${type.toLowerCase()} that this article was pulled from has been deleted.`,
   openList: (list: string) => `Open in ${list}`,
   stats: 'Stats',
-  level: 'Level',
-  drops: 'Drops',
-  foundIn: 'Found in',
-  missing: 'missing',
 }
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 const LIST_NAME: Record<EntityType, string> = { item: 'Item List', character: 'Character List', town: 'Town List', enemy: 'Enemy List' }
-
-interface Row {
-  label: string
-  value: string
-}
 
 /** Info box of an article pulled from an entity (WK-3). Reads the entity live, so edits in its list show up here. */
 export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) {
@@ -33,26 +23,8 @@ export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) 
 
   if (!entity) return <aside className="wiki-infobox wiki-infobox-missing">{UI.deleted(typeName)}</aside>
 
-  const nameOf = (type: EntityType, id: Id) => (entities[type] as Entity[]).find((e) => e.id === id)?.name || UI.missing
-  const rows: Row[] = []
-  for (const c of categoriesFor(categories, kind, entity.id)) {
-    const value = formatValue(c, entity.categories[c.id])
-    if (value) rows.push({ label: c.name, value })
-  }
-  if (entity.type === 'character' || entity.type === 'town') {
-    for (const link of entity.links) rows.push({ label: link.label || cap(ENTITY_LABELS[link.targetType].one), value: nameOf(link.targetType, link.targetId) })
-  }
-  if (entity.type === 'enemy') {
-    const lv = entity.levelMin === entity.levelMax ? `${entity.levelMin}` : `${entity.levelMin}–${entity.levelMax}`
-    rows.push({ label: UI.level, value: lv })
-    if (entity.dropTable.length)
-      rows.push({ label: UI.drops, value: entity.dropTable.map((d) => `${nameOf('item', d.itemId)} (${d.chancePercent}%)`).join(', ') })
-    if (entity.foundIn.length) rows.push({ label: UI.foundIn, value: entity.foundIn.map((id) => nameOf('town', id)).join(', ') })
-  }
-  const stats = entity.type === 'item' || entity.type === 'enemy' ? Object.entries(entity.stats) : []
+  const { rows, stats } = entityInfoRows(entity, entities as Record<EntityType, Entity[]>, categories)
   const look = entityLook(categories, kind, entity)
-  // The rarity's own fields (drop rate, sell price…) show as rows too.
-  if (look) for (const f of fieldLines(look.category, look.style)) rows.push(f)
 
   return (
     <aside className="wiki-infobox" aria-label={`${typeName} info`}>

@@ -1,0 +1,64 @@
+.modal:has(.dbook) {
+  width: min(560px, calc(100vw - 32px));
+}
+.dbook {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.dbook h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.dbook-lead {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.dbook-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.dbook-sections {
+  max-height: 45vh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 4px;
+}
+.dbook-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dbook-row label,
+.dbook-entries label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+.dbook-count {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.dbook-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px 0 6px 34px;
+  font-size: 13px;
+}
+.dbook-error {
+  margin: 0;
+  color: var(--danger);
+}
+.dbook .modal-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}

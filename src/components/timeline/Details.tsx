@@ -4,6 +4,7 @@ import { AssetImage } from '@/shared/AssetImage'
 import { RefPicker } from '@/shared/links'
 import type { RefProvider } from '@/shared/richtext'
 import { BRANCH_COLORS, xOfYear, yearAt, type TimelineEvent, type TimelineItem, type TimelineLine, type YearAxis } from './model'
+import { ProofTextarea } from '@/shared/spell'
 
 const DETAILS_UI = {
   event: 'Event',
@@ -102,7 +103,7 @@ function EventFields({ ev, axis, refs, autoFocus, onPatch, onPickImage, onDelete
       )}
       <label className="timeline-field">
         <span>{DETAILS_UI.text}</span>
-        <textarea className="input timeline-text" rows={5} value={ev.text} autoFocus={autoFocus} onChange={(e) => typed({ text: e.target.value })} {...field} />
+        <ProofTextarea className="input timeline-text" rows={5} value={ev.text} autoFocus={autoFocus} onChange={(e) => typed({ text: e.target.value })} {...field} />
       </label>
       <div className="timeline-field">
         <span>{DETAILS_UI.image}</span>

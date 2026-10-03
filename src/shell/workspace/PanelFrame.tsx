@@ -3,6 +3,7 @@ import { Component, Suspense, useState, type ReactNode } from 'react'
 import type { Panel } from '@/core/model'
 import { getManifest } from '@/core/registry'
 import { PanelContext, useAppStore, useProjectStore } from '@/core/state'
+import { ReviewButton } from '@/shared/reviews'
 import { closePanel, DRAG_MIME, movePanel, openComponent, type DragPayload } from '../editor/actions'
 import { neighbor, sideFromPoint, type Direction, type DropSide } from './layoutTree'
 
@@ -43,7 +44,8 @@ export function PanelFrame({ panel }: { panel: Panel }) {
     >
       <header className="panel-header">
         {manifest && <manifest.icon size={13} />}
-        <span>{title}</span>
+        <span className="panel-title">{title}</span>
+        {manifest && panel.type !== 'reviews' && <ReviewButton target={{ kind: 'doc', type: panel.type, id: panel.documentId }} title={title} />}
       </header>
       <div className="panel-body">
         <PanelErrorBoundary name={title}>

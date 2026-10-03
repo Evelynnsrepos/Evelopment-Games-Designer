@@ -1,0 +1,43 @@
+.wave-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 10px 16px;
+}
+.wave-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.wave-groups td .input {
+  min-width: 70px;
+}
+.wave-stat {
+  max-width: 280px;
+}
+.wave-weapons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wave-weapon {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.wave-weapon.on {
+  background: var(--bg-hover);
+}
+.wave-weapon-name {
+  min-width: 140px;
+  font-weight: 600;
+}
+.wave-ok {
+  color: #30a46c;
+  font-weight: 600;
+}
+.wave-short {
+  color: var(--danger);
+  font-weight: 600;
+}

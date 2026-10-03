@@ -155,3 +155,57 @@ export function richTextToMarkdown(doc: RichTextDoc, resolve?: LabelResolver): s
   }
   return render(doc, '', '').join('\n\n').trim() + '\n'
 }
+
+export const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+
+/** HTML for the Design Book export (v0.7). `image` turns a stored path into a src (e.g. a data URL). */
+export function richTextToHtml(doc: RichTextDoc, resolve?: LabelResolver, image: (src: string) => string = (s) => s): string {
+  const inline = (nodes: RichTextDoc[] | undefined): string =>
+    (nodes ?? [])
+      .map((n) => {
+        if (n.type === REF_NODE) return `<span class="ref">${escapeHtml(refLabel(n, resolve))}</span>`
+        if (n.type === 'hardBreak') return '<br>'
+        if (n.type !== 'text') return inline(n.content)
+        const marks = n.marks ?? []
+        let html = escapeHtml(n.text ?? '')
+        for (const m of marks) {
+          if (m.type === 'bold') html = `<strong>${html}</strong>`
+          else if (m.type === 'italic') html = `<em>${html}</em>`
+          else if (m.type === 'underline') html = `<u>${html}</u>`
+          else if (m.type === 'strike') html = `<s>${html}</s>`
+          else if (m.type === 'code') html = `<code>${html}</code>`
+          else if (m.type === 'link' && /^https?:/i.test(m.attrs?.href ?? '')) html = `<a href="${escapeHtml(m.attrs!.href)}">${html}</a>`
+        }
+        return html
+      })
+      .join('')
+  const block = (n: RichTextDoc): string => {
+    const inner = () => (n.content ?? []).map(block).join('')
+    switch (n.type) {
+      case 'doc':
+        return inner()
+      case 'blockquote':
+        return `<blockquote>${inner()}</blockquote>`
+      case 'heading': {
+        // Article headings sit below the book's own h1/h2.
+        const level = Math.min(6, (n.attrs?.level ?? 1) + 2)
+        return `<h${level}>${inline(n.content)}</h${level}>`
+      }
+      case 'bulletList':
+        return `<ul>${inner()}</ul>`
+      case 'orderedList':
+        return `<ol>${inner()}</ol>`
+      case 'listItem':
+        return `<li>${inner()}</li>`
+      case 'codeBlock':
+        return `<pre><code>${escapeHtml(inlineText(n))}</code></pre>`
+      case 'horizontalRule':
+        return '<hr>'
+      case 'image':
+        return n.attrs?.src ? `<img src="${escapeHtml(image(n.attrs.src))}" alt="${escapeHtml(n.attrs?.alt ?? '')}">` : ''
+      default:
+        return `<p>${inline(n.content)}</p>`
+    }
+  }
+  return block(doc)
+}

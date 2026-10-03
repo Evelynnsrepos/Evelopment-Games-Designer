@@ -2,6 +2,7 @@ import { ExternalLink, Trash2, X } from 'lucide-react'
 import type { Category, CategoryValue, Id, Town } from '@/core/model'
 import { CategoryFields } from '@/shared/categories'
 import { CITY_SIZES, MARKER_COLORS, type CityNode, type CitySize } from './model'
+import { ProofTextarea } from '@/shared/spell'
 
 export const PANEL_UI = {
   title: 'City',
@@ -87,7 +88,7 @@ export function CityPanel(p: CityPanelProps) {
 
           <label className="map-field">
             <span>{PANEL_UI.description}</span>
-            <textarea className="input map-textarea" rows={3} value={town.description} onChange={(e) => p.onTownChange({ description: e.target.value })} />
+            <ProofTextarea className="input map-textarea" rows={3} value={town.description} onChange={(e) => p.onTownChange({ description: e.target.value })} />
           </label>
 
           <button className="btn" onClick={p.onOpenTownList}>
