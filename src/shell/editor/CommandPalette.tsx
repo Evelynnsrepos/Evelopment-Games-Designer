@@ -69,7 +69,9 @@ function Palette({ onClose }: { onClose(): void }) {
     return found as Entry[]
   }, [commands, refs, query])
 
-  useEffect(() => list.current?.children[index]?.scrollIntoView({ block: 'nearest' }), [index])
+  useEffect(() => {
+    list.current?.children[index]?.scrollIntoView({ block: 'nearest' })
+  }, [index])
 
   const pick = (e: Entry | undefined, beside: boolean) => {
     if (!e) return

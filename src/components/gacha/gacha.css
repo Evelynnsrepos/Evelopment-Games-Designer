@@ -1,4 +1,6 @@
 .gacha-mode {
+  flex: none;
+  align-self: flex-start;
   margin-bottom: 4px;
 }
 .gacha-grid {
