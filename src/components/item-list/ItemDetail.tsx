@@ -7,6 +7,7 @@ import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
 import { droppedBy, formatDrop, nextStatName, renameStat } from './query'
 import { ProofTextarea } from '@/shared/spell'
+import { ReviewButton } from '@/shared/reviews'
 
 const T = {
   back: 'Back to list',
@@ -60,6 +61,7 @@ export function ItemDetail({
           <ArrowLeft size={16} />
         </button>
         <span style={{ flex: 1 }} />
+        <ReviewButton target={{ kind: 'entity', type: 'item', id: item.id }} title={item.name || 'Untitled item'} />
         <button
           className="icon-btn"
           title={T.duplicate}

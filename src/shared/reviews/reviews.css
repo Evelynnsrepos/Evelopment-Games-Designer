@@ -113,7 +113,8 @@
   align-items: center;
   gap: 2px;
 }
-.elist-detail-top .review-pill {
+.elist-detail-top .review-pill,
+.item-detail-top .review-pill {
   height: 24px;
   font-size: 12px;
 }
