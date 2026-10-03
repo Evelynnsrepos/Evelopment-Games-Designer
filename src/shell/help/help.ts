@@ -17,7 +17,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     { target: 'new-project', title: 'Start a project', text: 'Each game is a project. Create one here and pick the tools you want in it.' },
     { target: 'open-folder', title: 'Open a project folder', text: 'Projects are normal folders. Open one you copied from another computer or a backup.' },
     { target: 'theme-toggle', title: 'Light or dark', text: 'Switch between the dark and light theme.' },
-    { target: 'help', title: 'Help is always here', text: 'Open the user guide here or with F1. It explains every tool, and you can replay this tour from it.' },
+    { target: 'help', title: 'Help is always here', text: 'Report a problem or open the user guide here. F1 opens the guide directly; it explains every tool, and you can replay this tour from it.' },
   ],
   editor: [
     { title: 'Your project', text: 'This is the editor. Here is a quick look at how it works.' },
@@ -25,7 +25,7 @@ export const TOURS: Record<TourId, TourStep[]> = {
     { target: 'workspace', title: 'Side by side', text: 'Drag a tool from the sidebar onto an open panel to split the screen. Press Esc for Layout Mode to close or move panels.' },
     { target: 'add-component', title: 'More tools', text: 'Add any tool to this project whenever you need it. Right-click a tool to close it again.' },
     { target: 'project-look', title: 'Make it yours', text: 'Give this project its own accent color, background and wallpaper.' },
-    { target: 'help', title: 'Need help?', text: 'The user guide explains every tool. Everything saves automatically, so just start creating.' },
+    { target: 'help', title: 'Need help?', text: 'Report a problem here, or press F1 for the user guide. Everything saves automatically, so just start creating.' },
   ],
 }
 
@@ -52,6 +52,10 @@ interface HelpState {
   guide: string | null
   tour: TourId | null
   step: number
+  /** The small Help window (report an issue, repository, guide). */
+  report: boolean
+  openReport(): void
+  closeReport(): void
   openGuide(topic?: string): void
   closeGuide(): void
   startTour(tour: TourId): void
@@ -63,7 +67,10 @@ export const useHelp = create<HelpState>()((set, get) => ({
   guide: null,
   tour: null,
   step: 0,
-  openGuide: (topic = 'start') => set({ guide: topic }),
+  report: false,
+  openReport: () => set({ report: true }),
+  closeReport: () => set({ report: false }),
+  openGuide: (topic = 'start') => set({ guide: topic, report: false }),
   closeGuide: () => set({ guide: null }),
   startTour: (tour) => set({ tour, step: 0, guide: null }),
   setStep: (step) => set({ step }),

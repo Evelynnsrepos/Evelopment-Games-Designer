@@ -1,4 +1,4 @@
-import { BookOpen, Compass, Palette, Rocket, Save, Link2, LayoutPanelLeft, X } from 'lucide-react'
+import { BookOpen, Bug, CircleHelp, Compass, ExternalLink, FolderGit2, Palette, Puzzle, Rocket, Save, Search, SpellCheck, Link2, LayoutPanelLeft, Users, Wrench, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { allManifests } from '@/core/registry'
 import { useAppStore } from '@/core/state'
@@ -8,12 +8,27 @@ import { BASICS, COMMUNITY_LINKS, TOOL_GUIDE, type GuideTopic } from './guide'
 import { placeCard, TOURS, useHelp } from './help'
 import './help.css'
 
-const BASIC_ICONS = { start: Rocket, workspace: LayoutPanelLeft, saving: Save, links: Link2, look: Palette }
+// A topic without an icon here falls back to the book, so a new guide topic can never crash the guide.
+const BASIC_ICONS: Record<string, LucideIcon> = {
+  start: Rocket,
+  workspace: LayoutPanelLeft,
+  tools: Wrench,
+  saving: Save,
+  spelling: SpellCheck,
+  plugins: Puzzle,
+  links: Link2,
+  together: Users,
+  search: Search,
+  look: Palette,
+}
+
+export const REPO_URL = 'https://github.com/Evelynnsrepos/Evelopment-Games-Designer'
 
 /** Mount once at the app root: user guide dialog, tours and the F1 shortcut. */
 export function HelpHost() {
   const guide = useHelp((s) => s.guide)
   const tour = useHelp((s) => s.tour)
+  const report = useHelp((s) => s.report)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -27,9 +42,50 @@ export function HelpHost() {
 
   return (
     <>
+      {report && <HelpDialog />}
       {guide && <GuideDialog topic={guide} />}
       {tour && <Tour />}
     </>
+  )
+}
+
+/** The Help button: how to report a problem, the repository and the user guide. */
+function HelpDialog() {
+  const help = useHelp.getState()
+  return (
+    <Modal onClose={help.closeReport}>
+      <div className="help-report">
+        <h3>
+          <CircleHelp size={18} /> Help
+        </h3>
+        <p>Found a bug or have an idea? Tell us on GitHub by opening an issue:</p>
+        <ol>
+          <li>Click Report an issue below and sign in to GitHub (a free account).</li>
+          <li>Give it a short title, like "Map Creator: cities vanish after undo".</li>
+          <li>Describe what you did, what happened and what you expected. Add screenshots if you can.</li>
+          <li>Mention your app version (in the window title) and your system (Windows, Mac or Linux).</li>
+        </ol>
+        <div className="help-report-actions">
+          <button className="btn btn-primary" onClick={() => void openExternalUrl(`${REPO_URL}/issues/new`)}>
+            <Bug size={15} /> Report an issue
+          </button>
+          <button className="btn" onClick={() => void openExternalUrl(REPO_URL)}>
+            <FolderGit2 size={15} /> Open the repository
+          </button>
+          <button className="btn" onClick={() => help.openGuide()}>
+            <BookOpen size={15} /> User guide (F1)
+          </button>
+        </div>
+        <p className="help-report-url">
+          <ExternalLink size={12} /> {REPO_URL}
+        </p>
+        <div className="modal-actions">
+          <button className="btn" onClick={help.closeReport}>
+            Close
+          </button>
+        </div>
+      </div>
+    </Modal>
   )
 }
 
@@ -61,7 +117,7 @@ function GuideDialog({ topic }: { topic: string }) {
           <nav className="help-guide-nav">
             <div className="help-guide-group">Basics</div>
             {Object.entries(BASICS).map(([key, t]) => {
-              const Icon = BASIC_ICONS[key as keyof typeof BASIC_ICONS]
+              const Icon = BASIC_ICONS[key] ?? BookOpen
               return (
                 <button key={key} className={key === topic ? 'active' : ''} onClick={() => help.openGuide(key)}>
                   <Icon size={14} /> {t.title}

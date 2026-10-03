@@ -202,7 +202,7 @@ export function Sidebar() {
           <Settings size={16} />
           {!collapsed && <span>Settings</span>}
         </button>
-        <button className="sidebar-row" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
+        <button className="sidebar-row" title="Help" data-tour="help" onClick={() => useHelp.getState().openReport()}>
           <CircleHelp size={16} />
           {!collapsed && <span>Help</span>}
         </button>
