@@ -75,7 +75,7 @@ export function Launcher() {
           <div className="muted">Your game projects</div>
         </div>
         <div className="launcher-actions">
-          <button className="icon-btn" title="Help (F1)" data-tour="help" onClick={() => useHelp.getState().openGuide()}>
+          <button className="icon-btn" title="Help" data-tour="help" onClick={() => useHelp.getState().openReport()}>
             <CircleHelp size={16} />
           </button>
           <button className="icon-btn" title="Settings" onClick={openSettings}>
