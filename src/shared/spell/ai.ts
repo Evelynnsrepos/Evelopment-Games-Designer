@@ -47,8 +47,3 @@ export const useAiHelper = create<AiState>()((set, get) => ({
     set({ installed: false })
   },
 }))
-
-/** Best words for `word` in `context`; `candidates` are the dictionary's suggestions for the model to choose from. */
-export function aiSuggest(word: string, context: string, candidates: string[]): Promise<string[]> {
-  return invoke<string[]>('llm_suggest', { word, context, candidates })
-}

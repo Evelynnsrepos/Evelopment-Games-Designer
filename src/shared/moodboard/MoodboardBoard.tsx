@@ -1,3 +1,4 @@
+import { commentTool } from '@/shared/reviews'
 import { ArrowUpToLine, Brush, Circle, ImagePlus, Lasso, PanelRight, Pentagon, Square, Undo2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { assetUrl, dragHasFiles, importAssetsFromDataTransfer, pickAndImportAssets, useAssetUrls, type ImportedAsset } from '@/core/assets'
@@ -97,8 +98,9 @@ export function MoodboardBoard({ type, documentId, active, label }: PanelProps &
       arrowTool({ defaults: stroke }),
       textTool({ defaults: () => (ink ? { textColor: ink } : {}) }),
       cutoutTool(() => cutKind, () => setMessage(TEXT.pickImage)),
+      commentTool(type, documentId ?? null),
     ]
-  }, [ink, cutKind])
+  }, [ink, cutKind, type, documentId])
 
   const scene = doc.data?.scene
   const onTop = !!doc.data?.alwaysOnTop

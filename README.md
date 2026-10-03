@@ -56,10 +56,13 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
 - **Click** a tool in the sidebar to show only that tool; **Shift-click** to open it next to the ones already open.
 - **Spell check** in English and German with suggestions on right-click, your own word list, and names from your project counted as correct.
-- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that picks the best spelling for the sentence.
+- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, like Grammarly, with blue underlines and one-click fixes.
 - **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
 - **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
 - **Pen size, opacity and smoothing** sliders on every drawing canvas.
+- **Search with `Ctrl+K`**: find any tool, document, item, character, town, enemy or wiki article, or run a command.
+- **Design Book**: turn the project into one game design document with a cover, contents, images and info boxes, as a web page or PDF.
+- **Review status and comments** on every tool window and entry, from Idea to Final, with a Reviews board.
 
 ### The tools
 
@@ -83,6 +86,11 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 | **Sketch** | Draw and paint like in Procreate: pressure brushes (pencil, ink, marker, paint, airbrush), layers with blend modes, alpha lock and clipping masks, selection, mirror, reference images, PNG export, and Send to other tools. |
 | **Design Language** | The look of your game on one board. Works like the Moodboard: images, cutouts, and your Sketch drawings as stickers. |
 | **Asset Pool** | Every asset the game still needs (icons, sprites, models, sounds, music…) with status and pictures. Add one for every item, character, town or enemy at once, or paste a checklist. |
+| **Wave Planner** | Waves of enemies with timing, health growth and drops, the damage per second each wave needs, and which weapons can keep up. |
+| **Quest Designer** | Quests with givers, places, objectives, rewards and chains shown as a graph, plus flags shared with the Dialogue Editor. |
+| **Dialogue Editor** | Branching conversations as a graph with speakers, choices, conditions and flags, a play-through mode, and export to JSON, Yarn Spinner or Ink. |
+| **Gacha & Loot Simulator** | Banner rates, hard and soft pity and 50/50s simulated over thousands of players, plus chest and drop table chances. |
+| **Reviews** | Everything with a status or comments on one board, with a "needs review" filter. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.
@@ -93,6 +101,10 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 ### Your data stays yours
 Each project is a normal folder of JSON files plus an `assets/` folder, saved in
 `Documents/Evelopment Games Designer/`. Easy to back up and readable, it works fully offline, and the app sends no telemetry.
+
+**Working together** connects computers directly (peer to peer, end-to-end encrypted). People you work with can see
+your IP address on direct connections, and when a direct connection is not possible the encrypted traffic goes
+through public relay servers run by n0, a US company (iroh).
 The app only goes online when you share a project: teammates' computers then connect to each other directly and encrypted,
 using public relay servers by [n0](https://n0.computer) only to find each other or when a direct connection is not possible. Relays cannot read your project.
 

@@ -120,6 +120,11 @@ export interface ConnectorNode extends NodeBase {
   label?: string
 }
 
+/** Review comment pin (v0.7); its thread lives in the Reviews data. */
+export interface CommentPinNode extends NodeBase {
+  kind: 'comment-pin'
+}
+
 export type BuiltinNode = RectNode | EllipseNode | LineNode | TextNode | NoteNode | ImageNode | ConnectorNode
 
 /** A drawing group. Layers are ordered bottom to top; `alwaysOnTop` layers render above all others (MB-6). */

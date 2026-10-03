@@ -3,6 +3,9 @@ import { useAppStore } from '@/core/state'
 import { maybeStartTour } from '../help/help'
 import { Workspace } from '../workspace/Workspace'
 import { openInitialLayout } from './actions'
+import { CommandPalette } from './CommandPalette'
+import { DesignBookHost } from '../designBook/DesignBook'
+import { PinThreadHost } from '@/shared/reviews'
 import { ProjectWallpaper, useProjectTheme } from './projectTheme'
 import { Sidebar } from './Sidebar'
 import './editor.css'
@@ -48,6 +51,9 @@ export function EditorScreen() {
       <ProjectWallpaper />
       <Sidebar />
       <Workspace />
+      <CommandPalette />
+      <DesignBookHost />
+      <PinThreadHost />
     </div>
   )
 }

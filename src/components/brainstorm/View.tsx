@@ -5,6 +5,7 @@ import { newId, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore } from '@/core/state'
 import { promptDialog } from '@/shared/dialogs'
+import { commentTool } from '@/shared/reviews'
 import {
   addNodes,
   arrowTool,
@@ -81,8 +82,9 @@ export default function View({ documentId, active }: PanelProps) {
       pinTool(c),
       stringTool(c),
       areaTool(c),
+      commentTool('brainstorm', documentId ?? null),
     ]
-  }, [color])
+  }, [color, documentId])
 
   const scene = doc.data?.scene
   const paths = useMemo(() => scene?.nodes.flatMap((n) => (n.kind === 'image' || n.kind === 'audio' ? [n.src] : [])) ?? [], [scene])

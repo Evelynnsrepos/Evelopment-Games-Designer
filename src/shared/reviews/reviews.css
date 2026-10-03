@@ -1,0 +1,120 @@
+.modal:has(.review-thread) {
+  width: min(520px, calc(100vw - 32px));
+}
+.review-title {
+  margin: 0 0 12px;
+}
+.review-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.review-statuses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.review-status {
+  padding: 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.review-status:hover {
+  border-color: var(--status);
+}
+.review-status.on {
+  background: var(--status);
+  border-color: var(--status);
+  color: #fff;
+}
+.review-comments {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.review-empty {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.review-comment {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.review-comment.resolved {
+  opacity: 0.55;
+}
+.review-comment-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.review-time {
+  color: var(--text-muted);
+}
+.review-text {
+  margin-top: 4px;
+  white-space: pre-wrap;
+  font-size: 13px;
+}
+.review-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+.review-toggle {
+  align-self: flex-start;
+  font-size: 12px;
+}
+.review-new {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.review-new textarea {
+  flex: 1;
+  resize: vertical;
+}
+.review-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 18px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  flex: none;
+}
+.review-pill:hover,
+.review-pill.set {
+  color: var(--text);
+}
+.review-pill.set {
+  border-color: var(--status, var(--border));
+}
+.review-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.elist-detail-top .review-pill,
+.item-detail-top .review-pill {
+  height: 24px;
+  font-size: 12px;
+}

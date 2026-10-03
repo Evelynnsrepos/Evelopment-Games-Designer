@@ -6,6 +6,8 @@ import { ImagePicker, openEntity } from '@/shared/entityList'
 import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
 import { droppedBy, formatDrop, nextStatName, renameStat } from './query'
+import { ProofTextarea } from '@/shared/spell'
+import { ReviewButton } from '@/shared/reviews'
 
 const T = {
   back: 'Back to list',
@@ -59,6 +61,7 @@ export function ItemDetail({
           <ArrowLeft size={16} />
         </button>
         <span style={{ flex: 1 }} />
+        <ReviewButton target={{ kind: 'entity', type: 'item', id: item.id }} title={item.name || 'Untitled item'} />
         <button
           className="icon-btn"
           title={T.duplicate}
@@ -104,7 +107,7 @@ export function ItemDetail({
         <label className="item-label" htmlFor={`item-desc-${item.id}`}>
           {T.description}
         </label>
-        <textarea
+        <ProofTextarea
           id={`item-desc-${item.id}`}
           className="input item-textarea"
           rows={3}
@@ -155,7 +158,7 @@ export function ItemDetail({
         <label className="item-label" htmlFor={`item-notes-${item.id}`}>
           {T.notes}
         </label>
-        <textarea
+        <ProofTextarea
           id={`item-notes-${item.id}`}
           className="input item-textarea"
           rows={4}

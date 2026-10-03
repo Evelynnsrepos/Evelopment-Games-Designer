@@ -1,0 +1,51 @@
+.flow-wrap {
+  overflow: auto;
+  max-width: 100%;
+}
+.flow {
+  display: block;
+}
+.flow-node {
+  cursor: pointer;
+}
+.flow-node rect:first-child {
+  fill: var(--bg-elevated);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.flow-node:hover rect:first-child {
+  stroke: var(--accent);
+}
+.flow-node.selected rect:first-child {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.flow-node.muted rect:first-child {
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+.flow-label {
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--text);
+}
+.flow-sub {
+  font-size: 11px;
+  fill: var(--text-muted);
+}
+.flow-edge {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+}
+.flow-edge.back {
+  stroke-dasharray: 5 4;
+}
+.flow-arrowhead {
+  fill: var(--text-muted);
+}
+.flow-edge-label {
+  font-size: 10px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}

@@ -6,6 +6,7 @@ import { openExternalUrl, RefPicker } from '@/shared/links'
 import type { RefProvider } from '@/shared/richtext'
 import { isUrlLink, STORY_COLORS, type StoryLink, type StoryNode } from './model'
 import { STORY_NODE_UI } from './storyNodeType'
+import { ProofTextarea } from '@/shared/spell'
 
 const DETAILS_UI = {
   heading: 'Node',
@@ -101,7 +102,7 @@ export function NodeDetails({ node, nodes, refs, onPatch, onColor, onPickImage, 
 
       <label className="story-field">
         <span>{DETAILS_UI.body}</span>
-        <textarea className="input story-body" value={node.body} rows={5} onChange={(e) => typed({ body: e.target.value })} {...fieldEvents} />
+        <ProofTextarea className="input story-body" value={node.body} rows={5} onChange={(e) => typed({ body: e.target.value })} {...fieldEvents} />
       </label>
 
       <div className="story-field">
