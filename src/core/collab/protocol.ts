@@ -177,5 +177,51 @@ export function fromBase64Url(text: string): Uint8Array {
   return out
 }
 
+// ---- server connect codes (Evelopment Games Designer Server, 0.8) ------------------
+
+/** What a server's connect code holds. The key is personal: it never goes into the shared project. */
+export interface ServerCode {
+  /** WebSocket address, e.g. `wss://games.example.com/sync`. */
+  url: string
+  /** SHA-256 of the server's own certificate (self-signed servers), lowercase hex. */
+  fingerprint: string | null
+  /** The project on the server. */
+  serverProjectId: string
+  projectName: string
+  serverName: string
+  key: string
+}
+
+const SERVER_PREFIX = 'EGS1-'
+
+export function isServerCode(code: string): boolean {
+  return code.trim().startsWith(SERVER_PREFIX)
+}
+
+export function decodeServerCode(code: string): ServerCode | null {
+  const text = code.trim().replace(/\s+/g, '')
+  if (!text.startsWith(SERVER_PREFIX)) return null
+  try {
+    const raw = JSON.parse(decoder.decode(fromBase64Url(text.slice(SERVER_PREFIX.length)))) as Record<string, unknown>
+    const { u, f, p, n, s, k } = raw
+    if (typeof u !== 'string' || !/^wss?:\/\//.test(u) || typeof p !== 'string' || typeof k !== 'string' || !k.startsWith('egd-key-')) return null
+    if (f !== null && f !== undefined && (typeof f !== 'string' || !/^[0-9a-f]{64}$/.test(f))) return null
+    return { url: u, fingerprint: (f as string | null | undefined) ?? null, serverProjectId: p, projectName: String(n ?? ''), serverName: String(s ?? ''), key: k }
+  } catch {
+    return null
+  }
+}
+
+export function encodeServerCode(c: ServerCode): string {
+  const json = JSON.stringify({ u: c.url, f: c.fingerprint, p: c.serverProjectId, n: c.projectName, s: c.serverName, k: c.key })
+  return SERVER_PREFIX + toBase64Url(encoder.encode(json))
+}
+
+/** The device id for a key, the same as the server computes: `k-` + the first 32 hex digits of its SHA-256. */
+export async function deviceIdForKey(key: string): Promise<string> {
+  const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', encoder.encode(key) as BufferSource))
+  return 'k-' + [...hash.slice(0, 16)].map((b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 /** Asset paths peers may ask for: `assets/<images|audio>/<uuid>.<ext>`, nothing else. */
 export const ASSET_PATH = /^assets\/(images|audio)\/[0-9a-fA-F-]{36}\.[a-z0-9]{1,5}$/
