@@ -91,6 +91,13 @@ export const BASICS: Record<string, GuideTopic> = {
       'Making a new invite code stops older codes from working. Removing someone from the list stops their computer from connecting; they keep their copy.',
     ],
   },
+  search: {
+    title: 'Search (Ctrl+K) and the Design Book',
+    body: [
+      'Press Ctrl+K (Cmd+K on a Mac) anywhere in a project to search tools, documents, items, characters, towns, enemies, wiki articles and commands like Settings. Enter opens the result alone, Shift+Enter opens it next to the open tools.',
+      'Design Book at the bottom of the sidebar turns your project into one game design document with a cover, contents, images and info boxes. Pick the parts and entries to include, then save it as a web page or print it; choose Save as PDF as the printer for a PDF.',
+    ],
+  },
   look: {
     title: 'Project look (theming)',
     body: [
@@ -247,6 +254,49 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     title: 'Resource Calculator',
     body: [
       'Work out how many resources and how much play time a goal takes, using level-up costs and enemy drop rates.',
+    ],
+  },
+  'wave-planner': {
+    title: 'Wave Planner',
+    body: [
+      'Plan the waves of a wave or tower-defense mode. Set the number of waves, how long each one lasts and how fast enemy health grows: by a percent, a flat amount or by the level growth set on each enemy.',
+      'Add enemies from the Enemy List or as custom enemies, with how many come in the first wave, how many more each wave, and from which to which wave. "Every 5 waves" makes a boss wave.',
+      'The chart and the wave-by-wave table show total health, the damage per second needed to clear each wave in time, and the expected drops.',
+      'Pick weapons from the Item List to see up to which wave each one is strong enough.',
+    ],
+  },
+  quests: {
+    title: 'Quest Designer',
+    body: [
+      'Write quests with a type (main, side, daily, event), a quest giver, a place, a level, objectives and rewards in XP, gold and items.',
+      'Objectives point at your characters, enemies, items and towns: talk to, defeat, collect, go to, or anything else in your own words.',
+      'Requires links quests into chains. Quest chains shows them as a graph, and the app stops you from making a loop. Each quest also shows what the whole chain up to it gives.',
+      'Flags are game-state values like met_the_king or reputation. A quest can start only if a flag has a value and set flags when it is done. The Dialogue Editor uses the same flags.',
+    ],
+  },
+  dialogue: {
+    title: 'Dialogue Editor',
+    body: [
+      'A conversation is a set of lines, shown as a graph. Each line has a speaker (a character or any name) and what is said, then either goes on to the next line, ends, or offers the player choices.',
+      'Lines and choices can depend on flags (only said if, only offered if) and change flags when said or picked. Lines that nothing leads to are marked.',
+      'Play runs through the conversation like the player would, showing the flags as they change.',
+      'Export saves the conversation as JSON, Yarn Spinner or Ink, ready for your engine.',
+    ],
+  },
+  gacha: {
+    title: 'Gacha & Loot Simulator',
+    body: [
+      'Banner: set the tiers and their rates (or use the project rarities), hard and soft pity, the featured chance and the guarantee after losing a 50/50, and how many featured copies you want.',
+      'The simulator plays thousands of players and shows the average pulls, how many pulls 50, 90 and 99% of players need, what that costs, and a chart of players done by pull.',
+      'Chest / drop table: list what can drop, either one entry picked by weight or each entry with its own chance, or load an enemy drop table. Mark one entry as the target to see its chance per opening and how many openings a 50, 90 or 99% chance takes.',
+    ],
+  },
+  reviews: {
+    title: 'Reviews',
+    body: [
+      'Every tool window and every item, character, town and enemy has a small Review button. Give it a status (Idea, Draft, In review, Approved, Final) or write a comment.',
+      'The Reviews tool shows everything with a status or comments as a board. Needs review only shows what is waiting for review or has open comments. Click a card to read and answer the comments, or Open to jump there.',
+      'Resolve a comment when it is done; resolved comments are hidden until you show them. When working together, everyone sees the same statuses and comments.',
     ],
   },
 }
