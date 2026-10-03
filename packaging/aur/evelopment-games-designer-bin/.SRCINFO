@@ -1,6 +1,6 @@
 pkgbase = evelopment-games-designer-bin
 	pkgdesc = All-in-one game design tool: writing, wiki, maps, boards, lists and calculators
-	pkgver = 0.6.0
+	pkgver = 0.7.0
 	pkgrel = 1
 	url = https://github.com/Evelynnsrepos/Evelopment-Games-Designer
 	arch = x86_64
@@ -10,10 +10,10 @@ pkgbase = evelopment-games-designer-bin
 	depends = hicolor-icon-theme
 	provides = evelopment-games-designer
 	conflicts = evelopment-games-designer
-	noextract = evelopment-games-designer-0.6.0.deb
-	source = evelopment-games-designer-0.6.0.deb::https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/download/v0.6.0/Evelopment.Games.Designer_0.6.0_amd64.deb
-	source = LICENSE-0.6.0::https://raw.githubusercontent.com/Evelynnsrepos/Evelopment-Games-Designer/v0.6.0/LICENSE
-	sha256sums = c17f29345fbe9c16c2d46592a7f029c944f29e283758d80fc62fa493be4ded7b
+	noextract = evelopment-games-designer-0.7.0.deb
+	source = evelopment-games-designer-0.7.0.deb::https://github.com/Evelynnsrepos/Evelopment-Games-Designer/releases/download/v0.7.0/Evelopment.Games.Designer_0.7.0_amd64.deb
+	source = LICENSE-0.7.0::https://raw.githubusercontent.com/Evelynnsrepos/Evelopment-Games-Designer/v0.7.0/LICENSE
+	sha256sums = ce8c586b675778989639d25b7957d0facaadb5c0d575cc672ff77a192b0549ed
 	sha256sums = 3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986
 
 pkgname = evelopment-games-designer-bin
