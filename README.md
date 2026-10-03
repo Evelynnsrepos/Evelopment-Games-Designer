@@ -86,7 +86,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.
-- **Rarities** with colors, borders and icons (Common to Legendary, or your own) show on cards, tables, pages, the wiki and links. Any dropdown category can get looks like that.
+- **Rarities**: as many rarity systems as you like (Rarity, Tier, Quality…) with colors, borders, icons or your own pictures, star or number ratings, and your own fields like drop rates. They show on cards, tables, pages, the wiki and links.
 - `[[links]]` in the Wiki, Writer, Story and Timeline point at articles and entities, and follow renames.
 - Before you delete something, the app shows every place it is used.
 

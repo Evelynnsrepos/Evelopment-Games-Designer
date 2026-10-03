@@ -1,5 +1,6 @@
 import { Crown, Diamond, Flame, Gem, Heart, Shield, Skull, Sparkles, Star, Zap, type LucideIcon } from 'lucide-react'
 import type { CSSProperties } from 'react'
+import { useAssetUrl } from '@/core/assets'
 import { categoryAppliesTo, type Category, type CategoryValue, type EntityBase, type EntityType, type OptionStyle, type StyleDisplay } from '@/core/model'
 
 /**
@@ -97,11 +98,18 @@ export function frameStyle(style: OptionStyle | null | undefined): CSSProperties
 }
 
 /** A small colored pill with the option's icon and name. */
-export function StyleBadge({ style, label, small, rating }: { style: OptionStyle; label?: string; small?: boolean; rating?: string }) {
+/** The option's own picture, else its built-in icon, else nothing. */
+function StyleIcon({ style, size }: { style: OptionStyle; size: number }) {
+  const url = useAssetUrl(style.image)
+  if (style.image) return url ? <img src={url} alt="" width={size + 2} height={size + 2} className="cat-style-img" /> : null
   const Icon = style.icon ? STYLE_ICONS[style.icon] : null
+  return Icon ? <Icon size={size} color={style.color} className="cat-style-mark" /> : null
+}
+
+export function StyleBadge({ style, label, small, rating }: { style: OptionStyle; label?: string; small?: boolean; rating?: string }) {
   return (
     <span className={`cat-style-badge${small ? ' small' : ''}`} style={{ color: style.color, borderColor: `${style.color}88`, background: `${style.color}1f` }}>
-      {Icon && <Icon size={small ? 11 : 13} />}
+      <StyleIcon style={style} size={small ? 11 : 13} />
       {label}
       {rating && <span className="cat-style-rating">{rating}</span>}
     </span>
@@ -110,6 +118,14 @@ export function StyleBadge({ style, label, small, rating }: { style: OptionStyle
 
 /** Just the colored icon (or a dot), for tight spots like links and table names. */
 export function StyleMark({ style }: { style: OptionStyle }) {
-  const Icon = style.icon ? STYLE_ICONS[style.icon] : null
-  return Icon ? <Icon size={12} color={style.color} className="cat-style-mark" /> : <span className="cat-style-dot" style={{ background: style.color }} />
+  return style.icon || style.image ? <StyleIcon style={style} size={12} /> : <span className="cat-style-dot" style={{ background: style.color }} />
+}
+
+/** "Drop rate %: 5" lines for an option's own fields. */
+export function fieldLines(category: Category, style: OptionStyle | null | undefined): { label: string; value: string }[] {
+  if (!style?.values) return []
+  return (category.fields ?? [])
+    .map((f) => ({ label: f.name, value: style.values?.[f.id] }))
+    .filter((x): x is { label: string; value: string | number } => x.value !== null && x.value !== undefined && x.value !== '')
+    .map((x) => ({ label: x.label, value: String(x.value) }))
 }

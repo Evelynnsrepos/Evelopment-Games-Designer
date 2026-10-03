@@ -110,6 +110,17 @@ export interface OptionStyle {
   icon: string | null
   /** Rating, e.g. 1 to 5 stars or any number like 4.5; null = none. */
   rating?: number | null
+  /** Your own picture as the icon (`assets/images/<uuid>.png`); wins over `icon`. */
+  image?: AssetPath | null
+  /** Values of the category's own fields (`Category.fields`), keyed by field id. */
+  values?: Record<Id, string | number | null>
+}
+
+/** A field every option of a styled category has, e.g. "Drop rate %" or "Sell multiplier". */
+export interface StyleField {
+  id: Id
+  name: string
+  kind: 'number' | 'text'
 }
 
 /** How a styled category shows its options (the Rarities window). */
@@ -130,6 +141,8 @@ export interface Category {
   styles?: Record<string, OptionStyle>
   /** Missing = borders on, no rating. */
   display?: StyleDisplay
+  /** Your own fields for every option (rarity systems), shown on pages and in the wiki. */
+  fields?: StyleField[]
   /** Which entities show this category, per entity type (IT-5). */
   appliesTo: Partial<Record<EntityType, CategoryScope>>
   builtIn: boolean

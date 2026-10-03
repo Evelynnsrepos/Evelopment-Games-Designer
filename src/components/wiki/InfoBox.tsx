@@ -4,7 +4,7 @@ import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
 import { openEntity } from '@/shared/entityList'
 import { categoriesFor, ENTITY_LABELS, formatValue } from '@/shared/categories'
-import { entityLook, frameStyle, ratingText, StyleBadge } from '@/shared/categories'
+import { entityLook, fieldLines, frameStyle, ratingText, StyleBadge } from '@/shared/categories'
 
 const UI = {
   deleted: (type: string) => `The ${type.toLowerCase()} that this article was pulled from has been deleted.`,
@@ -51,6 +51,8 @@ export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) 
   }
   const stats = entity.type === 'item' || entity.type === 'enemy' ? Object.entries(entity.stats) : []
   const look = entityLook(categories, kind, entity)
+  // The rarity's own fields (drop rate, sell price…) show as rows too.
+  if (look) for (const f of fieldLines(look.category, look.style)) rows.push(f)
 
   return (
     <aside className="wiki-infobox" aria-label={`${typeName} info`}>

@@ -68,8 +68,8 @@ export const BASICS: Record<string, GuideTopic> = {
     body: [
       'Type [[ in the Wiki, Writer, Story Branch Writer or Timeline to link to an article, item, character, town or enemy. Links follow renames.',
       'Custom categories such as Element or Faction are created once and shared by the Item, Character, Town and Enemy lists.',
-      'Rarities: the Rarity category comes with colors, borders and icons from Common to Legendary. Items and characters show them on their cards, in tables, on their page, in the wiki and in [[links]].',
-      'Open Categories to change the looks: pick a color, a border (solid, double or glow) and an icon for each option, or add your own rarities. Tick "Colors, borders and icons" to give any dropdown (like Element) looks too.',
+      'Rarities: click Rarities at the bottom of the sidebar. Rarity comes ready from Common to Legendary; change names, colors, borders (or switch them off), icons or your own pictures, and a rating as 1 to 5 stars or a number.',
+      'Add more systems next to Rarity, like Tier or Quality, each on the lists you choose, and give a system your own fields (drop rate, sell price…) to fill in per rarity. Rarities show on cards, in tables, on pages, in the wiki and in [[links]].',
       'Before you delete something, the app shows every place it is used, so nothing breaks silently.',
     ],
   },
