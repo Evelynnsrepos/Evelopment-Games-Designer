@@ -183,6 +183,14 @@ function CategoryEditor({
       {kind !== category.kind && valueCount > 0 && (
         <div className="cat-hint">Values that do not fit the new type are hidden, not deleted. Switch back to see them again.</div>
       )}
+      {isRarity(category) && (
+        <div className="cat-hint cat-open-rarities">
+          Ratings, borders and more are in the Rarities window.{' '}
+          <button type="button" className="btn btn-ghost" onClick={() => import('./RarityEditor').then((m) => m.openRarities())}>
+            Open Rarities…
+          </button>
+        </div>
+      )}
       {kind === 'dropdown' && (
         <div className="cat-form-row">
           <span>Options</span>

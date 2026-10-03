@@ -6,6 +6,7 @@ import { EditorScreen } from '@/shell/editor/EditorScreen'
 import { Launcher } from '@/shell/launcher/Launcher'
 import { NewProjectWizard } from '@/shell/launcher/NewProjectWizard'
 import { useAiHelper } from '@/shared/spell'
+import { RaritiesHost } from '@/shared/categories'
 import { DialogHost } from '@/shared/ui'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
@@ -41,6 +42,7 @@ export default function App() {
       <DialogHost />
       <HelpHost />
       <SharingEndedHost />
+      <RaritiesHost />
       <SettingsHost />
     </>
   )

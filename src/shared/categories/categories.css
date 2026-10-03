@@ -283,3 +283,116 @@
 .cat-option:has(.cat-style-controls) {
   grid-template-columns: minmax(70px, 1fr) auto auto auto auto;
 }
+
+.cat-style-rating {
+  margin-left: 2px;
+  letter-spacing: -1px;
+  opacity: 0.9;
+}
+/* Rarities window */
+.modal:has(.rarity) {
+  width: min(900px, calc(100vw - 32px));
+}
+.rarity {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 82vh;
+  overflow: auto;
+}
+.rarity-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.rarity-head h3 {
+  margin: 0;
+}
+.rarity-settings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  align-items: center;
+}
+.rarity-setting {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.rarity-setting > span:first-child {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.rarity-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.rarity-table {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.rarity-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.rarity-row > .input {
+  width: auto;
+}
+.rarity-row > input.input:not(.rarity-number) {
+  flex: 1 1 120px;
+  min-width: 90px;
+}
+.rarity-labels {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rarity-move {
+  display: inline-flex;
+  flex-direction: column;
+}
+.rarity-move .icon-btn {
+  padding: 0;
+  height: 14px;
+}
+.rarity-color {
+  width: 34px;
+  height: 30px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.rarity-number {
+  width: 80px;
+}
+.rarity-stars {
+  display: inline-flex;
+  color: #f5c518;
+}
+.rarity-stars button {
+  border: none;
+  background: none;
+  color: inherit;
+  padding: 1px;
+  cursor: pointer;
+}
+.rarity-preview {
+  display: inline-flex;
+  padding: 4px 6px;
+  border-radius: 6px;
+  min-width: 140px;
+}
+.rarity-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.cat-open-rarities {
+  margin-bottom: 6px;
+}

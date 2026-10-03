@@ -12,7 +12,7 @@ import {
   isUsedFor,
   type CategoryFilter,
 } from '@/shared/categories'
-import { entityLook, frameStyle, StyleBadge, StyleMark, styleOf } from '@/shared/categories'
+import { entityLook, frameStyle, StyleBadge, ratingText, StyleMark, styleOf } from '@/shared/categories'
 import { confirmDialog } from '@/shared/dialogs'
 import { AssetImage } from '@/shared/AssetImage'
 import { confirmEntityDelete } from '@/shared/entityDelete'
@@ -477,7 +477,7 @@ function ItemGrid({ items, selected, focusId, onSelect, onToggle }: ListProps) {
                   const style = styleOf(c, item.categories[c.id])
                   return style ? (
                     <span key={c.id} title={`${c.name}: ${v}`}>
-                      <StyleBadge style={style} label={v} small />
+                      <StyleBadge style={style} label={v} small rating={ratingText(c, style)} />
                     </span>
                   ) : (
                     <span key={c.id} className="item-chip" title={`${c.name}: ${v}`}>

@@ -4,7 +4,7 @@ import { useProjectStore } from '@/core/state'
 import { AssetImage } from '@/shared/AssetImage'
 import { openEntity } from '@/shared/entityList'
 import { categoriesFor, ENTITY_LABELS, formatValue } from '@/shared/categories'
-import { entityLook, frameStyle, StyleBadge } from '@/shared/categories'
+import { entityLook, frameStyle, ratingText, StyleBadge } from '@/shared/categories'
 
 const UI = {
   deleted: (type: string) => `The ${type.toLowerCase()} that this article was pulled from has been deleted.`,
@@ -58,7 +58,7 @@ export function InfoBox({ kind, entityId }: { kind: EntityType; entityId: Id }) 
         <strong style={look ? { color: look.style.color } : undefined}>{entity.name || 'Untitled'}</strong>
         <span className="wiki-infobox-type">{typeName}</span>
       </div>
-      {look && <StyleBadge style={look.style} label={look.value} />}
+      {look && <StyleBadge style={look.style} label={look.value} rating={ratingText(look.category, look.style)} />}
       <div className="wiki-infobox-image" style={frameStyle(look?.style)}>
         <AssetImage path={entity.image} alt={entity.name} size={180} />
       </div>

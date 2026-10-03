@@ -20,7 +20,7 @@ import { isTyping } from './dom'
 import { takeEntityFocus, useEntityNavigation } from './navigation'
 import { DEFAULT_QUERY, queryEntities, rangeBetween, type EntityQuery, type SortKey, type StatFilter } from './query'
 import './entityList.css'
-import { entityLook, frameStyle, StyleBadge, StyleMark, styleOf } from '../categories/styles'
+import { entityLook, frameStyle, StyleBadge, ratingText, StyleMark, styleOf } from '../categories/styles'
 
 /** User-visible words for one list; `one`/`many` are lower case ("character", "characters"). */
 export interface ListText {
@@ -545,7 +545,7 @@ function Grid<T extends EntityType>({ type, text, entities, selected, focusId, o
                   const style = styleOf(c, entity.categories[c.id])
                   return style ? (
                     <span key={c.id} title={`${c.name}: ${v}`}>
-                      <StyleBadge style={style} label={v} small />
+                      <StyleBadge style={style} label={v} small rating={ratingText(c, style)} />
                     </span>
                   ) : (
                     <span key={c.id} className="elist-chip" title={`${c.name}: ${v}`}>

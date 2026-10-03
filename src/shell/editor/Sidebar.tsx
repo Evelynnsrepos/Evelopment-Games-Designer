@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Settings, Trash2, Users } from 'lucide-react'
+import { ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Gem, Settings, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -8,6 +8,7 @@ import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, repl
 import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
+import { openRarities } from '@/shared/categories'
 import { usePlugins } from '../plugins/plugins'
 import { ProjectThemeDialog } from './projectTheme'
 import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
@@ -188,6 +189,10 @@ export function Sidebar() {
           {!collapsed && <span>Project look</span>}
         </button>
         {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
+        <button className="sidebar-row" title="Rarities: colors, borders, icons and ratings" onClick={openRarities}>
+          <Gem size={16} />
+          {!collapsed && <span>Rarities</span>}
+        </button>
         <button className="sidebar-row" title="Settings" onClick={openSettings}>
           <Settings size={16} />
           {!collapsed && <span>Settings</span>}

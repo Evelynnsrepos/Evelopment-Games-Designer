@@ -1,6 +1,6 @@
 import { Crown, Diamond, Flame, Gem, Heart, Shield, Skull, Sparkles, Star, Zap, type LucideIcon } from 'lucide-react'
 import type { CSSProperties } from 'react'
-import { categoryAppliesTo, type Category, type CategoryValue, type EntityBase, type EntityType, type OptionStyle } from '@/core/model'
+import { categoryAppliesTo, type Category, type CategoryValue, type EntityBase, type EntityType, type OptionStyle, type StyleDisplay } from '@/core/model'
 
 /**
  * Option styles (v0.6 rarities): a dropdown category can give each option a
@@ -31,12 +31,29 @@ export const STYLE_ICONS: Record<string, LucideIcon> = {
 
 /** Pre-saved rarity looks, used for the built-in Rarity category (also in projects made before v0.6). */
 export const DEFAULT_RARITY_STYLES: Record<string, OptionStyle> = {
-  Common: { color: '#9aa0a6', border: 'none', icon: null },
-  Uncommon: { color: '#30a46c', border: 'solid', icon: null },
-  Rare: { color: '#3e8ef7', border: 'solid', icon: 'gem' },
-  Epic: { color: '#a855f7', border: 'double', icon: 'sparkles' },
-  Legendary: { color: '#f5a623', border: 'glow', icon: 'crown' },
-  Mythic: { color: '#e5484d', border: 'glow', icon: 'flame' },
+  Common: { color: '#9aa0a6', border: 'none', icon: null, rating: 1 },
+  Uncommon: { color: '#30a46c', border: 'solid', icon: null, rating: 2 },
+  Rare: { color: '#3e8ef7', border: 'solid', icon: 'gem', rating: 3 },
+  Epic: { color: '#a855f7', border: 'double', icon: 'sparkles', rating: 4 },
+  Legendary: { color: '#f5a623', border: 'glow', icon: 'crown', rating: 5 },
+  Mythic: { color: '#e5484d', border: 'glow', icon: 'flame', rating: 5 },
+}
+
+export const DEFAULT_DISPLAY: StyleDisplay = { borders: true, rating: 'none' }
+
+/** How a styled category shows its options; the built-in Rarity shows stars unless changed. */
+export function displayOf(category: Category): StyleDisplay {
+  return category.display ?? (isRarity(category) ? { borders: true, rating: 'stars' } : DEFAULT_DISPLAY)
+}
+
+/** "★★★★☆" for stars (1 to 5, halves round up), "4.5" for numbers, '' when hidden or unset. */
+export function ratingText(category: Category, style: OptionStyle | null | undefined): string {
+  const r = style?.rating
+  const mode = displayOf(category).rating
+  if (r === null || r === undefined || mode === 'none') return ''
+  if (mode === 'number') return String(Math.round(r * 100) / 100)
+  const n = Math.max(0, Math.min(5, Math.round(r)))
+  return '★'.repeat(n) + '☆'.repeat(5 - n)
 }
 
 export const isRarity = (c: Category) => c.builtIn && c.name === 'Rarity'
@@ -65,7 +82,8 @@ export function entityLook(categories: Category[], type: EntityType, entity: Pic
   for (const c of styled) {
     const v = entity.categories[c.id]
     const style = styleOf(c, v)
-    if (style) return { style, value: v as string, category: c }
+    // Borders switched off in the Rarities window: keep the color and icon, drop the frame.
+    if (style) return { style: displayOf(c).borders ? style : { ...style, border: 'none' }, value: v as string, category: c }
   }
   return null
 }
@@ -79,12 +97,13 @@ export function frameStyle(style: OptionStyle | null | undefined): CSSProperties
 }
 
 /** A small colored pill with the option's icon and name. */
-export function StyleBadge({ style, label, small }: { style: OptionStyle; label?: string; small?: boolean }) {
+export function StyleBadge({ style, label, small, rating }: { style: OptionStyle; label?: string; small?: boolean; rating?: string }) {
   const Icon = style.icon ? STYLE_ICONS[style.icon] : null
   return (
     <span className={`cat-style-badge${small ? ' small' : ''}`} style={{ color: style.color, borderColor: `${style.color}88`, background: `${style.color}1f` }}>
       {Icon && <Icon size={small ? 11 : 13} />}
       {label}
+      {rating && <span className="cat-style-rating">{rating}</span>}
     </span>
   )
 }

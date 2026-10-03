@@ -108,6 +108,16 @@ export interface OptionStyle {
   border: 'none' | 'solid' | 'double' | 'glow'
   /** One of the icon names in shared/categories/styles.tsx, or null. */
   icon: string | null
+  /** Rating, e.g. 1 to 5 stars or any number like 4.5; null = none. */
+  rating?: number | null
+}
+
+/** How a styled category shows its options (the Rarities window). */
+export interface StyleDisplay {
+  /** Frame cards and pictures with the option's border. */
+  borders: boolean
+  /** Show each option's rating as stars, as a number, or not at all. */
+  rating: 'none' | 'stars' | 'number'
 }
 
 export interface Category {
@@ -118,6 +128,8 @@ export interface Category {
   options: string[]
   /** Colors, borders and icons per option (dropdowns only). Missing = plain options. */
   styles?: Record<string, OptionStyle>
+  /** Missing = borders on, no rating. */
+  display?: StyleDisplay
   /** Which entities show this category, per entity type (IT-5). */
   appliesTo: Partial<Record<EntityType, CategoryScope>>
   builtIn: boolean
