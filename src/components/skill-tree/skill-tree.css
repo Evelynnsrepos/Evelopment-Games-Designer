@@ -1,0 +1,127 @@
+.skills {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.skills-head {
+  padding: 0 12px;
+}
+.skills-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.skills-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.skills-mode {
+  align-self: center;
+}
+.skills-total {
+  margin-left: auto;
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.skills-total.over {
+  color: var(--danger);
+}
+.skills-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.skills-graph {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 12px;
+}
+.skills-empty {
+  max-width: 420px;
+}
+.skills-side {
+  flex: 0 0 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+.skills-side h3 {
+  margin: 0;
+}
+.skills-side p {
+  margin: 0;
+}
+.skills-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.skills-field .input {
+  color: var(--text);
+}
+.skills-field.grow {
+  flex: 1;
+}
+.skills-detail-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.skills-image {
+  width: 72px;
+  flex: none;
+}
+.skills-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.skills-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.skills-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 4px 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.skills-link {
+  border: none;
+  background: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+}
+.skills-rank {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.skills-message {
+  color: var(--danger);
+  font-size: 13px;
+}
+.skills-delete {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

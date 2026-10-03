@@ -324,6 +324,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     ],
     tips: ['Scroll to zoom and drag the empty space to move around.'],
   },
+  'skill-tree': {
+    title: 'Skill Tree',
+    body: [
+      'Build skill and talent trees. Each skill has a type (active or passive), an effect, a max rank, a cost in points per rank, and can need other skills first or a number of points spent in the tree.',
+      'The tree is drawn as a graph from your "Needs first" links. Click a skill to edit it; the app stops you from making a loop.',
+      'Plan a build tests the tree like a player: set the points at the start, per level and the level, then click skills and add or take back ranks. The planner explains why a rank is not possible yet.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

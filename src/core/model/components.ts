@@ -30,6 +30,7 @@ export const COMPONENT_TYPES = [
   'spreadsheet',
   'principles',
   'gameplay-loop',
+  'skill-tree',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]
