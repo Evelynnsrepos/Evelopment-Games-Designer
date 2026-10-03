@@ -2,7 +2,7 @@
  * The only thing the collaboration protocol needs from the network: open
  * authenticated connections to other devices and move bytes. iroh (desktop),
  * BroadcastChannel (browser dev mode) and an in-memory hub (tests) implement
- * it; a server transport could later be added the same way.
+ * it, and `serverTransport.ts` connects to an Evelopment server.
  */
 export type ConnId = number
 
@@ -12,7 +12,7 @@ export type TransportEvent =
   | { type: 'closed'; conn: ConnId; reason?: string }
 
 export interface CollabTransport {
-  readonly kind: 'iroh' | 'browser' | 'memory'
+  readonly kind: 'iroh' | 'browser' | 'memory' | 'server'
   /** Start listening. Returns this device's id, which other devices dial. */
   start(onEvent: (event: TransportEvent) => void): Promise<string>
   /** Full address to put in an invite (may be just the id). */

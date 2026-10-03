@@ -23,6 +23,10 @@ in their projects; it comes back when the plugin is installed again.
 
 Plugins live in the app data folder under `plugins/<id>/`.
 
+**From a server (0.8).** A project on an Evelopment server can offer plugins its admin installed there. The app shows
+"<server> offers plugins" with a **Review** button; each plugin goes through the same warning (with a note that the server's
+admin chose it). Nothing installs by itself, and a plugin that changed on the server asks again.
+
 ## Files
 
 ```

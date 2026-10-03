@@ -25,8 +25,9 @@ import { attachPresence } from './presence'
 import { invalidate, readTop } from './bridge'
 import { BrowserTransport } from './browserTransport'
 import { CollabNetwork, type JoinRequest, type Peer, type Profile } from './network'
-import { decodeInvite, encodeInvite, newSecret, type Invite, type Reject } from './protocol'
+import { decodeInvite, decodeServerCode, encodeInvite, encodeServerCode, isServerCode, newSecret, type Invite, type Reject, type ServerCode } from './protocol'
 import { CollabSession, type Member } from './session'
+import { ServerAuthError, ServerTransport, type ServerPlugin, type ServerWelcome } from './serverTransport'
 import { TauriTransport } from './tauriTransport'
 import type { CollabTransport } from './transport'
 
@@ -57,6 +58,10 @@ interface CollabState {
   hostId: string
   /** The host ended the shared project; the shell asks whether to keep this computer's copy. */
   ended: { root: string; projectName: string; host: string } | null
+  /** Working through an Evelopment server (0.8) instead of peer to peer. */
+  server: { name: string; role: 'view' | 'write' } | null
+  /** Plugins the server offers (the shell compares them with what is installed and asks). */
+  serverPlugins: ServerPlugin[]
 }
 
 const PROFILE_KEY = 'egd.collab.profile'
@@ -86,6 +91,8 @@ export const useCollab = create<CollabState>()(() => ({
   isHost: false,
   hostId: '',
   ended: null,
+  server: null,
+  serverPlugins: [],
 }))
 
 function updateRoles(session: CollabSession, selfId = useCollab.getState().selfId) {
@@ -131,6 +138,8 @@ interface Active {
   network: CollabNetwork
   assets: AssetSync
   unsubscribe: () => void
+  /** Set when working through a server. */
+  server: ServerTransport | null
 }
 let active: Active | null = null
 
@@ -153,11 +162,17 @@ export function sharedRichText(name: string, seedKey: string, seed: (fragment: Y
   return { fragment: a.session.richText(name, seedKey, seed), awareness: a.network.awareness }
 }
 
-async function goOnline(session: CollabSession) {
+async function goOnline(session: CollabSession, code: ServerCode | null = null) {
+  const server = code
+    ? new ServerTransport(code, {
+        authenticated: (w) => onServerWelcome(w),
+        authError: (e) => onServerRefused(session, code, e),
+      })
+    : null
   const network = new CollabNetwork(
-    makeTransport(),
+    server ?? makeTransport(),
     session.doc,
-    { kind: 'member', session, onJoinRequest: (r) => askToJoin(r) },
+    { kind: 'member', session, onJoinRequest: (r) => askToJoin(r), server: code?.url },
     useCollab.getState().profile,
     {
       peers: (peers) => {
@@ -168,8 +183,9 @@ async function goOnline(session: CollabSession) {
         if (!byUs) useCollab.setState({ error: rejectMessage(reason, peer) })
       },
       closed: (message, peer) => {
-        // Only the host can end the project for everyone.
-        if (message.reason !== 'host-closed' || peer.remoteId !== session.hostId || useCollab.getState().isHost) return
+        // Only the host can end the project for everyone (on a server: its admin).
+        const fromHost = server ? true : peer.remoteId === session.hostId
+        if (message.reason !== 'host-closed' || !fromHost || useCollab.getState().isHost) return
         const projectName = useProjectStore.getState().meta?.name ?? ''
         const host = peer.name || session.members.find((m) => m.id === peer.remoteId)?.name || 'The host'
         void goOffline().then(() => useCollab.setState({ ended: { root: session.root, projectName, host } }))
@@ -183,8 +199,8 @@ async function goOnline(session: CollabSession) {
     updateRoles(session)
     network.dropNonMembers()
   })
-  active = { session, network, assets, unsubscribe }
-  useCollab.setState({ shared: true, members: session.members, error: null })
+  active = { session, network, assets, unsubscribe, server }
+  useCollab.setState({ shared: true, members: session.members, error: null, server: code && { name: code.serverName, role: 'write' } })
   try {
     await network.start()
     attachPresence(network.awareness)
@@ -200,7 +216,7 @@ async function goOffline() {
   const a = active
   active = null
   setCollabBinding(null)
-  useCollab.setState({ shared: false, online: false, peers: [], members: [], error: null, isHost: false, hostId: '' })
+  useCollab.setState({ shared: false, online: false, peers: [], members: [], error: null, isHost: false, hostId: '', server: null, serverPlugins: [] })
   attachPresence(null)
   if (!a) return
   a.unsubscribe()
@@ -231,7 +247,7 @@ export function installCollaboration() {
       }
       setCollabBinding(session)
       session.pullAll()
-      void goOnline(session)
+      void goOnline(session, await readServerCode(root))
     },
     async closing() {
       // The host closing the project ends it for everyone who is connected.
@@ -267,6 +283,7 @@ export async function shareProject(): Promise<string> {
 export async function inviteCode(): Promise<string> {
   const a = active
   if (!a) throw new Error('This project is not shared')
+  if (a.server) throw new Error('New people get a connect code from the server’s admin page.')
   const info = a.session.shareInfo!
   const meta = useProjectStore.getState().meta
   const address = await a.network.address()
@@ -329,7 +346,12 @@ export interface JoinHandle {
   cancel(): void
 }
 
+/** An invite code (peer to peer) or a server connect code. */
 export function parseInvite(code: string): Invite | null {
+  if (isServerCode(code)) {
+    const c = decodeServerCode(code)
+    return c && { projectId: '', projectName: c.projectName, address: c.url, secret: '' }
+  }
   return decodeInvite(code)
 }
 
@@ -339,7 +361,8 @@ export function parseInvite(code: string): Invite | null {
  * returns that folder (open it with `useProjectStore.getState().open`).
  */
 export function joinProject(code: string, parentDir?: string, onWaiting?: () => void): JoinHandle {
-  const invite = decodeInvite(code)
+  const serverCode = isServerCode(code) ? decodeServerCode(code) : null
+  const invite = parseInvite(code)
   if (!invite) return { done: Promise.reject(new Error('That is not a valid invite code.')), cancel() {} }
   const doc = new Y.Doc()
   doc.on('afterTransaction', invalidate)
@@ -349,17 +372,32 @@ export function joinProject(code: string, parentDir?: string, onWaiting?: () => 
 
   const done = new Promise<string>((resolve, reject) => {
     settle = { resolve, reject }
-    network = new CollabNetwork(makeTransport(), doc, { kind: 'join', invite }, useCollab.getState().profile, {
+    const transport = serverCode
+      ? new ServerTransport(serverCode, {
+          authenticated: (w) => {
+            // The server tells us the project's id; an empty project has nothing to join yet.
+            if (!w.projectId || w.empty) reject(new Error(EMPTY_SERVER_PROJECT))
+            else invite.projectId = w.projectId
+          },
+        })
+      : makeTransport()
+    network = new CollabNetwork(transport, doc, { kind: 'join', invite }, useCollab.getState().profile, {
       peers: () => onWaiting?.(),
       rejected: (reason, peer, byUs) => reject(new Error(rejectMessage(reason, peer, byUs))),
       synced: () => {
         if (cancelled) return
-        void writeJoinedProject(doc, invite, parentDir).then(resolve, reject)
+        void writeJoinedProject(doc, invite, parentDir)
+          .then(async (root) => {
+            if (serverCode) await writeServerCode(root, serverCode)
+            return root
+          })
+          .then(resolve, reject)
       },
     })
     network.start().catch((error) => {
       console.error(error)
-      reject(new Error('Could not reach the person who invited you. Check that they have the project open.'))
+      if (serverCode) reject(error instanceof ServerAuthError ? error : new Error('Could not reach the server. Check your internet connection or ask its admin.'))
+      else reject(new Error('Could not reach the person who invited you. Check that they have the project open.'))
     })
   })
   const finished = done.finally(() => network?.stop())
@@ -427,4 +465,113 @@ export function rejectMessage(reason: Reject, peer?: Peer, byUs = false): string
 export function sharedMetaOfOpenProject(): SharedMeta | null {
   const meta = useProjectStore.getState().meta
   return meta ? sharedMeta(meta) : null
+}
+
+// ---- working through a server (0.8) -------------------------------------------------
+
+const EMPTY_SERVER_PROJECT =
+  'This project on the server is still empty. Someone who can edit has to move a project there first (Work together → Move to a server).'
+
+/** The connect code is personal (it holds the key), so it is kept next to the project, never in the shared state. */
+async function serverCodePath(root: string) {
+  return getFs().join(await projectPaths.collabDir(root), 'server.json')
+}
+
+async function readServerCode(root: string): Promise<ServerCode | null> {
+  const fs = getFs()
+  const path = await serverCodePath(root)
+  if (!(await fs.exists(path))) return null
+  try {
+    return decodeServerCode((JSON.parse(await fs.readText(path)) as { code: string }).code)
+  } catch {
+    return null
+  }
+}
+
+async function writeServerCode(root: string, code: ServerCode) {
+  const fs = getFs()
+  await fs.mkdir(await projectPaths.collabDir(root))
+  await fs.writeTextAtomic(await serverCodePath(root), JSON.stringify({ code: encodeServerCode(code) }))
+}
+
+function onServerWelcome(w: ServerWelcome) {
+  const a = active
+  if (!a?.server) return
+  a.network.readOnly = w.role === 'view'
+  useCollab.setState({ server: { name: w.serverName, role: w.role }, error: null })
+  void a.server
+    .plugins()
+    .then((serverPlugins) => active === a && useCollab.setState({ serverPlugins }))
+    .catch(() => {})
+}
+
+/** The server no longer accepts the key (revoked, expired) or closed the project. */
+function onServerRefused(session: CollabSession, code: ServerCode, error: ServerAuthError) {
+  const a = active
+  if (!a || a.session !== session) return
+  if (error.reason === 'closed') {
+    const projectName = useProjectStore.getState().meta?.name ?? ''
+    void goOffline().then(() => useCollab.setState({ ended: { root: session.root, projectName, host: code.serverName || 'The server' } }))
+    return
+  }
+  // Stop retrying: a refused key does not come back.
+  void a.network.stop()
+  useCollab.setState({ online: false, error: error.message })
+}
+
+/** Connect once to read what the server says about a code (role, empty project, ids). */
+async function probeServer(code: ServerCode): Promise<ServerWelcome> {
+  const transport = new ServerTransport(code)
+  await transport.start(() => {})
+  try {
+    await transport.connect()
+    return transport.welcome!
+  } finally {
+    await transport.stop()
+  }
+}
+
+/**
+ * Move the open project to a server: it is uploaded into an empty server project, and from then on this
+ * computer syncs through the server. A project shared peer to peer stops being shared that way: if this
+ * computer is the host, teammates are told the project closed here and get connect codes from the server's admin.
+ */
+export async function moveToServer(codeText: string) {
+  const code = decodeServerCode(codeText)
+  if (!code) throw new Error('That is not a server connect code. It starts with EGS1-.')
+  const { root, meta, entities, categories } = useProjectStore.getState()
+  if (!root || !meta) throw new Error('No project is open')
+  const welcome = await probeServer(code)
+  if (welcome.role !== 'write') throw new Error('This connect code can only view. Moving a project needs a code that can edit.')
+  const projectId = active?.session.shareInfo?.projectId ?? meta.id
+  if (!welcome.empty && welcome.projectId !== projectId)
+    throw new Error('This project on the server already holds a different project. To open it, use Join project on the start screen.')
+
+  let session: CollabSession
+  if (active) {
+    const a = active
+    await a.network.sayGoodbye(useCollab.getState().isHost ? 'host-closed' : 'left')
+    active = null
+    a.unsubscribe()
+    a.assets.stop()
+    attachPresence(null)
+    await a.network.stop()
+    session = a.session
+  } else {
+    await flushAll(root)
+    session = await CollabSession.create(root, { meta, entities, categories }, { projectId, secret: newSecret() }, null)
+    setCollabBinding(session)
+  }
+  // The server is the host now: only its admin removes people or closes the project.
+  session.setShareInfo({ ...session.shareInfo!, hostId: welcome.serverId })
+  session.setMembers([])
+  await session.saveNow()
+  await writeServerCode(root, code)
+  await goOnline(session, code)
+}
+
+/** Download a plugin the server offers (the shell checks it and shows the plugin warning before installing). */
+export async function downloadServerPlugin(plugin: ServerPlugin): Promise<Uint8Array> {
+  if (!active?.server) throw new Error('Not connected to a server.')
+  return active.server.pluginZip(plugin)
 }

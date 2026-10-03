@@ -21,7 +21,7 @@ const UI = {
 }
 
 /** The heavy warning before any plugin is installed (v0.4). Cancel has focus; installing needs the checkbox. */
-export function PluginWarningDialog({ info, onDone }: { info: PluginInfo; onDone: (install: boolean) => void }) {
+export function PluginWarningDialog({ info, note, onDone }: { info: PluginInfo; note?: string; onDone: (install: boolean) => void }) {
   const [sure, setSure] = useState(false)
   return (
     <Modal onClose={() => onDone(false)}>
@@ -30,6 +30,7 @@ export function PluginWarningDialog({ info, onDone }: { info: PluginInfo; onDone
           <TriangleAlert size={20} /> {UI.title(info.name)}
         </h3>
         <p className="plugin-warning-lead">{UI.lead}</p>
+        {note && <p>{note}</p>}
         <ul>
           {UI.risks.map((r) => (
             <li key={r}>{r}</li>

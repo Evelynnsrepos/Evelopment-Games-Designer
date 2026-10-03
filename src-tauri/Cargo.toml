@@ -1,6 +1,6 @@
 [package]
 name = "evelopment-games-designer"
-version = "0.7.0"
+version = "0.8.0"
 description = "Evelopment Games Designer: a free all-in-one game design tool"
 authors = ["Evelopment Games"]
 license = "GPL-3.0-only"
@@ -29,3 +29,8 @@ ureq = { version = "3", features = ["json"] }
 anyhow = "1.0.104"
 iroh = "1.3.0"
 tokio = { version = "1", features = ["sync", "macros", "rt-multi-thread", "io-util", "time"] }
+tokio-tungstenite = { version = "0.29", default-features = false, features = ["connect", "__rustls-tls"] }
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+rustls-platform-verifier = "0.7"
+sha2 = "0.10"
+futures-util = "0.3"

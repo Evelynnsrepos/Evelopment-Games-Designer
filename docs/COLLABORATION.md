@@ -95,12 +95,29 @@ Both tabs share the browser's storage, so use this only to try things out.
 
 ## Known limits
 
-- Someone who is already in the project must be online for a teammate to join or catch up (no server keeps a copy).
+- Peer to peer, someone who is already in the project must be online for a teammate to join or catch up. A server removes that limit.
 - If two people create the same fixed-id document (for example the Wiki's article index) while both offline, one person's
   first version of it can win when they reconnect. Documents with UUIDs are not affected.
 - Invite links (`egd://join/...`) are not registered with the operating system yet; paste the code instead.
 
-## Future: a server
+## Working through a server (0.8)
 
-`CollabTransport` is the seam for a hosted relay or sync server: the Yjs document and the protocol stay the same, so a server can
-store the latest state and let people join while everyone else is offline.
+[Evelopment Games Designer Server](https://github.com/Evelynnsrepos/Evelopment-Games-Designer-Server) is an always-on member of a
+project: it keeps the Yjs document, relays edits and presence, and stores asset files, so people sync without being online together.
+The protocol is the same version 1; only the transport and the way people get in differ.
+
+| Piece | Where | What it does |
+|---|---|---|
+| Connect code | `protocol.ts` (`decodeServerCode`) | `EGS1-` + base64url JSON: server address, certificate fingerprint (self-signed servers), project, server name, **key**. Made on the server's admin page. |
+| Transport | `serverTransport.ts`, `src-tauri/src/server_link.rs` | A WebSocket. The first text message is the key; the server answers `auth-ok` with its id, the project's id, the role (`view`/`write`) and whether the project is still empty. Protocol v1 runs in binary messages. In the desktop app the socket lives in Rust so a self-signed server is pinned by fingerprint; other servers are checked against the system's trust store. |
+| Network | `network.ts` | `NetworkMode.member.server`: dial only the server, and skip the member list check (the transport authenticated the server). `readOnly` stops sending changes for view keys. A join without an invite secret sends no join proof. |
+| Controller | `controller.ts` | `joinProject` accepts server codes, `moveToServer` uploads the open project into an empty server project, `collab/server.json` keeps the personal connect code (never in the shared state). The server is the host: only its admin removes people or closes the project. |
+| UI | `src/shell/collab/CollabDialogs.tsx`, `src/shell/plugins/ServerPluginOffer.tsx` | "Or work through a server" in Work together, server codes in Join project, online people from presence, plugin offers. |
+
+- The first upload binds the server project to the app's project id (`meta.id`), so moving a project keeps its id.
+- A revoked key gets `reject` (`not-member`) and then `auth-error`; the app stops retrying and says so. Closing the project on the server
+  sends the usual `host-closed` goodbye, and everyone is asked whether to keep their copy.
+- Plugins the server offers are listed over the same connection; each install goes through the plugin warning, and a changed plugin
+  (new SHA-256) asks again.
+
+To run the integration test against a real server, build it and set `EGD_SERVER_BIN` to its binary before `npm test`.

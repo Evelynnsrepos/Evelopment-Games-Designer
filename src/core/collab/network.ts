@@ -49,7 +49,13 @@ export interface JoinRequest {
 }
 
 export type NetworkMode =
-  | { kind: 'member'; session: CollabSession; onJoinRequest(request: JoinRequest): Promise<boolean> }
+  | {
+      kind: 'member'
+      session: CollabSession
+      onJoinRequest(request: JoinRequest): Promise<boolean>
+      /** Work through an Evelopment server at this address instead of with members directly. */
+      server?: string
+    }
   | { kind: 'join'; invite: Invite }
 
 export interface NetworkEvents {
@@ -75,6 +81,8 @@ const RECONNECT_MS = 15_000
 export class CollabNetwork {
   readonly awareness: awarenessProtocol.Awareness
   selfId = ''
+  /** View-only access on a server: never send changes (the server would refuse them anyway). */
+  readOnly = false
   private readonly peers = new Map<ConnId, Peer>()
   private readonly outgoing = new Set<ConnId>()
   private readonly dialing = new Set<string>()
@@ -168,6 +176,10 @@ export class CollabNetwork {
   /** Dial every known member we are not connected to. */
   reconnect() {
     if (this.mode.kind !== 'member' || this.stopped) return
+    if (this.mode.server) {
+      if (this.peers.size === 0) this.dial(this.mode.server).catch(() => {})
+      return
+    }
     const connected = new Set([...this.peers.values()].map((p) => p.remoteId))
     for (const m of this.mode.session.members) {
       if (m.id !== this.selfId && !connected.has(m.id)) this.dial(m.id).catch(() => {})
@@ -181,7 +193,7 @@ export class CollabNetwork {
 
   /** After the member list changed: disconnect devices that are no longer in it. */
   dropNonMembers() {
-    if (this.mode.kind !== 'member') return
+    if (this.mode.kind !== 'member' || this.mode.server) return
     const members = new Set(this.mode.session.members.map((m) => m.id))
     for (const peer of this.readyPeers()) if (!members.has(peer.remoteId)) this.drop(peer)
   }
@@ -222,7 +234,8 @@ export class CollabNetwork {
       this.send(peer, encodeJson(MSG.hello, hello({ ...base, projectId: info.projectId })))
     } else {
       const { invite } = this.mode
-      const proof = await joinProof(invite.secret, invite.projectId, this.selfId, peer.remoteId)
+      // A server checks the key instead; there is no invite secret.
+      const proof = invite.secret ? await joinProof(invite.secret, invite.projectId, this.selfId, peer.remoteId) : undefined
       this.send(peer, encodeJson(MSG.hello, hello({ ...base, projectId: invite.projectId, joinProof: proof })))
     }
   }
@@ -279,7 +292,8 @@ export class CollabNetwork {
       const { session } = this.mode
       const info = session.shareInfo
       if (!info || h.projectId !== info.projectId) return reject('project')
-      if (!session.members.some((m) => m.id === h.deviceId)) {
+      // Through a server, the only peer is the server, which the transport authenticated (key and certificate).
+      if (!this.mode.server && !session.members.some((m) => m.id === h.deviceId)) {
         if (!h.joinProof) return reject('not-member')
         if (!(await verifyJoinProof(h.joinProof, info.secret, info.projectId, h.deviceId, this.selfId))) return reject('bad-invite')
         const allowed = await this.mode.onJoinRequest({ deviceId: h.deviceId, name: peer.name || 'Someone' })
@@ -324,7 +338,7 @@ export class CollabNetwork {
     const decoder = decoding.createDecoder(payload)
     const encoder = encoding.createEncoder()
     const kind = syncProtocol.readSyncMessage(decoder, encoder, this.doc, peer)
-    if (encoding.length(encoder) > 0) this.send(peer, encodeBytes(MSG.sync, encoding.toUint8Array(encoder)))
+    if (encoding.length(encoder) > 0 && !this.readOnly) this.send(peer, encodeBytes(MSG.sync, encoding.toUint8Array(encoder)))
     if (kind === syncProtocol.messageYjsSyncStep2) {
       if (!this.syncedOnce) this.syncedOnce = true
       this.events.synced?.(peer)
@@ -332,6 +346,7 @@ export class CollabNetwork {
   }
 
   private readonly onDocUpdate = (update: Uint8Array, origin: unknown) => {
+    if (this.readOnly) return
     const encoder = encoding.createEncoder()
     syncProtocol.writeUpdate(encoder, update)
     const message = encodeBytes(MSG.sync, encoding.toUint8Array(encoder))
