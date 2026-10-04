@@ -133,9 +133,16 @@ export function dropPanel(root: LayoutNode, panelId: Id, targetId: Id, zone: Dro
   return insertPanel(removePanel(root, panelId), panel, targetId, zone)
 }
 
-/** Like sideFromPoint, but the middle part of the panel counts as its own zone. */
+/**
+ * Layout Mode drop zones: the outer quarter on the left and right wins, then the top and
+ * bottom 30% of the middle strip, and what is left in the middle swaps the two panels.
+ */
 export function zoneFromPoint(px: number, py: number): DropSide | 'center' {
-  return Math.abs(px - 0.5) < 0.2 && Math.abs(py - 0.5) < 0.2 ? 'center' : sideFromPoint(px, py)
+  if (px < 0.25) return 'left'
+  if (px > 0.75) return 'right'
+  if (py < 0.3) return 'top'
+  if (py > 0.7) return 'bottom'
+  return 'center'
 }
 
 /** Where a click-to-open goes: split the largest panel along its longer side. */
@@ -147,10 +154,9 @@ export function autoPlacement(root: LayoutNode | null, aspect = 16 / 9): { targe
   return { targetId: largest.panel.id, side: wide ? 'right' : 'bottom' }
 }
 
-/** Which half of a panel the pointer is over, from coordinates relative to the panel (0..1). */
+/** Which side of a panel the pointer is over (0..1): left and right edges first, then top or bottom. */
 export function sideFromPoint(px: number, py: number): DropSide {
-  const dx = px - 0.5
-  const dy = py - 0.5
-  if (Math.abs(dx) >= Math.abs(dy)) return dx < 0 ? 'left' : 'right'
-  return dy < 0 ? 'top' : 'bottom'
+  if (px < 0.25) return 'left'
+  if (px > 0.75) return 'right'
+  return py < 0.5 ? 'top' : 'bottom'
 }

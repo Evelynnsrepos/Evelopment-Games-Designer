@@ -45,6 +45,11 @@ describe('layout tree', () => {
     expect(dropPanel(t, 'a', 'a', 'left')).toBe(t)
     expect(zoneFromPoint(0.5, 0.5)).toBe('center')
     expect(zoneFromPoint(0.05, 0.5)).toBe('left')
+    expect(zoneFromPoint(0.2, 0.05)).toBe('left')
+    expect(zoneFromPoint(0.8, 0.95)).toBe('right')
+    expect(zoneFromPoint(0.5, 0.2)).toBe('top')
+    expect(zoneFromPoint(0.5, 0.8)).toBe('bottom')
+    expect(zoneFromPoint(0.3, 0.6)).toBe('center')
   })
 
   it('clamps resize ratios', () => {
