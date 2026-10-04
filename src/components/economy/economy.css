@@ -40,3 +40,6 @@
 .eco-warn {
   color: #f08c00;
 }
+.eco-body h3 .calc-number {
+  width: 90px;
+}

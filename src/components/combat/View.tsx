@@ -140,9 +140,9 @@ export default function View({ documentId, active }: PanelProps) {
         {result && !result.error && (
           <section>
             <div className="cb-bar">
-              <div style={{ flex: result.wins[0], background: '#3e8ef7' }}>{Math.round((result.wins[0] / totalRuns) * 100)}%</div>
+              {result.wins[0] > 0 && <div style={{ flex: result.wins[0], background: '#3e8ef7' }}>{Math.round((result.wins[0] / totalRuns) * 100)}%</div>}
               {result.draws > 0 && <div style={{ flex: result.draws, background: 'var(--text-muted)' }}>{Math.round((result.draws / totalRuns) * 100)}%</div>}
-              <div style={{ flex: result.wins[1], background: '#e03131' }}>{Math.round((result.wins[1] / totalRuns) * 100)}%</div>
+              {result.wins[1] > 0 && <div style={{ flex: result.wins[1], background: '#e03131' }}>{Math.round((result.wins[1] / totalRuns) * 100)}%</div>}
             </div>
             <div className="ld-result">
               <div className="ld-stat">

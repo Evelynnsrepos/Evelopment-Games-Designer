@@ -1,0 +1,25 @@
+.bal {
+  height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 14px 18px;
+}
+.bal h3 {
+  margin: 0 0 6px;
+}
+.bal p {
+  margin: 4px 0;
+}
+.bal-table {
+  width: auto;
+}
+.bal-high {
+  color: var(--danger);
+  font-weight: 600;
+}
+.bal-low {
+  color: #3e8ef7;
+  font-weight: 600;
+}

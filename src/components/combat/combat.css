@@ -74,3 +74,6 @@
 .cb-body h4 {
   margin: 12px 0 6px;
 }
+.cb-settings .calc-number {
+  width: 100px;
+}

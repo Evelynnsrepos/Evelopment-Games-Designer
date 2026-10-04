@@ -41,6 +41,7 @@ export const COMPONENT_TYPES = [
   'calendar',
   'economy',
   'combat',
+  'balance',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

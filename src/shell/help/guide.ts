@@ -412,6 +412,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Simulate runs hundreds or thousands of fights and shows how often each side wins, how much HP the winners keep, how long fights take, the damage of every fighter and an example fight blow by blow.',
     ],
   },
+  balance: {
+    title: 'Balance Dashboard',
+    body: [
+      'A live look at the numbers in your Item and Enemy Lists; there is nothing to fill in.',
+      'Numbers that stick out compares every stat with the other items or enemies of the same rarity and lists the ones far from the typical value, too high in red and too low in blue. Click the arrow to open the entry.',
+      'Difficulty curve charts the average of an enemy stat per level and points out levels where it jumps or drops much more than usual. Gaps lists entries without numbers and enemies that drop nothing.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
