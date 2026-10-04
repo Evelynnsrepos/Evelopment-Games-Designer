@@ -55,3 +55,49 @@
 .tk-p-low {
   color: var(--text-muted);
 }
+
+.tk-img {
+  display: block;
+  width: 100%;
+  max-height: 140px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.tk-cat {
+  color: #fff;
+}
+.tk-catpick {
+  padding: 3px 10px;
+  border: 1.5px solid;
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+}
+.tk-catpick.on {
+  color: #fff;
+}
+.tk-manage {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tk-manage h3 {
+  margin: 6px 0 0;
+}
+.tk-manage p {
+  margin: 0;
+}
+.tk-manage input[type='color'] {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.tk-manage .btn {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}

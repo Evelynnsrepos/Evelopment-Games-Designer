@@ -1,4 +1,4 @@
-import { PanelRight } from 'lucide-react'
+import { MoveHorizontal, PanelRight, Shrink } from 'lucide-react'
 import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { pickAndImportAssets, useAssetUrls } from '@/core/assets'
 import type { Id } from '@/core/model'
@@ -20,7 +20,7 @@ import { combineRefProviders, useEntityRefProvider } from '@/shared/richtext'
 import { useArticleRefProvider } from '@/shared/wiki'
 import { Details } from './Details'
 import { formatYear, useCalendar } from '@/shared/calendar'
-import { createDefaultTimeline, events, layoutCards, mainLine, normalizeTimeline, yearAxis, type TimelineItem } from './model'
+import { setLineLength, stretchTimeline, createDefaultTimeline, events, layoutCards, mainLine, normalizeTimeline, yearAxis, type TimelineItem } from './model'
 import { makeTimelineTypes } from './timelineTypes'
 import { branchTool, eventTool, timelineSelectTool, type TimelineToolHost } from './tools'
 import './timeline.css'
@@ -150,6 +150,22 @@ export default function View({ documentId, active }: PanelProps) {
               <YearInput label={UI.start} value={data.startYear} onChange={(v) => setYears({ startYear: v })} />
               <span className="timeline-years-dash">–</span>
               <YearInput label={UI.end} value={data.endYear} onChange={(v) => setYears({ endYear: v })} />
+              <button
+                className="canvas-toolbar-btn"
+                title="Make the timeline longer (or drag the round handle at its end)"
+                aria-label="Make the timeline longer"
+                onClick={() => main && onChange((s) => stretchTimeline(s, main.length * 1.5))}
+              >
+                <MoveHorizontal size={17} strokeWidth={1.8} />
+              </button>
+              <button
+                className="canvas-toolbar-btn"
+                title="Make the timeline shorter"
+                aria-label="Make the timeline shorter"
+                onClick={() => main && onChange((s) => setLineLength(s, main.id, main.length / 1.5))}
+              >
+                <Shrink size={17} strokeWidth={1.8} />
+              </button>
               <button
                 className={'canvas-toolbar-btn' + (showDetails ? ' is-active' : '')}
                 title={UI.details}

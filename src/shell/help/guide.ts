@@ -171,6 +171,8 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Timelines with optional years and events that can hold images.',
       'Press B to start a branch for an alternative history. Pressing a tool shortcut again returns to the select tool.',
+      'To make the timeline longer, use the stretch buttons in the toolbar or drag the round handle at the end of the line. Events keep their place in time; branches get longer the same way.',
+      'With eras in Calendar & Eras, the years show as era years, like 305 FA.',
     ],
     tips: ['Pan with the middle mouse button or Space+drag, zoom with the mouse wheel.'],
   },
@@ -439,6 +441,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     title: 'Task Board',
     body: [
       'Keep the work on your game in four columns: to do, doing, review and done. Drag tasks between columns and click one to give it a person, a due date, a priority and notes.',
+      'Give tasks a picture and your own categories (like Art, Code or Sound) with colors, and filter the board by category. Columns and categories lets you rename, recolor, add, reorder and remove columns and categories.',
       'Link a task to what it is about: type a name to find items, characters, towns, enemies, wiki articles or any document, and click the link later to jump there. Filter the board by title or person.',
     ],
   },

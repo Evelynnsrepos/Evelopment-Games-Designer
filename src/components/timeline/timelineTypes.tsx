@@ -72,7 +72,10 @@ export function makeTimelineTypes(o: TimelineTypeOptions): NodeTypes {
           )}
           <Line points={[startX, l.y, end, l.y]} stroke={color} strokeWidth={l.main ? 4 : 3} lineCap="round" hitStrokeWidth={18} />
           {l.main && <Circle x={l.x} y={l.y} radius={HANDLE_R} fill={color} />}
-          <Circle x={end} y={l.y} radius={HANDLE_R} fill={ctx.theme.bgElevated} stroke={color} strokeWidth={2} hitStrokeWidth={10} />
+          {/* The end handle: drag it to make the line longer or shorter. */}
+          <Circle x={end} y={l.y} radius={HANDLE_R + 4} fill={ctx.theme.bgElevated} stroke={color} strokeWidth={2.5} hitStrokeWidth={14} />
+          <Line points={[end - 3, l.y - 4, end + 1, l.y, end - 3, l.y + 4]} stroke={color} strokeWidth={2} lineCap="round" lineJoin="round" listening={false} />
+          {l.main && <Text x={end + HANDLE_R + 10} y={l.y - 6} text="drag to stretch ⟷" fontSize={11} fontFamily={ctx.theme.font} fill={ctx.theme.textMuted} listening={false} />}
           {!l.main && <Text x={startX + 6} y={l.y + 10} text={l.name || TYPES_UI.branch} fontSize={13} fontStyle="bold" fontFamily={ctx.theme.font} fill={color} />}
           {axis &&
             yearTicks(axis).map((year) => {

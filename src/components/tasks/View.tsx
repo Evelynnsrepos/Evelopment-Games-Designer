@@ -1,8 +1,10 @@
-import { Link2, Trash2, X } from 'lucide-react'
+import { ArrowUp, ImagePlus, Link2, Plus, Settings2, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { newId, type ComponentType, type Id } from '@/core/model'
 import { getManifest, type PanelProps } from '@/core/registry'
+import { pickAndImportAssets, useAssetUrl } from '@/core/assets'
 import { useDocument, useProjectStore, useUndoRedoKeys } from '@/core/state'
+import { Modal } from '@/shared/ui'
 import { Kanban, moveCard } from '@/shared/kanban'
 import '@/shared/listDetail/listDetail.css'
 import { combineRefProviders, rankRefItems, useEntityRefProvider, type RefItem } from '@/shared/richtext'
@@ -35,10 +37,36 @@ interface Task {
   due: string
   priority: (typeof PRIORITIES)[number]
   links: TaskLink[]
+  image?: string | null
+  categoryIds?: Id[]
+}
+
+interface Column {
+  id: string
+  title: string
+  color: string
+}
+
+interface TaskCategory {
+  id: Id
+  name: string
+  color: string
 }
 
 interface TasksDoc {
   items: Task[]
+  /** Your own columns; the four defaults until changed. */
+  columns?: Column[]
+  /** Your own categories, like Art, Code, Sound (v0.10). */
+  categories?: TaskCategory[]
+}
+
+const CATEGORY_COLORS = ['#e8590c', '#2f9e44', '#1971c2', '#9c36b5', '#e03131', '#0c8599', '#f08c00', '#c2255c']
+const CATEGORY_NAMES = ['Art', 'Code', 'Sound', 'Writing', 'Design']
+
+function CardImage({ path }: { path: string }) {
+  const url = useAssetUrl(path)
+  return url ? <img className="tk-img" src={url} alt="" /> : null
 }
 
 const createTasksDoc = (): TasksDoc => ({ items: [] })
@@ -54,29 +82,53 @@ export default function View({ active }: PanelProps) {
   const [openId, setOpenId] = useState<string | null>(null)
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('')
+  const [category, setCategory] = useState('')
+  const [manage, setManage] = useState(false)
+  const root = useProjectStore((s) => s.root)
   if (!doc.data) return null
   const d = doc.data
   const set = (fn: (d: TasksDoc) => TasksDoc) => doc.update(fn)
   const edit = (id: Id, patch: Partial<Task>) => set((x) => ({ ...x, items: x.items.map((t) => (t.id === id ? { ...t, ...patch } : t)) }))
   const t = d.items.find((x) => x.id === openId)
+  const columns = d.columns?.length ? d.columns : COLUMNS
+  const categories = d.categories ?? []
+  const catOf = (id: Id) => categories.find((c) => c.id === id)
+  const lastColumn = columns[columns.length - 1]
 
   const docItems: RefItem[] = documents.map((doc) => ({ kind: `doc:${doc.type}`, id: doc.id, label: doc.title, hint: getManifest(doc.type)?.name }))
   const label = (l: TaskLink): RefItem | undefined => (l.kind.startsWith('doc:') ? docItems.find((x) => x.id === l.id) : refs.resolve(l))
   const open = (l: TaskLink) => (l.kind.startsWith('doc:') ? openComponent(l.kind.slice(4) as ComponentType, l.id) : refs.open?.(l))
   const suggestions = query.trim() ? rankRefItems([...refs.search(query), ...docItems], query, 8) : []
-  const shown = filter ? d.items.filter((x) => x.assignee.toLowerCase().includes(filter.toLowerCase()) || x.title.toLowerCase().includes(filter.toLowerCase())) : d.items
+  const shown = d.items
+    .filter((x) => !filter || x.assignee.toLowerCase().includes(filter.toLowerCase()) || x.title.toLowerCase().includes(filter.toLowerCase()))
+    .filter((x) => !category || (x.categoryIds ?? []).includes(category))
+    // Tasks of a removed column show up in the first one.
+    .map((x) => (columns.some((c) => c.id === x.column) ? x : { ...x, column: columns[0].id }))
 
   return (
     <div className="tk">
       <div className="ld-toolbar">
         <input className="input" style={{ width: 220 }} placeholder="Filter by title or person" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        {categories.length > 0 && (
+          <select className="input" style={{ width: 'auto' }} value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        )}
+        <button className="btn btn-ghost" onClick={() => setManage(true)}>
+          <Settings2 size={14} /> Columns and categories
+        </button>
         <span className="muted">
-          {d.items.filter((x) => x.column !== 'done').length} open, {d.items.filter((x) => x.column === 'done').length} done
+          {d.items.filter((x) => x.column !== lastColumn.id).length} open, {d.items.filter((x) => x.column === lastColumn.id).length} in {lastColumn.title}
         </span>
       </div>
       <div className="tk-body">
         <Kanban
-          columns={COLUMNS}
+          columns={columns}
           cards={shown}
           columnOf={(x) => x.column}
           selectedId={openId}
@@ -89,8 +141,16 @@ export default function View({ active }: PanelProps) {
           onMove={(id, col, before) => set((x) => ({ ...x, items: moveCard(x.items, id, before, (c) => ({ ...c, column: col })) }))}
           renderCard={(x) => (
             <>
+              {x.image && <CardImage path={x.image} />}
               <div className="kb-card-title">{x.title}</div>
               <div className="kb-card-meta">
+                {(x.categoryIds ?? []).map((id) =>
+                  catOf(id) ? (
+                    <span key={id} className="kb-chip tk-cat" style={{ background: catOf(id)!.color }}>
+                      {catOf(id)!.name}
+                    </span>
+                  ) : null,
+                )}
                 {x.priority !== 'Normal' && <span className={`kb-chip tk-p-${x.priority.toLowerCase()}`}>{x.priority}</span>}
                 {x.assignee && <span className="kb-chip">{x.assignee}</span>}
                 {x.due && <span className="kb-chip">{x.due}</span>}
@@ -110,6 +170,46 @@ export default function View({ active }: PanelProps) {
               <button className="icon-btn" aria-label="Close" onClick={() => setOpenId(null)}>
                 <X size={14} />
               </button>
+            </div>
+            {t.image && <CardImage path={t.image} />}
+            {root && (
+              <div className="ld-inline">
+                <button
+                  className="btn"
+                  onClick={async () => {
+                    const [a] = await pickAndImportAssets(root, 'image', 'Picture for the task')
+                    if (a) edit(t.id, { image: a.path })
+                  }}
+                >
+                  <ImagePlus size={14} /> {t.image ? 'Change picture' : 'Add picture'}
+                </button>
+                {t.image && (
+                  <button className="btn btn-ghost" onClick={() => edit(t.id, { image: null })}>
+                    Remove picture
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="ld-field">
+              <span>Categories</span>
+              <div className="ld-inline">
+                {categories.map((c) => {
+                  const on = (t.categoryIds ?? []).includes(c.id)
+                  return (
+                    <button
+                      key={c.id}
+                      className={`tk-catpick${on ? ' on' : ''}`}
+                      style={{ borderColor: c.color, background: on ? c.color : 'transparent' }}
+                      onClick={() => edit(t.id, { categoryIds: on ? (t.categoryIds ?? []).filter((x) => x !== c.id) : [...(t.categoryIds ?? []), c.id] })}
+                    >
+                      {c.name}
+                    </button>
+                  )
+                })}
+                <button className="btn btn-ghost" onClick={() => setManage(true)}>
+                  {categories.length ? 'Edit categories' : 'Make categories'}
+                </button>
+              </div>
             </div>
             <label className="ld-field">
               <span>Who</span>
@@ -169,6 +269,80 @@ export default function View({ active }: PanelProps) {
           </aside>
         )}
       </div>
+      {manage && (
+        <Modal onClose={() => setManage(false)}>
+          <div className="tk-manage">
+            <h3>Columns</h3>
+            {columns.map((c, i) => (
+              <div key={c.id} className="ld-inline">
+                <input type="color" value={c.color} onChange={(e) => set((x) => ({ ...x, columns: columns.map((o) => (o.id === c.id ? { ...o, color: e.target.value } : o)) }))} />
+                <input className="input" value={c.title} onChange={(e) => set((x) => ({ ...x, columns: columns.map((o) => (o.id === c.id ? { ...o, title: e.target.value } : o)) }))} />
+                <button
+                  className="icon-btn"
+                  title="Move earlier"
+                  aria-label="Move earlier"
+                  disabled={i === 0}
+                  onClick={() =>
+                    set((x) => {
+                      const next = [...columns]
+                      ;[next[i - 1], next[i]] = [next[i], next[i - 1]]
+                      return { ...x, columns: next }
+                    })
+                  }
+                >
+                  <ArrowUp size={13} />
+                </button>
+                <button
+                  className="icon-btn"
+                  aria-label="Remove column"
+                  disabled={columns.length < 2}
+                  onClick={() =>
+                    set((x) => {
+                      const rest = columns.filter((o) => o.id !== c.id)
+                      return { ...x, columns: rest, items: x.items.map((it) => (it.column === c.id ? { ...it, column: rest[0].id } : it)) }
+                    })
+                  }
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+            <button className="btn btn-ghost" onClick={() => set((x) => ({ ...x, columns: [...columns, { id: newId(), title: 'New column', color: '#9aa0a6' }] }))}>
+              <Plus size={14} /> Add column
+            </button>
+            <h3>Categories</h3>
+            <p className="muted">Sort tasks by area of work, like Art, Code, Sound or Writing. A task can have several.</p>
+            {categories.map((c) => (
+              <div key={c.id} className="ld-inline">
+                <input type="color" value={c.color} onChange={(e) => set((x) => ({ ...x, categories: categories.map((o) => (o.id === c.id ? { ...o, color: e.target.value } : o)) }))} />
+                <input className="input" value={c.name} onChange={(e) => set((x) => ({ ...x, categories: categories.map((o) => (o.id === c.id ? { ...o, name: e.target.value } : o)) }))} />
+                <button
+                  className="icon-btn"
+                  aria-label="Remove category"
+                  onClick={() =>
+                    set((x) => ({ ...x, categories: categories.filter((o) => o.id !== c.id), items: x.items.map((it) => ({ ...it, categoryIds: (it.categoryIds ?? []).filter((k) => k !== c.id) })) }))
+                  }
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ))}
+            <button
+              className="btn btn-ghost"
+              onClick={() =>
+                set((x) => ({ ...x, categories: [...categories, { id: newId(), name: CATEGORY_NAMES[categories.length] ?? 'Category', color: CATEGORY_COLORS[categories.length % CATEGORY_COLORS.length] }] }))
+              }
+            >
+              <Plus size={14} /> Add category
+            </button>
+            <div className="modal-actions">
+              <button className="btn btn-primary" onClick={() => setManage(false)}>
+                Done
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

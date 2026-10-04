@@ -49,7 +49,7 @@ export function hitTest(api: Api, host: TimelineToolHost, p: Point): TimelineHit
     const card = cards.get(ev.id) ?? { lift: STEM, height: 60 }
     if (rectContainsPoint(cardRect(ev, l.y, card), p) || Math.hypot(p.x - ev.x, p.y - l.y) <= tol + 4) return { part: 'event', node: ev }
   }
-  for (const l of lines(scene)) if (Math.hypot(p.x - lineEnd(l), p.y - l.y) <= tol + 3) return { part: 'handle', node: l }
+  for (const l of lines(scene)) if (Math.hypot(p.x - lineEnd(l), p.y - l.y) <= tol + 8) return { part: 'handle', node: l }
   for (const l of lines(scene)) {
     if (Math.abs(p.y - l.y) <= tol && p.x >= l.x - tol && p.x <= lineEnd(l) + tol) return { part: 'line', node: l }
   }
