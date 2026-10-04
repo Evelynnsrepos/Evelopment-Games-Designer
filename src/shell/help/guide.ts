@@ -404,6 +404,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'If players spend less than half of what they earn, the money piles up and loses its meaning; the simulator warns you so you can add sinks or lower income.',
     ],
   },
+  combat: {
+    title: 'Combat Simulator',
+    body: [
+      'Put two teams against each other. Each fighter has HP, attack, defense, attacks per second, crit chance and crit damage, and a count for groups like 5 slimes. Fighters can be taken from the Enemy List; stats named HP, ATK, DEF and SPD are read automatically.',
+      'Damage uses a formula from the damage library with the attacker ATK and the target DEF, plus a random spread. Fighters attack the weakest enemy left.',
+      'Simulate runs hundreds or thousands of fights and shows how often each side wins, how much HP the winners keep, how long fights take, the damage of every fighter and an example fight blow by blow.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
