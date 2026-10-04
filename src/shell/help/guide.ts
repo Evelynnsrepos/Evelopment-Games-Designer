@@ -340,6 +340,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Compare all in a table lists every ability side by side; click a column to sort, for example by damage per second, to spot the ones that are too strong.',
     ],
   },
+  crafting: {
+    title: 'Crafting & Recipes',
+    body: [
+      'Write down how things are made: what goes in (items from the Item List or any name), what comes out, the station and the time it takes.',
+      'Each recipe shows its crafting tree: the ingredients, the recipes that make those, and so on down to raw materials that no recipe makes.',
+      'Enter how many you want to make to see the total raw materials and crafting time, with crafts rounded up like in a game (a smelt that gives 2 bars runs twice for 3 bars). Recipes that go in a circle are pointed out.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
