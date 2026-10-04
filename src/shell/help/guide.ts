@@ -380,6 +380,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'The toolbar adds up the points and warns when you go over 1000, the usual budget for a full game on consoles.',
     ],
   },
+  names: {
+    title: 'Names & Languages',
+    body: [
+      'Each document is a language. Pick a preset (Elvish, Dwarvish, Orcish, Japanese-like, Norse-like, Latin) or set the sounds yourself: consonants, vowels, syllable shapes like CV or CVC, how many syllables, endings and letter pairs to avoid.',
+      'Generate makes a batch of names that sound like they belong together. Click a name to keep it.',
+      'The dictionary holds the words of your language; the dice makes one up for you. Translate turns any text into the language: dictionary words use your word, every other word gets a made-up word that stays the same every time.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

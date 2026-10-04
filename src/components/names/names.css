@@ -1,0 +1,68 @@
+.nm {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.nm-head {
+  padding: 0 12px;
+}
+.nm-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(240px, 1.2fr) minmax(280px, 1.4fr);
+  overflow: auto;
+}
+.nm-col {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+}
+.nm-col h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0;
+}
+.nm-col h3 .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.nm-col .calc-number {
+  width: 60px;
+}
+.nm-names {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.nm-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+}
+.nm-name.on {
+  border-color: #f5a623;
+}
+.nm-dict .input {
+  width: 120px;
+}
+.nm-out {
+  margin: 0;
+  padding: 10px;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  font-size: 15px;
+  font-style: italic;
+}
