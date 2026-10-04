@@ -6,27 +6,9 @@ import { newId, type AssetPath, type Id } from '@/core/model'
  * the JSON only holds the layer stack, so documents stay small and sync well.
  */
 
-/** Canvas 2D composite operations offered as layer blend modes. */
-export const BLEND_MODES = [
-  { id: 'source-over', label: 'Normal' },
-  { id: 'multiply', label: 'Multiply' },
-  { id: 'screen', label: 'Screen' },
-  { id: 'overlay', label: 'Overlay' },
-  { id: 'darken', label: 'Darken' },
-  { id: 'lighten', label: 'Lighten' },
-  { id: 'color-dodge', label: 'Color dodge' },
-  { id: 'color-burn', label: 'Color burn' },
-  { id: 'hard-light', label: 'Hard light' },
-  { id: 'soft-light', label: 'Soft light' },
-  { id: 'difference', label: 'Difference' },
-  { id: 'hue', label: 'Hue' },
-  { id: 'saturation', label: 'Saturation' },
-  { id: 'color', label: 'Color' },
-  { id: 'luminosity', label: 'Luminosity' },
-  { id: 'lighter', label: 'Add' },
-] as const
+import type { BlendMode } from './blend'
 
-export type BlendMode = (typeof BLEND_MODES)[number]['id']
+export { BLEND_MODES, type BlendMode } from './blend'
 
 export interface SketchLayer {
   id: Id
@@ -86,6 +68,9 @@ export const createSketchDoc = (width = 1920, height = 1080): SketchDoc => ({
 
 export const CANVAS_PRESETS = [
   { label: 'Full HD 1920 × 1080', width: 1920, height: 1080 },
+  { label: '4K 3840 × 2160', width: 3840, height: 2160 },
+  { label: 'Large square 4096 × 4096', width: 4096, height: 4096 },
+  { label: 'Poster 8192 × 8192', width: 8192, height: 8192 },
   { label: 'Square 2048 × 2048', width: 2048, height: 2048 },
   { label: 'Portrait A4 2480 × 3508', width: 2480, height: 3508 },
   { label: 'Icon 512 × 512', width: 512, height: 512 },

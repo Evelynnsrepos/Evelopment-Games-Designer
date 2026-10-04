@@ -51,6 +51,7 @@ import {
 } from './model'
 import { HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
 import { ReferencePicker } from './ReferencePicker'
+import { maxLayers } from './tiles'
 import './sketch.css'
 
 const UI = {
@@ -81,6 +82,7 @@ const UI = {
   symmetryModes: { off: 'Off', vertical: 'Left / right', horizontal: 'Top / bottom', quad: 'Four ways' } as Record<SymmetryMode, string>,
   layers: 'Layers',
   addLayer: 'New layer',
+  layerLimit: (n: number) => `This canvas holds at most ${n} layers in memory. Merge or delete layers to add more.`,
   duplicate: 'Duplicate',
   mergeDown: 'Merge down',
   deleteLayer: 'Delete layer',
@@ -484,7 +486,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const undo = () => markDirty(engine.undo())
   const redo = () => markDirty(engine.redo())
 
+  const layerLimit = maxLayers(doc.width, doc.height)
   const addLayer = () => {
+    if (doc.layers.length >= layerLimit) return
     const layer = newLayer(nextLayerName(doc))
     const i = doc.layers.findIndex((l) => l.id === activeLayer?.id)
     update((d) => ({ ...d, layers: [...d.layers.slice(0, i + 1), layer, ...d.layers.slice(i + 1)] }))
@@ -492,6 +496,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   }
 
   const duplicateLayer = (l: SketchLayer) => {
+    if (doc.layers.length >= layerLimit) return
     const copy = { ...l, id: newId(), name: `${l.name} copy`, image: null }
     engine.copyLayer(l.id, copy.id)
     loaded.current.set(copy.id, null)
@@ -749,7 +754,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           <section className="sketch-layers">
             <div className="sketch-layers-head">
               <h4>{UI.layers}</h4>
-              <ToolButton icon={Plus} label={UI.addLayer} onClick={addLayer} />
+              <ToolButton icon={Plus} label={doc.layers.length >= layerLimit ? UI.layerLimit(layerLimit) : `${UI.addLayer} (${doc.layers.length} / ${layerLimit})`} onClick={addLayer} />
             </div>
             {[...doc.layers].reverse().map((l, i, arr) => (
               <div
@@ -774,10 +779,14 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
                   <div className="sketch-layer-props" onClick={(e) => e.stopPropagation()}>
                     <Slider label={UI.opacity} min={0} max={1} step={0.05} value={l.opacity} onChange={(opacity) => update((d) => updateLayer(d, l.id, { opacity }))} percent />
                     <select className="input" value={l.blend} onChange={(e) => update((d) => updateLayer(d, l.id, { blend: e.target.value as BlendMode }))}>
-                      {BLEND_MODES.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.label}
-                        </option>
+                      {[...new Set(BLEND_MODES.map((m) => m.group))].map((g) => (
+                        <optgroup key={g} label={g}>
+                          {BLEND_MODES.filter((m) => m.group === g).map((m) => (
+                            <option key={m.id} value={m.id}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                     <div className="sketch-layer-actions">
