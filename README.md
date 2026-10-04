@@ -66,7 +66,7 @@ and Qwen models, Apache-2.0). There is no closed part, no account and no trackin
 - **Project launcher**: all your games at a glance, with word and image counts.
 - **Add tool** at the bottom of the sidebar; right-click a tool to hide it (keeps its contents) or delete its contents.
 - **Tiling editor**: open several tools side by side, drag a tool from the sidebar to split the screen, and resize the splits.
-- **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets.
+- **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets, or drag a tool onto another to swap them or put it beside it.
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
 - **Work together**: share a project with an invite code and edit it live with others, peer to peer, on Windows, Mac and Linux. No account needed; offline changes merge when you reconnect.
 - **Work through a server** (optional): put a project on your own [Evelopment Games Designer Server](https://github.com/Evelynnsrepos/Evelopment-Games-Designer-Server) so people can join and sync even when nobody else is online. Each person gets their own connect code, for editing or view only, and the server can offer plugins.

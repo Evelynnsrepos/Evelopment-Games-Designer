@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Panel } from '@/core/model'
-import { autoPlacement, insertPanel, leaves, neighbor, panelRects, removePanel, setRatio, swapPanels } from './layoutTree'
+import { autoPlacement, dropPanel, insertPanel, leaves, neighbor, panelRects, removePanel, setRatio, swapPanels, zoneFromPoint } from './layoutTree'
 
 const p = (id: string): Panel => ({ id, type: 'wiki', documentId: null })
 
@@ -33,6 +33,18 @@ describe('layout tree', () => {
     expect(neighbor(t, 'a', 'left')).toBeUndefined()
     const swapped = swapPanels(t, 'a', 'c')
     expect(leaves(swapped).map((x) => x.id)).toEqual(['c', 'b', 'a'])
+  })
+
+  it('drags a panel onto another in Layout Mode', () => {
+    let t = insertPanel(null, p('a'), null, 'right')
+    t = insertPanel(t, p('b'), 'a', 'right')
+    t = insertPanel(t, p('c'), 'b', 'bottom')
+    expect(leaves(dropPanel(t, 'a', 'c', 'center')).map((x) => x.id)).toEqual(['c', 'b', 'a'])
+    const moved = dropPanel(t, 'a', 'c', 'right')
+    expect(leaves(moved).map((x) => x.id)).toEqual(['b', 'c', 'a'])
+    expect(dropPanel(t, 'a', 'a', 'left')).toBe(t)
+    expect(zoneFromPoint(0.5, 0.5)).toBe('center')
+    expect(zoneFromPoint(0.05, 0.5)).toBe('left')
   })
 
   it('clamps resize ratios', () => {

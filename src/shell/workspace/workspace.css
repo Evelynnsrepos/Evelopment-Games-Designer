@@ -121,6 +121,20 @@
 .drop-bottom {
   inset: 50% 0 0 0;
 }
+.drop-center {
+  inset: 0;
+}
+.layout-mode .drop-zone {
+  z-index: 60;
+  pointer-events: none;
+}
+.layout-overlay {
+  cursor: grab;
+}
+.layout-dragging .layout-overlay {
+  cursor: grabbing;
+  opacity: 0.5;
+}
 
 /* ED-5: Layout Mode overlay with a giant X and arrows. */
 .layout-overlay {

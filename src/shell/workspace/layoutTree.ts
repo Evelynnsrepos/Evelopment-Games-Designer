@@ -124,6 +124,20 @@ export function swapPanels(root: LayoutNode, aId: Id, bId: Id): LayoutNode {
   return visit(root)
 }
 
+/** Drag a panel onto another in Layout Mode: the middle swaps them, an edge moves it to that side. */
+export function dropPanel(root: LayoutNode, panelId: Id, targetId: Id, zone: DropSide | 'center'): LayoutNode {
+  if (panelId === targetId) return root
+  if (zone === 'center') return swapPanels(root, panelId, targetId)
+  const panel = findPanel(root, panelId)
+  if (!panel) return root
+  return insertPanel(removePanel(root, panelId), panel, targetId, zone)
+}
+
+/** Like sideFromPoint, but the middle part of the panel counts as its own zone. */
+export function zoneFromPoint(px: number, py: number): DropSide | 'center' {
+  return Math.abs(px - 0.5) < 0.2 && Math.abs(py - 0.5) < 0.2 ? 'center' : sideFromPoint(px, py)
+}
+
 /** Where a click-to-open goes: split the largest panel along its longer side. */
 export function autoPlacement(root: LayoutNode | null, aspect = 16 / 9): { targetId: Id | null; side: DropSide } {
   const rects = panelRects(root)

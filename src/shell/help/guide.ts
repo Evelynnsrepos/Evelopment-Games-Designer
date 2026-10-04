@@ -24,7 +24,7 @@ export const BASICS: Record<string, GuideTopic> = {
     title: 'Workspace and Layout Mode',
     body: [
       'You can open several tools side by side. Shift-click a tool in the sidebar, or drag a tool or document from the sidebar onto an open panel to split the screen, and drag the dividers to resize.',
-      'Press Esc to enter Layout Mode. Every panel shows big buttons to close it or move it around. Layout Mode ends after your next click or key press.',
+      'Press Esc to enter Layout Mode. Every panel shows big buttons to close it or move it around, and you can drag a panel with the mouse: drop it on the middle of another panel to swap them, or on an edge to put it on that side. Layout Mode ends after your next click or key press.',
       'Single-letter shortcuts only work in the panel you clicked last, so typing in one tool never triggers another.',
     ],
     tips: ['Collapse the sidebar with the button at its bottom to get more room.', 'On drawing canvases, the Size and Smoothing sliders appear in the bottom toolbar while the pen is selected. More smoothing irons out shaky lines.'],
