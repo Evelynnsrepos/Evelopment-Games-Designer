@@ -25,6 +25,7 @@ const UI = {
   aiRemove: 'Remove AI helper',
   aiRemoveAsk: 'Delete the downloaded AI helper and its models from this computer?',
   aiUse: 'Check grammar with the AI helper',
+  askProject: 'Show the Ask your project tool (looks things up in your own notes; local only, never writes for you)',
   aiProgram: 'Downloading program',
   aiModel: 'Downloading model',
   close: 'Close',
@@ -105,6 +106,10 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
                 {UI.aiUse}
               </label>
             )}
+            <label className="settings-check">
+              <input type="checkbox" checked={s.askProject} onChange={(e) => s.update({ askProject: e.target.checked })} />
+              {UI.askProject}
+            </label>
             <h4>{UI.aiModels}</h4>
             {AI_MODELS.map((m) => (
               <div key={m.id} className="settings-model">

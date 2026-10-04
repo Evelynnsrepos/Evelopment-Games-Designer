@@ -2,7 +2,8 @@ import { BookOpen, Boxes, ChevronDown, ChevronRight, CircleHelp, House, PanelLef
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
-import { useProjectStore } from '@/core/state'
+import { useProjectStore, useSettings } from '@/core/state'
+import { shownTool } from './optionalTools'
 import { confirmDialog, promptDialog } from '@/shared/dialogs'
 import { backToProjects, closePanel, DRAG_MIME, newDocument, openComponent, replaceWithComponent, type DragPayload } from './actions'
 import { leaves } from '../workspace/layoutTree'
@@ -29,10 +30,11 @@ export function Sidebar() {
   const [closing, setClosing] = useState<ComponentManifest | null>(null)
   const [restoring, setRestoring] = useState<ComponentManifest | null>(null)
   usePlugins((s) => s.installed) // re-render when plugin tools come and go
+  const askProject = useSettings((s) => s.askProject)
   if (!meta) return null
   const collapsed = meta.sidebarCollapsed
-  const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m)
-  const available = allManifests().filter((m) => !meta.enabledComponents.includes(m.type))
+  const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m && shownTool(m.type, askProject))
+  const available = allManifests().filter((m) => !meta.enabledComponents.includes(m.type) && shownTool(m.type, askProject))
 
   const addTool = async (m: ComponentManifest) => {
     setAddOpen(false)

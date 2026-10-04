@@ -5,6 +5,7 @@ import { defaultProjectsDir } from '@/core/project'
 import { allManifests } from '@/core/registry'
 import { useAppStore, useProjectStore } from '@/core/state'
 import { applyTemplate, TEMPLATES, type Template } from './templates'
+import { shownTool } from '../editor/optionalTools'
 import './launcher.css'
 
 /** Three-step new project flow (spec 5, NP-1..NP-6). */
@@ -17,7 +18,7 @@ export function NewProjectWizard() {
   const [location, setLocation] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const manifests = allManifests()
+  const manifests = allManifests().filter((m) => shownTool(m.type))
 
   useEffect(() => {
     void defaultProjectsDir().then(setLocation)

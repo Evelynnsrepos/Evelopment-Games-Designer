@@ -9,6 +9,7 @@ import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
 import { openDesignBook } from '../designBook/open'
 import { useEngineExport } from '../engineExport/open'
+import { shownTool } from './optionalTools'
 import { backToProjects, newDocument, openComponent, replaceWithComponent } from './actions'
 
 /**
@@ -46,7 +47,7 @@ function Palette({ onClose }: { onClose(): void }) {
 
   const commands = useMemo<Entry[]>(() => {
     const out: Entry[] = []
-    const tools = allManifests().filter((m) => meta?.enabledComponents.includes(m.type))
+    const tools = allManifests().filter((m) => meta?.enabledComponents.includes(m.type) && shownTool(m.type))
     for (const m of tools) {
       out.push({ kind: 'tool', id: m.type, label: m.name, hint: 'Tool', run: (b) => (b ? openComponent(m.type) : void replaceWithComponent(m.type)) })
       if (m.multiDocument) out.push({ kind: 'new', id: m.type, label: `New ${m.newDocumentTitle?.replace(/^Untitled /, '') ?? 'document'} (${m.name})`, hint: 'Create', run: () => newDocument(m.type) })
