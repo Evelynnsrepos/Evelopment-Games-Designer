@@ -860,7 +860,7 @@ export default function View({ documentId, active }: PanelProps) {
         </div>
         {nums.length > 1 && (
           <div className="ss-status">
-            Sum {formatValue(nums.reduce((a, b) => a + b, 0), undefined, false)} · Average {formatValue(nums.reduce((a, b) => a + b, 0) / nums.length, undefined, false)} · Count {nums.length}
+            Sum {nums.reduce((a, b) => a + b, 0).toLocaleString(undefined, { maximumFractionDigits: 2 })} · Average {(nums.reduce((a, b) => a + b, 0) / nums.length).toLocaleString(undefined, { maximumFractionDigits: 2 })} · Count {nums.length}
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 import { AlignCenter, AlignLeft, AlignRight, Bold, Calculator, Italic, Minus, PaintBucket, Plus, Type, Underline } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { calcPreset } from './engine'
 import type { Border, CellStyle, NumberFormat } from './model'
 
@@ -26,8 +26,14 @@ export function Toolbar({
   presets: string[]
   onInsertCalc(name: string): void
 }) {
-  const [line, setLine] = useState<Border>({ w: 1, color: '#000000' })
+  const [line, setLine] = useState<Border>({ w: 1, color: '#888888' })
   const [calcOpen, setCalcOpen] = useState(false)
+  useEffect(() => {
+    if (!calcOpen) return
+    const close = (e: MouseEvent) => !(e.target as Element).closest?.('.ss-calcwrap') && setCalcOpen(false)
+    window.addEventListener('mousedown', close)
+    return () => window.removeEventListener('mousedown', close)
+  }, [calcOpen])
   const toggle = (key: 'b' | 'i' | 'u') => onStyle({ [key]: style[key] ? undefined : true })
   const border = (mode: BorderMode) =>
     onStyle((s) => {

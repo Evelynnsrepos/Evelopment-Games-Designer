@@ -87,8 +87,13 @@ export class Engine {
     this.hf = HyperFormula.buildEmpty(CONFIG)
   }
 
+  private dead = false
+
+  /** Free the engine. A later `sync` (React's dev double mount) starts a fresh one. */
   destroy() {
-    this.hf.destroy()
+    if (!this.dead) this.hf.destroy()
+    this.dead = true
+    this.applied = null
   }
 
   /** Bring HyperFormula up to date with the workbook. */
@@ -114,7 +119,8 @@ export class Engine {
   }
 
   private rebuild(wb: Workbook) {
-    this.hf.destroy()
+    if (!this.dead) this.hf.destroy()
+    this.dead = false
     this.index.clear()
     this.hf = HyperFormula.buildEmpty(CONFIG)
     for (const s of wb.sheets) {
@@ -134,7 +140,7 @@ export class Engine {
 
   /** Work CALC() cells out again, e.g. after a calculator preset changed. */
   recalc() {
-    this.hf.rebuildAndRecalculate()
+    if (!this.dead) this.hf.rebuildAndRecalculate()
   }
 
   shown(sheetId: Id, col: number, row: number): Shown {
