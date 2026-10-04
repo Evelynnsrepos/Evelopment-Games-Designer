@@ -57,7 +57,8 @@ export default function View({ active }: PanelProps) {
   const doc = useDocument<VisionDoc>('vision', 'vision', createVisionDoc)
   useUndoRedoKeys(doc, active)
   if (!doc.data) return null
-  const d = doc.data
+  // Other tools read this document too (pillars), so fill in anything missing.
+  const d = { ...createVisionDoc(), ...doc.data }
   const set = (patch: Partial<VisionDoc>) => doc.update((x) => ({ ...x, ...patch }))
   const editPillar = (id: Id, patch: Partial<Pillar>) => set({ pillars: d.pillars.map((p) => (p.id === id ? { ...p, ...patch } : p)) })
   const text = (key: 'pitch' | 'vision' | 'fantasy' | 'antiGoals', label: string, hint: string, rows = 2) => (

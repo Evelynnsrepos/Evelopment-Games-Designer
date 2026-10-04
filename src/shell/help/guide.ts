@@ -428,6 +428,13 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Add references (games, films, books and what you take from each) and anti-goals: things you decided against so nobody adds them later.',
     ],
   },
+  scope: {
+    title: 'Scope Planner',
+    body: [
+      'Sort every feature by priority: must have, should have, could have, won’t have (now) and cut. Drag cards between the columns or reorder them; click a card to edit it.',
+      'Each feature has an effort in days, a status and the design pillar it serves (from Vision & Pillars). Enter the days until release: the planner adds up must and should and tells you when they do not fit, so you know what to move or cut.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

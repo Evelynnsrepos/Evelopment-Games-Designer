@@ -1,0 +1,30 @@
+.sc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.sc .calc-number {
+  width: 80px;
+}
+.sc-over {
+  color: var(--danger);
+  font-weight: 600;
+}
+.sc-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.sc-body > .kb {
+  flex: 1;
+}
+.sc-side {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
