@@ -364,6 +364,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Every link can carry a note like adopted, married or divorced. Double-click a character, or use Open character page, to jump to their entry. The app stops you from making someone their own ancestor.',
     ],
   },
+  'level-layout': {
+    title: 'Level Layout',
+    body: [
+      'Sketch levels and dungeons on a grid. Pick a tile on the left (floor, wall, door, water, lava, stairs, start, exit, enemy, boss, chest, key, trap, NPC) and paint with the brush.',
+      'Room draws a whole room as you drag: floor inside, walls around, and doors you already placed stay. Fill floods an area, Erase clears tiles, and right-click with Fill empties an area.',
+      'Note pins a numbered note on the map for puzzles, secrets or ambushes; the notes are listed on the right. The palette counts how many enemies, chests and so on the level has. Export saves the level as a PNG.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
