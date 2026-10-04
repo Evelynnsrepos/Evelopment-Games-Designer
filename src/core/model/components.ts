@@ -39,6 +39,7 @@ export const COMPONENT_TYPES = [
   'achievements',
   'names',
   'calendar',
+  'economy',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

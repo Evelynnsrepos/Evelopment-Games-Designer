@@ -396,6 +396,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'The month view shows any month of any year with its weekdays, and the date calculator tells you which date and weekday it is a number of days later.',
     ],
   },
+  economy: {
+    title: 'Economy Simulator',
+    body: [
+      'Model the money of your game. Add currencies like gold or gems, sources where they come from (quests, selling loot) with an amount per hour that can grow over time, and sinks where they go: steady costs, costs every few hours, or one-time purchases like a mount.',
+      'The simulation plays the hours you choose and charts each currency. It shows what was earned and spent, when one-time purchases become affordable, and when the player cannot pay for something.',
+      'If players spend less than half of what they earn, the money piles up and loses its meaning; the simulator warns you so you can add sinks or lower income.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

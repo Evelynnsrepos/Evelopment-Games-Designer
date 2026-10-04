@@ -1,0 +1,42 @@
+.eco {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.eco-head {
+  padding: 0 12px;
+}
+.eco-body {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 12px 18px;
+}
+.eco-body h3 {
+  margin: 0 0 6px;
+}
+.eco-body p {
+  margin: 4px 0;
+}
+.eco-table {
+  width: auto;
+}
+.eco-table .input,
+.eco-table .calc-number {
+  width: 110px;
+}
+.eco-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.eco-bad {
+  color: var(--danger);
+}
+.eco-warn {
+  color: #f08c00;
+}
