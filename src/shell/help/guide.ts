@@ -332,6 +332,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Plan a build tests the tree like a player: set the points at the start, per level and the level, then click skills and add or take back ranks. The planner explains why a rank is not possible yet.',
     ],
   },
+  abilities: {
+    title: 'Abilities & Spells',
+    body: [
+      'List the abilities and spells of your game: type (attack, spell, heal, buff, passive, utility), element, range, cost, cooldown, cast time, a picture and who can use them.',
+      'Give an ability its number with a formula from the library or one of your Damage Calculator presets, and change any input just for this ability. The page shows the value, the value per second (by cooldown or cast time) and per point of cost.',
+      'Compare all in a table lists every ability side by side; click a column to sort, for example by damage per second, to spot the ones that are too strong.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
