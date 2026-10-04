@@ -1,0 +1,32 @@
+.hi {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.hi .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.hi-table {
+  width: auto;
+}
+.hi-table td {
+  max-width: 360px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.hi-old {
+  color: var(--danger);
+  text-decoration: line-through;
+}
+.hi-new {
+  color: #2f9e44;
+}
+.hi h4 {
+  margin: 12px 0 0;
+}
+.hi-version {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}

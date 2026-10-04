@@ -6,6 +6,7 @@ import { openInitialLayout } from './actions'
 import { CommandPalette } from './CommandPalette'
 import { DesignBookHost } from '../designBook/DesignBook'
 import { PinThreadHost } from '@/shared/reviews'
+import { HistoryRecorder } from '../history/HistoryRecorder'
 import { ProjectWallpaper, useProjectTheme } from './projectTheme'
 import { Sidebar } from './Sidebar'
 import './editor.css'
@@ -54,6 +55,7 @@ export function EditorScreen() {
       <CommandPalette />
       <DesignBookHost />
       <PinThreadHost />
+      <HistoryRecorder />
     </div>
   )
 }

@@ -14,7 +14,7 @@ import { usePlugins } from '../plugins/plugins'
 import { ProjectThemeDialog } from './projectTheme'
 import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
 import { CloseToolDialog, RestoreToolDialog, type CloseChoice, type RestoreChoice } from './ToolDialogs'
-import { deleteToolContent, hideTool, toolHasContent } from './toolContent'
+import { BACKGROUND_TOOLS, deleteToolContent, hideTool, toolHasContent } from './toolContent'
 
 /** Always-visible component sidebar (SB-1..SB-7). */
 export function Sidebar() {
@@ -35,7 +35,7 @@ export function Sidebar() {
 
   const addTool = async (m: ComponentManifest) => {
     setAddOpen(false)
-    if (await toolHasContent(m.type)) setRestoring(m)
+    if (!BACKGROUND_TOOLS.includes(m.type) && (await toolHasContent(m.type))) setRestoring(m)
     else useProjectStore.getState().enableComponent(m.type)
   }
   const finishRestore = async (choice: RestoreChoice) => {

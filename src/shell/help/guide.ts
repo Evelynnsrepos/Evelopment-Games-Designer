@@ -442,6 +442,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Link a task to what it is about: type a name to find items, characters, towns, enemies, wiki articles or any document, and click the link later to jump there. Filter the board by title or person.',
     ],
   },
+  history: {
+    title: 'History',
+    body: [
+      'Every time you change an item, character, town or enemy, the app keeps a version. Edits within two minutes count as one version; the last 40 versions of each entry are kept.',
+      'Pick an entry to compare any two versions (or a version with now): every changed field, number and category is listed with the old and the new value. Restore brings an old version back, and you can undo that in its list.',
+      'History stays on your computer; it is not shared when working together.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

@@ -10,6 +10,13 @@ import { closePanel } from './actions'
 
 const entityTypeOf = (type: ComponentType) => ENTITY_TYPES.find((t) => ENTITY_COMPONENT[t] === type)
 
+/**
+ * Tools whose data also grows while they are not in the sidebar (history is
+ * recorded, review pills write comments), so adding them never asks about
+ * "hidden" contents.
+ */
+export const BACKGROUND_TOOLS: readonly ComponentType[] = ['history', 'reviews']
+
 /** Does the project hold anything made with this tool (documents, list entries or saved files)? */
 export async function toolHasContent(type: ComponentType): Promise<boolean> {
   const { root, meta, entities } = useProjectStore.getState()

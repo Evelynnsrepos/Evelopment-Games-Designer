@@ -46,7 +46,7 @@ export function setCollabBinding(next: CollabBinding | null) {
  * pictures made from them (stickers on a Moodboard, images in the Asset Pool)
  * are normal assets and still sync.
  */
-export const LOCAL_ONLY_TYPES: readonly ComponentType[] = ['sketch']
+export const LOCAL_ONLY_TYPES: readonly ComponentType[] = ['sketch', 'history']
 
 export const isLocalOnlyType = (type: ComponentType) => LOCAL_ONLY_TYPES.includes(type)
 

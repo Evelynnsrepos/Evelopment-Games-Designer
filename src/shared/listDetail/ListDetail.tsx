@@ -26,8 +26,8 @@ export function ListDetail({
   rows: ListRow[]
   selectedId: string | null
   onSelect(id: string): void
-  onAdd(): void
-  addLabel: string
+  onAdd?(): void
+  addLabel?: string
   empty: string
   toolbar?: ReactNode
   children?: ReactNode
@@ -38,9 +38,11 @@ export function ListDetail({
   return (
     <div className="ld">
       <div className="ld-toolbar">
-        <button className="btn btn-primary" onClick={onAdd}>
-          <Plus size={14} /> {addLabel}
-        </button>
+        {onAdd && (
+          <button className="btn btn-primary" onClick={onAdd}>
+            <Plus size={14} /> {addLabel}
+          </button>
+        )}
         <label className="ld-search">
           <Search size={14} />
           <input className="input" placeholder="Search" value={query} onChange={(e) => setQuery(e.target.value)} />
