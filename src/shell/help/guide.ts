@@ -312,6 +312,15 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Story structures such as the Hero’s Journey, the three-act structure, the story circle, Save the Cat, Kishōtenketsu, the seven-point structure and Freytag’s pyramid are listed as numbered steps.',
       'Make it yours: add principles and categories, edit or delete any entry, star the ones that matter for your game, and sort by your own order, A to Z or starred first. Deleted built-in entries can be brought back with Restore.',
     ],
+  'gameplay-loop': {
+    title: 'Gameplay Loop',
+    body: [
+      'Map the loop your players repeat, like explore, fight, loot, upgrade. Each step sits on a circular timeline; the arrows show the direction the loop runs.',
+      'Click a step to flesh it out: its type (action, challenge, reward, progression, social, rest), what the player does, what it gives them, how many minutes it takes and notes. Move steps earlier or later around the circle.',
+      'Turn on Size steps by time to make the circle a real timeline: each step takes up as much of the circle as it takes time in the game.',
+      'Add branches to a step for ideas, variants or open questions, and branch off branches for more detail. Make several documents for different loops, like a core loop, a session loop and a long-term loop.',
+    ],
+    tips: ['Scroll to zoom and drag the empty space to move around.'],
   },
   reviews: {
     title: 'Reviews',
