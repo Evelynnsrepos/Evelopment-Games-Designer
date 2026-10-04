@@ -27,6 +27,8 @@ export interface LoopNode {
   /** Rough time the step takes, in minutes; sizes its arc on the timeline. */
   minutes: number
   notes: string
+  /** Own segment color; empty = the color of its type. */
+  color?: string
 }
 
 export interface Branch {
@@ -62,6 +64,7 @@ export function createLoopDoc(): LoopDoc {
 export const normalizeLoop = (d: Partial<LoopDoc> | undefined): LoopDoc => ({ nodes: d?.nodes ?? [], branches: d?.branches ?? [], timed: d?.timed ?? false })
 
 export const kindColor = (k: NodeKind) => NODE_KINDS.find((x) => x.id === k)?.color ?? '#9aa0a6'
+export const nodeColor = (n: LoopNode) => n.color || kindColor(n.kind)
 
 export const totalMinutes = (d: LoopDoc) => d.nodes.reduce((n, x) => n + Math.max(0, x.minutes), 0)
 

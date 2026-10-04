@@ -140,3 +140,17 @@
 .gl-danger:hover {
   color: var(--danger);
 }
+.gl-colors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gl-colors input[type='color'] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}

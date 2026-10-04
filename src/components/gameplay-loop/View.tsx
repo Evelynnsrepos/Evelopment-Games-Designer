@@ -8,7 +8,7 @@ import { ProofTextarea } from '@/shared/spell'
 import {
   arcs,
   createLoopDoc,
-  kindColor,
+  nodeColor,
   moveNode,
   newBranch,
   newNode,
@@ -162,7 +162,7 @@ export default function View({ documentId, active }: PanelProps) {
               const gap = Math.min(0.06, (a.end - a.start) / 6)
               return (
                 <g key={n.id} className={`gl-arc${sel?.id === n.id ? ' on' : ''}`} onMouseDown={() => setSel({ kind: 'node', id: n.id })}>
-                  <path d={arcPath(R, a.start + gap, a.end - gap)} stroke={kindColor(n.kind)} strokeWidth={RING} fill="none" />
+                  <path d={arcPath(R, a.start + gap, a.end - gap)} stroke={nodeColor(n)} strokeWidth={RING} fill="none" />
                   <path d={arcPath(R + RING, a.start + gap, a.end - gap)} stroke="var(--text-muted)" strokeWidth={1.5} fill="none" markerEnd="url(#gl-arrow)" opacity={0.6} />
                 </g>
               )
@@ -173,7 +173,7 @@ export default function View({ documentId, active }: PanelProps) {
               const label = polar(R - RING - 26, a.mid)
               return (
                 <g key={`n${n.id}`} className="gl-node" onMouseDown={() => setSel({ kind: 'node', id: n.id })}>
-                  <circle cx={p.x} cy={p.y} r={20} fill="var(--bg-elevated)" stroke={kindColor(n.kind)} strokeWidth={sel?.id === n.id ? 5 : 3} />
+                  <circle cx={p.x} cy={p.y} r={20} fill="var(--bg-elevated)" stroke={nodeColor(n)} strokeWidth={sel?.id === n.id ? 5 : 3} />
                   <text x={p.x} y={p.y} className="gl-num">
                     {i + 1}
                   </text>
@@ -229,6 +229,17 @@ export default function View({ documentId, active }: PanelProps) {
                 ))}
               </select>
             </label>
+            <div className="gl-field">
+              Segment color
+              <div className="gl-colors">
+                <input type="color" aria-label="Segment color" value={nodeColor(node)} onChange={(e) => editNode(node.id, { color: e.target.value })} />
+                {node.color && (
+                  <button className="btn btn-ghost" onClick={() => editNode(node.id, { color: undefined })}>
+                    Use the type color
+                  </button>
+                )}
+              </div>
+            </div>
             <label className="gl-field">
               What the player does
               <ProofTextarea className="input" rows={2} value={node.does} onChange={(e) => editNode(node.id, { does: e.target.value })} />
