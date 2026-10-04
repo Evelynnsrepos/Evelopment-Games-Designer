@@ -71,7 +71,7 @@ export function buildExport(input: ExportInput, engine: Engine): OutFile[] {
       const recs = records(input, t)
       const stats = [...new Set(recs.flatMap((r) => r.stats.map((s) => s.name)))]
       const cats = [...new Set(recs.flatMap((r) => r.categories.map((c) => c.name)))]
-      const head = ['Name', 'DisplayName', 'Description', ...stats.map(ident), ...cats.map(ident)]
+      const head = ['Name', 'DisplayName', 'Description', ...stats.map((s) => ident(s)), ...cats.map((c) => ident(c))]
       const rows = recs.map((r) => [r.id, r.name, r.description, ...stats.map((s) => String(r.stats.find((x) => x.name === s)?.value ?? 0)), ...cats.map((c) => r.categories.find((x) => x.name === c)?.value ?? '')])
       files.push({ path: `DataTables/DT_${PLURAL[t][0].toUpperCase()}${PLURAL[t].slice(1)}.csv`, text: toCSV([head, ...rows]) })
     }
