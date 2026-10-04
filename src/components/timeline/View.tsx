@@ -19,6 +19,7 @@ import {
 import { combineRefProviders, useEntityRefProvider } from '@/shared/richtext'
 import { useArticleRefProvider } from '@/shared/wiki'
 import { Details } from './Details'
+import { formatYear, useCalendar } from '@/shared/calendar'
 import { createDefaultTimeline, events, layoutCards, mainLine, normalizeTimeline, yearAxis, type TimelineItem } from './model'
 import { makeTimelineTypes } from './timelineTypes'
 import { branchTool, eventTool, timelineSelectTool, type TimelineToolHost } from './tools'
@@ -83,11 +84,13 @@ export default function View({ documentId, active }: PanelProps) {
     () => (scene ? layoutCards(scene, (t, size, w) => measureTextHeight(t, size, w, font), !!axis) : new Map()),
     [scene, font, axis],
   )
+  const calendar = useCalendar().data
+  const formatYearFn = useMemo(() => (calendar?.useOnTimeline && calendar.eras.length ? (y: number) => formatYear(calendar, y) : undefined), [calendar])
   const nodeTypes = useMemo(
-    () => makeTimelineTypes({ years, mainId: main?.id, cards }),
+    () => makeTimelineTypes({ years, mainId: main?.id, cards, formatYear: formatYearFn }),
     // years is rebuilt each render; its numbers are what matter
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [years?.start, years?.end, main?.id, cards],
+    [years?.start, years?.end, main?.id, cards, formatYearFn],
   )
   const resolveImageSrc = useAssetUrls(scene ? events(scene).map((e) => e.src) : [])
 

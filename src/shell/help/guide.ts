@@ -388,6 +388,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'The dictionary holds the words of your language; the dice makes one up for you. Translate turns any text into the language: dictionary words use your word, every other word gets a made-up word that stays the same every time.',
     ],
   },
+  calendar: {
+    title: 'Calendar & Eras',
+    body: [
+      'Give your world its own calendar: months with any number of days, your own weekday names and which weekday year 1 starts on. It starts with a ten-month example to change.',
+      'Eras are named ages like the First Age or the Age of Ash. Each era counts its own years from 1 and starts at a year on your timelines. With Show era years on timelines on, the Timeline labels years as 305 FA instead of 305.',
+      'The month view shows any month of any year with its weekdays, and the date calculator tells you which date and weekday it is a number of days later.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

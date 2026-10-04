@@ -38,6 +38,7 @@ export const COMPONENT_TYPES = [
   'level-layout',
   'achievements',
   'names',
+  'calendar',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

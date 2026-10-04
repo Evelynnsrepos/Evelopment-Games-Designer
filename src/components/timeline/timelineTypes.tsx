@@ -34,11 +34,14 @@ export interface TimelineTypeOptions {
   mainId: string | undefined
   /** Card placement from `layoutCards`. */
   cards: Map<string, { lift: number; height: number }>
+  /** Year labels, e.g. "305 TA" from the project calendar (v0.10). */
+  formatYear?: (year: number) => string
 }
 
 const HANDLE_R = 6
 
 export function makeTimelineTypes(o: TimelineTypeOptions): NodeTypes {
+  const fmt = o.formatYear ?? String
   const axisOf = (ctx: RenderContext): YearAxis | null => {
     const main = o.mainId ? ctx.getNode(o.mainId) : undefined
     return o.years && isLine(main) ? { ...o.years, length: main.length } : null
@@ -77,7 +80,7 @@ export function makeTimelineTypes(o: TimelineTypeOptions): NodeTypes {
               return (
                 <Group key={year} listening={false}>
                   <Line points={[x, l.y - 5, x, l.y + 5]} stroke={color} strokeWidth={1.5} />
-                  <Text x={x - 40} y={l.y + 10} width={80} align="center" text={String(year)} fontSize={11} fontFamily={ctx.theme.font} fill={ctx.theme.textMuted} />
+                  <Text x={x - 40} y={l.y + 10} width={80} align="center" text={fmt(year)} fontSize={11} fontFamily={ctx.theme.font} fill={ctx.theme.textMuted} />
                 </Group>
               )
             })}
@@ -117,7 +120,7 @@ export function makeTimelineTypes(o: TimelineTypeOptions): NodeTypes {
           <Circle x={ev.x} y={l.y} radius={7} fill={color} stroke={theme.bgSunken} strokeWidth={2} />
           <Rect {...r} cornerRadius={6} fill={theme.bgElevated} stroke={theme.border} strokeWidth={1} shadowColor="#000" shadowOpacity={0.2} shadowBlur={6} shadowOffsetY={1} />
           <Rect x={r.x} y={r.y} width={3} height={r.height} fill={color} cornerRadius={[6, 0, 0, 6]} />
-          {axis && <Text x={r.x + CARD_PAD} y={yearY} text={String(yearAt(axis, ev.x))} fontSize={12} fontStyle="bold" fontFamily={theme.font} fill={theme.accent} />}
+          {axis && <Text x={r.x + CARD_PAD} y={yearY} text={fmt(yearAt(axis, ev.x))} fontSize={12} fontStyle="bold" fontFamily={theme.font} fill={theme.accent} />}
           <Text
             x={r.x + CARD_PAD}
             y={textY}
