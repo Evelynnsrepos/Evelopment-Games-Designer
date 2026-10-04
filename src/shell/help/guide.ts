@@ -49,10 +49,10 @@ export const BASICS: Record<string, GuideTopic> = {
   spelling: {
     title: 'Spell check and the AI helper',
     body: [
-      'Text editors underline misspelled words in English and German. Right-click an underlined word for suggestions or choose Add to dictionary.',
+      'Text editors underline misspelled words in English and German. Click an underlined word for a card with up to 3 fixes, Dismiss and Add to dictionary.',
       'Names of your items, characters, towns and enemies are always counted as correct, so your made-up names are not flagged.',
       'Settings (bottom of the sidebar, or the gear on the start screen) turns spell check on or off, picks the languages and lists your own words.',
-      'The AI helper is optional. Download it in Settings: Small (1.1 GB, fast) or Better (2.5 GB, catches more). It runs on your computer and checks grammar as you write, like Grammarly: wrong words for the sentence, verb forms, missing commas. Its suggestions get a blue underline. Click one for a card with what is wrong and up to 3 fixes, or Dismiss it. Spell check and the AI helper work in the Writer, the Wiki and the description and notes boxes.',
+      'The AI helper is optional. Download it in Settings: Small (1.1 GB, fast) or Better (2.5 GB, catches more). It runs on your computer and checks grammar as you write: wrong words for the sentence, verb forms, missing commas. Its suggestions get a blue underline. Click one for a card with what is wrong and up to 3 fixes, or Dismiss it. Spell check and the AI helper work in the Writer, the Wiki and the description and notes boxes.',
     ],
   },
   plugins: {
@@ -76,7 +76,7 @@ export const BASICS: Record<string, GuideTopic> = {
   together: {
     title: 'Working together',
     body: [
-      'Several people can edit one project at the same time, each on their own computer, on Windows, Mac or Linux. There is no account and no server: the computers connect directly.',
+      'Several people can edit one project at the same time, each on their own computer, on Windows, Mac or Linux. There is no account: the computers connect directly, or through a server if your team runs one (see the end of this page).',
       'To invite someone, open the project and click Work together at the bottom of the sidebar. Enter your name, pick a color and click Share project. Copy the invite code and send it to your teammate.',
       'Your teammate clicks Join project on their start screen, pastes the code and picks a folder. You are asked to let them in. After that, the project is copied to their computer and changes show up for both of you within a moment.',
       'You see where the others are: colored dots in the sidebar show who is in which tool, canvases show their pointer and what they selected, and in the Writer and Wiki you type in the same text live and see their cursor.',
@@ -85,9 +85,13 @@ export const BASICS: Record<string, GuideTopic> = {
       'The person who shared the project is the host. When the host closes the project or stops sharing, everyone else is disconnected and asked whether to keep their copy as a normal project or delete it.',
       'Only the host can remove people. Everyone else can Leave project, keeping or deleting their copy.',
       'Privacy: computers connect directly, so the people you work with can see your IP address. When a direct connection is not possible, the encrypted traffic goes through public relay servers run by n0, a US company (the makers of iroh). The project contents stay end-to-end encrypted on the way.',
+      'Working through a server: an Evelopment Games Designer Server keeps a copy of the project, so people can join and catch up even when nobody else is online. Each person gets their own connect code (it starts with EGS1-) from the server\'s admin page. A code can be for editing or view only.',
+      'To join a project on a server, click Join project on the start screen and paste your connect code. To put the open project on a server, open Work together, click Or work through a server, paste a connect code and click Move to server. People you shared with directly then need their own connect code.',
+      'With a server, the Work together window shows the server\'s name and who is online now. Only the server\'s admin can remove people or close the project. The project is stored on that server, so whoever runs it can read it: only use servers you trust.',
+      'A server can offer plugins. Click Review to see each one with the usual plugin warning; nothing installs by itself, and a plugin that changes on the server asks again.',
     ],
     tips: [
-      'The project has to be open on at least one computer that is already in it when someone joins or catches up.',
+      'Without a server, the project has to be open on at least one computer that is already in it when someone joins or catches up.',
       'Making a new invite code stops older codes from working. Removing someone from the list stops their computer from connecting; they keep their copy.',
     ],
   },
