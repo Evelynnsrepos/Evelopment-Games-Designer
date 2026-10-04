@@ -1,42 +1,12 @@
 import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, X } from 'lucide-react'
 import { Component, Suspense, useState, type ReactNode } from 'react'
-import { create } from 'zustand'
 import type { Panel } from '@/core/model'
 import { getManifest } from '@/core/registry'
 import { PanelContext, useAppStore, useProjectStore } from '@/core/state'
 import { ReviewButton } from '@/shared/reviews'
 import { closePanel, DRAG_MIME, movePanel, openComponent, type DragPayload } from '../editor/actions'
-import { dropPanel, neighbor, sideFromPoint, zoneFromPoint, type Direction, type DropSide } from './layoutTree'
-
-/** A panel being dragged in Layout Mode, and where it would land. */
-const useLayoutDrag = create<{ from: string | null; over: string | null; zone: DropSide | 'center' | null }>(() => ({ from: null, over: null, zone: null }))
-
-/** Hold and drag a panel in Layout Mode (Esc) to move it, like moving windows in a tiling window manager. */
-function startLayoutDrag(e: React.PointerEvent<HTMLElement>, panelId: string) {
-  if (e.button !== 0 || e.target !== e.currentTarget) return
-  e.preventDefault()
-  const at = (ev: PointerEvent) => {
-    const el = document.elementsFromPoint(ev.clientX, ev.clientY).find((x) => x instanceof HTMLElement && x.dataset.panelId)
-    if (!(el instanceof HTMLElement)) return { over: null, zone: null }
-    const box = el.getBoundingClientRect()
-    return { over: el.dataset.panelId ?? null, zone: zoneFromPoint((ev.clientX - box.left) / box.width, (ev.clientY - box.top) / box.height) }
-  }
-  useLayoutDrag.setState({ from: panelId, over: null, zone: null })
-  const onMove = (ev: PointerEvent) => {
-    const hit = at(ev)
-    useLayoutDrag.setState(hit.over === panelId ? { over: null, zone: null } : hit)
-  }
-  const onUp = () => {
-    window.removeEventListener('pointermove', onMove)
-    window.removeEventListener('pointerup', onUp)
-    const { over, zone } = useLayoutDrag.getState()
-    useLayoutDrag.setState({ from: null, over: null, zone: null })
-    const { meta, setLayout } = useProjectStore.getState()
-    if (meta?.layout && over && zone) setLayout(dropPanel(meta.layout, panelId, over, zone))
-  }
-  window.addEventListener('pointermove', onMove)
-  window.addEventListener('pointerup', onUp)
-}
+import { neighbor, sideFromPoint, type Direction, type DropSide } from './layoutTree'
+import { startLayoutDrag, useLayoutDrag } from './layoutDrag'
 
 /** One tile: slim "fake" window header (ED-4), the component view, drop zones and Layout Mode overlay. */
 export function PanelFrame({ panel }: { panel: Panel }) {
@@ -47,7 +17,6 @@ export function PanelFrame({ panel }: { panel: Panel }) {
   const active = useAppStore((s) => s.activePanelId === panel.id)
   const [drop, setDrop] = useState<DropSide | null>(null)
   const dragging = useLayoutDrag((s) => s.from === panel.id)
-  const layoutDrop = useLayoutDrag((s) => (s.over === panel.id ? s.zone : null))
 
   const View = manifest?.View
   const title = manifest ? (docTitle ? `${manifest.name} · ${docTitle}` : manifest.name) : panel.type
@@ -91,7 +60,7 @@ export function PanelFrame({ panel }: { panel: Panel }) {
         </PanelErrorBoundary>
       </div>
 
-      {(drop ?? layoutDrop) && <div className={`drop-zone drop-${drop ?? layoutDrop}`} />}
+      {drop && <div className={`drop-zone drop-${drop}`} />}
 
       {layoutMode && (
         <div className="layout-overlay" title="Drag to move this tool" onPointerDown={(e) => startLayoutDrag(e, panel.id)}>

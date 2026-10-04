@@ -70,6 +70,14 @@ export function setRatio(root: LayoutNode, path: NodePath, ratio: number): Layou
     : { ...root, second: setRatio(root.second, rest, ratio) }
 }
 
+/** Turn a split between side by side and stacked (Layout Mode button on the divider). */
+export function flipSplit(root: LayoutNode, path: NodePath): LayoutNode {
+  if (root.kind !== 'split') return root
+  if (path.length === 0) return { ...root, direction: root.direction === 'row' ? 'column' : 'row' }
+  const [head, ...rest] = path
+  return head === 0 ? { ...root, first: flipSplit(root.first, rest) } : { ...root, second: flipSplit(root.second, rest) }
+}
+
 /** Normalised (0..1) rectangle of every panel. */
 export function panelRects(node: LayoutNode | null, rect: Rect = { x: 0, y: 0, w: 1, h: 1 }): { panel: Panel; rect: Rect }[] {
   if (!node) return []

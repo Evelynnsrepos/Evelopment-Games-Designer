@@ -37,6 +37,7 @@
 }
 
 .divider {
+  position: relative;
   flex: none;
   background: transparent;
   transition: background 0.15s;
@@ -130,6 +131,50 @@
 }
 .layout-overlay {
   cursor: grab;
+}
+.layout-flip {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+}
+.layout-flip:hover {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.layout-preview {
+  position: absolute;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  border: 3px solid var(--accent);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--text);
+  font-size: 18px;
+  font-weight: 600;
+  pointer-events: none;
+  transition: all 0.12s ease-out;
+}
+.layout-drag-label {
+  position: fixed;
+  z-index: 90;
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  pointer-events: none;
+  white-space: nowrap;
 }
 .layout-dragging .layout-overlay {
   cursor: grabbing;

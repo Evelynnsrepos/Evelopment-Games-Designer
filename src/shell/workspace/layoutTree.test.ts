@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Panel } from '@/core/model'
-import { autoPlacement, dropPanel, insertPanel, leaves, neighbor, panelRects, removePanel, setRatio, swapPanels, zoneFromPoint } from './layoutTree'
+import { autoPlacement, dropPanel, flipSplit, insertPanel, leaves, neighbor, panelRects, removePanel, setRatio, swapPanels, zoneFromPoint } from './layoutTree'
 
 const p = (id: string): Panel => ({ id, type: 'wiki', documentId: null })
 
@@ -50,6 +50,17 @@ describe('layout tree', () => {
     expect(zoneFromPoint(0.5, 0.2)).toBe('top')
     expect(zoneFromPoint(0.5, 0.8)).toBe('bottom')
     expect(zoneFromPoint(0.3, 0.6)).toBe('center')
+  })
+
+  it('flips a split between side by side and stacked', () => {
+    let t = insertPanel(null, p('a'), null, 'right')
+    t = insertPanel(t, p('b'), 'a', 'right')
+    const f = flipSplit(t, [])
+    expect(f.kind === 'split' && f.direction).toBe('column')
+    expect(panelRects(f).map((r) => [r.panel.id, r.rect.y])).toEqual([
+      ['a', 0],
+      ['b', 0.5],
+    ])
   })
 
   it('clamps resize ratios', () => {
