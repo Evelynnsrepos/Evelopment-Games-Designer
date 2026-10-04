@@ -32,6 +32,11 @@ import {
   type Workbook,
 } from './model'
 import { CalcPanel, Toolbar } from './Toolbar'
+import { ChartBox } from './Chart'
+import { chartData } from './chartData'
+import { parseCSV, parseRange, toCSV } from './csv'
+import { saveTextFile, safeFileName } from '@/core/export'
+import { newId } from '@/core/model'
 import './spreadsheet.css'
 
 const HEAD_W = 46
@@ -108,6 +113,11 @@ export default function View({ documentId, active }: PanelProps) {
   const colsCount = Math.max(MIN_COLS, used.cols + 10, range.c2 + 10, Math.ceil((view.left + view.width) / DEFAULT_COL_WIDTH) + 5)
   const cols = useAxis(colsCount, sheet.colWidths, DEFAULT_COL_WIDTH)
   const rows = useAxis(rowsCount, sheet.rowHeights, DEFAULT_ROW_HEIGHT)
+  /** Frozen rows and columns, and how much room they take at the top and left. */
+  const fr = sheet.freeze?.rows ?? 0
+  const fc = sheet.freeze?.cols ?? 0
+  const frozenH = rows.at[fr]
+  const frozenW = cols.at[fc]
 
   useLayoutEffect(() => {
     const el = body.current
@@ -174,12 +184,17 @@ export default function View({ documentId, active }: PanelProps) {
       const y = rows.at[p.row]
       const w = cols.size(p.col)
       const h = rows.size(p.row)
-      if (x < el.scrollLeft) el.scrollLeft = x
-      else if (x + w > el.scrollLeft + el.clientWidth) el.scrollLeft = x + w - el.clientWidth
-      if (y < el.scrollTop) el.scrollTop = y
-      else if (y + h > el.scrollTop + el.clientHeight) el.scrollTop = y + h - el.clientHeight
+      // Cells under the frozen area need to scroll a bit further.
+      if (p.col >= fc) {
+        if (x - frozenW < el.scrollLeft) el.scrollLeft = x - frozenW
+        else if (x + w > el.scrollLeft + el.clientWidth) el.scrollLeft = x + w - el.clientWidth
+      }
+      if (p.row >= fr) {
+        if (y - frozenH < el.scrollTop) el.scrollTop = y - frozenH
+        else if (y + h > el.scrollTop + el.clientHeight) el.scrollTop = y + h - el.clientHeight
+      }
     },
-    [cols, rows],
+    [cols, rows, fr, fc, frozenH, frozenW],
   )
 
   const select = (anchor: Pos, focus: Pos = anchor) => {
@@ -226,7 +241,10 @@ export default function View({ documentId, active }: PanelProps) {
 
   const cellAt = (e: { clientX: number; clientY: number }): Pos => {
     const r = body.current!.getBoundingClientRect()
-    return { col: cols.index(e.clientX - r.left + body.current!.scrollLeft), row: rows.index(e.clientY - r.top + body.current!.scrollTop) }
+    const x = e.clientX - r.left
+    const y = e.clientY - r.top
+    // The frozen area does not scroll.
+    return { col: cols.index(x < frozenW ? x : x + body.current!.scrollLeft), row: rows.index(y < frozenH ? y : y + body.current!.scrollTop) }
   }
 
   /** While writing a formula, a click on a cell puts its address in. */
@@ -599,9 +617,10 @@ export default function View({ documentId, active }: PanelProps) {
           : { ...range, c2: range.c1 - 1, c1: Math.max(0, range.c1 - fillPreview.count) }
     : null
 
+  const renderCells = (ra: number, rb: number, ca: number, cb: number) => {
   const cellsShown: React.ReactNode[] = []
-  for (let r = r1; r <= r2; r++) {
-    for (let c = c1; c <= c2; c++) {
+  for (let r = ra; r <= rb; r++) {
+    for (let c = ca; c <= cb; c++) {
       const k = addr(c, r)
       const cell = sheet.cells[k]
       if (!cell) continue
@@ -640,10 +659,15 @@ export default function View({ documentId, active }: PanelProps) {
       )
     }
   }
+  return cellsShown
+  }
 
-  const lines: React.ReactNode[] = []
-  for (let c = c1; c <= c2 + 1; c++) lines.push(<div key={`v${c}`} className="ss-vline" style={{ left: colX(c) - 1, height: rowY(rowsCount) }} />)
-  for (let r = r1; r <= r2 + 1; r++) lines.push(<div key={`h${r}`} className="ss-hline" style={{ top: rowY(r) - 1, width: colX(colsCount) }} />)
+  const renderLines = (ra: number, rb: number, ca: number, cb: number) => {
+    const out: React.ReactNode[] = []
+    for (let c = ca; c <= cb + 1; c++) out.push(<div key={`v${c}`} className="ss-vline" style={{ left: colX(c) - 1, top: rowY(ra), height: rowY(rb + 1) - rowY(ra) }} />)
+    for (let r = ra; r <= rb + 1; r++) out.push(<div key={`h${r}`} className="ss-hline" style={{ top: rowY(r) - 1, left: colX(ca), width: colX(cb + 1) - colX(ca) }} />)
+    return out
+  }
 
   const selRect = rect(range)
   const activeRect = rect({ c1: sel.anchor.col, r1: sel.anchor.row, c2: sel.anchor.col, r2: sel.anchor.row })
@@ -657,6 +681,9 @@ export default function View({ documentId, active }: PanelProps) {
         onStyle={setStyle}
         presets={documents?.filter((d) => d.type === 'damage-calculator').map((d) => d.title) ?? []}
         onInsertCalc={(name) => writeCells({ [activeKey]: { v: `=CALC("${name.replace(/"/g, '""')}")`, s: activeCell?.s } })}
+        onChart={addChart}
+        onExportCSV={() => void exportCSV()}
+        onImportCSV={importCSV}
       />
       <div className="ss-bar">
         <span className="ss-namebox">{rangeName(range)}</span>
@@ -682,11 +709,11 @@ export default function View({ documentId, active }: PanelProps) {
         <div className="ss-corner" style={{ width: HEAD_W, height: HEAD_H }} onMouseDown={() => setSel({ anchor: { col: 0, row: 0 }, focus: { col: colsCount - 1, row: rowsCount - 1 } })} />
         <div className="ss-colhead" style={{ left: HEAD_W, height: HEAD_H }}>
           <div style={{ transform: `translateX(${-view.left}px)`, position: 'relative', height: '100%' }}>
-            {Array.from({ length: c2 - c1 + 1 }, (_, i) => c1 + i).map((c) => (
+            {[...new Set([...Array.from({ length: Math.min(fc, colsCount) }, (_, i) => i), ...Array.from({ length: c2 - c1 + 1 }, (_, i) => c1 + i)])].map((c) => (
               <div
                 key={c}
-                className={`ss-head${c >= range.c1 && c <= range.c2 ? ' on' : ''}${isWhole('col', c) ? ' whole' : ''}`}
-                style={{ left: colX(c), width: colW(c) }}
+                className={`ss-head${c >= range.c1 && c <= range.c2 ? ' on' : ''}${isWhole('col', c) ? ' whole' : ''}${c < fc ? ' frozen' : ''}`}
+                style={{ left: c < fc ? colX(c) + view.left : colX(c), width: colW(c) }}
                 onMouseDown={(e) => {
                   if (e.button !== 0) return
                   const edge = e.clientX > (e.currentTarget.getBoundingClientRect().right - 5)
@@ -720,11 +747,11 @@ export default function View({ documentId, active }: PanelProps) {
         </div>
         <div className="ss-rowhead" style={{ top: HEAD_H, width: HEAD_W }}>
           <div style={{ transform: `translateY(${-view.top}px)`, position: 'relative' }}>
-            {Array.from({ length: r2 - r1 + 1 }, (_, i) => r1 + i).map((r) => (
+            {[...new Set([...Array.from({ length: Math.min(fr, rowsCount) }, (_, i) => i), ...Array.from({ length: r2 - r1 + 1 }, (_, i) => r1 + i)])].map((r) => (
               <div
                 key={r}
-                className={`ss-head${r >= range.r1 && r <= range.r2 ? ' on' : ''}${isWhole('row', r) ? ' whole' : ''}`}
-                style={{ top: rowY(r), height: rowH(r), width: HEAD_W }}
+                className={`ss-head${r >= range.r1 && r <= range.r2 ? ' on' : ''}${isWhole('row', r) ? ' whole' : ''}${r < fr ? ' frozen' : ''}`}
+                style={{ top: r < fr ? rowY(r) + view.top : rowY(r), height: rowH(r), width: HEAD_W }}
                 onMouseDown={(e) => {
                   if (e.button !== 0) return
                   if (e.clientY > e.currentTarget.getBoundingClientRect().bottom - 4) {
@@ -761,7 +788,10 @@ export default function View({ documentId, active }: PanelProps) {
           <div
             ref={body}
             className="ss-body"
-            onScroll={(e) => setView((v) => ({ ...v, top: e.currentTarget.scrollTop, left: e.currentTarget.scrollLeft }))}
+            onScroll={(e) => {
+              const { scrollTop: top, scrollLeft: left } = e.currentTarget
+              setView((v) => ({ ...v, top, left }))
+            }}
             onMouseDown={onBodyDown}
             onDoubleClick={(e) => {
               if (drag?.kind === 'ref' || canInsertRef()) return
@@ -779,10 +809,24 @@ export default function View({ documentId, active }: PanelProps) {
             onDrop={onDrop}
           >
             <div className="ss-canvas" style={{ width: colX(colsCount), height: rowY(rowsCount) }}>
-              {lines}
-              {cellsShown}
+              {renderLines(r1, r2, c1, c2)}
+              {renderCells(r1, r2, c1, c2)}
               <div className="ss-sel" style={selRect} />
               <div className="ss-active" style={activeRect} />
+              {(sheet.charts ?? []).map((c) => (
+                <ChartBox
+                  key={c.id}
+                  chart={c}
+                  data={chartData(chartGrid(c.range))}
+                  onChange={(patch) => editChart(c.id, patch)}
+                  onRemove={() => updateSheet((sh) => ({ ...sh, charts: (sh.charts ?? []).filter((o) => o.id !== c.id) }))}
+                  onRename={() =>
+                    void promptDialog('Chart title', c.title).then((t) => {
+                      if (t !== null) editChart(c.id, { title: t.trim() })
+                    })
+                  }
+                />
+              ))}
               {previewRange && <div className="ss-fillpreview" style={rect(previewRange)} />}
               {!editing && (
                 <div
@@ -832,6 +876,34 @@ export default function View({ documentId, active }: PanelProps) {
               )}
             </div>
           </div>
+          {fr > 0 && (
+            <div className="ss-frozen ss-frozen-top" style={{ width: view.width, height: frozenH }}>
+              <div style={{ transform: `translateX(${-view.left}px)` }}>
+                {renderLines(0, fr - 1, c1, c2)}
+                {renderCells(0, fr - 1, c1, c2)}
+                <div className="ss-sel" style={selRect} />
+                <div className="ss-active" style={activeRect} />
+              </div>
+            </div>
+          )}
+          {fc > 0 && (
+            <div className="ss-frozen ss-frozen-left" style={{ width: frozenW, height: view.height }}>
+              <div style={{ transform: `translateY(${-view.top}px)` }}>
+                {renderLines(r1, r2, 0, fc - 1)}
+                {renderCells(r1, r2, 0, fc - 1)}
+                <div className="ss-sel" style={selRect} />
+                <div className="ss-active" style={activeRect} />
+              </div>
+            </div>
+          )}
+          {fr > 0 && fc > 0 && (
+            <div className="ss-frozen ss-frozen-corner" style={{ width: frozenW, height: frozenH }}>
+              {renderLines(0, fr - 1, 0, fc - 1)}
+              {renderCells(0, fr - 1, 0, fc - 1)}
+              <div className="ss-sel" style={selRect} />
+              <div className="ss-active" style={activeRect} />
+            </div>
+          )}
         </div>
       </div>
 
@@ -899,6 +971,11 @@ export default function View({ documentId, active }: PanelProps) {
               <button onClick={() => structure('col', range.c1, -(range.c2 - range.c1 + 1))}>Delete {range.c2 - range.c1 + 1 > 1 ? 'columns' : 'column'}</button>
             </>
           )}
+          <button onClick={() => freeze({ rows: 1, cols: 0 })}>Freeze top row</button>
+          <button onClick={() => freeze({ rows: 0, cols: 1 })}>Freeze first column</button>
+          <button onClick={() => freeze({ rows: sel.anchor.row, cols: sel.anchor.col })}>Freeze above and left of {addr(sel.anchor.col, sel.anchor.row)}</button>
+          {(fr > 0 || fc > 0) && <button onClick={() => freeze({ rows: 0, cols: 0 })}>Unfreeze</button>}
+          <button onClick={() => (setMenu(null), addChart())}>Insert chart from selection</button>
           <button onClick={() => sortRange(true)}>Sort A → Z</button>
           <button onClick={() => sortRange(false)}>Sort Z → A</button>
           <button onClick={clearRange}>Clear contents and formatting</button>
@@ -906,6 +983,55 @@ export default function View({ documentId, active }: PanelProps) {
       )}
     </div>
   )
+
+  function addChart() {
+    const r = range.r1 === range.r2 && range.c1 === range.c2 ? { ...range, r2: Math.max(range.r1, used.rows - 1), c2: Math.max(range.c1, used.cols - 1) } : range
+    const x = colX(r.c2 + 1) + 16
+    const y = rowY(r.r1)
+    updateSheet((sh) => ({ ...sh, charts: [...(sh.charts ?? []), { id: newId(), range: rangeName(r), type: 'bar', title: '', x, y, w: 420, h: 260 }] }))
+  }
+  function chartGrid(ref: string) {
+    const r = parseRange(ref)
+    if (!r) return []
+    const out: unknown[][] = []
+    for (let row = r.r1; row <= r.r2; row++) {
+      const line: unknown[] = []
+      for (let c = r.c1; c <= r.c2; c++) line.push(engine.shown(sheet.id, c, row).value)
+      out.push(line)
+    }
+    return out
+  }
+  function editChart(id: Id, patch: Partial<NonNullable<Sheet['charts']>[number]>) {
+    updateSheet((sh) => ({ ...sh, charts: (sh.charts ?? []).map((c) => (c.id === id ? { ...c, ...patch } : c)) }))
+  }
+
+  async function exportCSV() {
+    const lines: string[][] = []
+    for (let r = 0; r < used.rows; r++) {
+      const line: string[] = []
+      for (let c = 0; c < used.cols; c++) line.push(shownText(c, r))
+      lines.push(line)
+    }
+    await saveTextFile({ title: 'Export sheet as CSV', defaultName: `${safeFileName(sheet.name)}.csv`, text: toCSV(lines), filter: { name: 'CSV', extensions: ['csv'] } })
+  }
+  function importCSV(text: string, fileName: string) {
+    const rows = parseCSV(text)
+    update((w) => {
+      const base = fileName.replace(/\.[^.]+$/, '') || 'Import'
+      let name = base
+      for (let n = 2; w.sheets.some((s) => s.name.toLowerCase() === name.toLowerCase()); n++) name = `${base} ${n}`
+      const sh = newSheet(name)
+      rows.forEach((line, r) => line.forEach((v, c) => v !== '' && (sh.cells[addr(c, r)] = { v })))
+      return { ...w, sheets: [...w.sheets, sh], activeSheetId: sh.id }
+    })
+    setSel({ anchor: { col: 0, row: 0 }, focus: { col: 0, row: 0 } })
+  }
+
+  function freeze(f: { rows: number; cols: number }) {
+    setMenu(null)
+    updateSheet((sh) => ({ ...sh, freeze: f.rows || f.cols ? f : undefined }))
+    body.current?.scrollTo(0, 0)
+  }
 
   /** Sort the selected rows by the selection's first column (values, not formulas). */
   function sortRange(asc: boolean) {

@@ -1,5 +1,5 @@
-import { AlignCenter, AlignLeft, AlignRight, Bold, Calculator, Italic, Minus, PaintBucket, Plus, Type, Underline } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { AlignCenter, AlignLeft, AlignRight, BarChart3, Bold, Calculator, Download, Upload, Italic, Minus, PaintBucket, Plus, Type, Underline } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { calcPreset } from './engine'
 import type { Border, CellStyle, NumberFormat } from './model'
 
@@ -20,7 +20,13 @@ export function Toolbar({
   onStyle,
   presets,
   onInsertCalc,
+  onChart,
+  onExportCSV,
+  onImportCSV,
 }: {
+  onChart(): void
+  onExportCSV(): void
+  onImportCSV(text: string, fileName: string): void
   style: CellStyle
   onStyle(patch: Partial<CellStyle> | ((s: CellStyle) => CellStyle)): void
   presets: string[]
@@ -28,6 +34,7 @@ export function Toolbar({
 }) {
   const [line, setLine] = useState<Border>({ w: 1, color: '#888888' })
   const [calcOpen, setCalcOpen] = useState(false)
+  const file = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!calcOpen) return
     const close = (e: MouseEvent) => !(e.target as Element).closest?.('.ss-calcwrap') && setCalcOpen(false)
@@ -108,6 +115,27 @@ export function Toolbar({
         <span className="ss-linecolor" style={{ borderBottom: `${line.w + 1}px solid ${line.color}` }} />
         <input type="color" value={line.color} onChange={(e) => setLine({ ...line, color: e.target.value })} />
       </label>
+      <span className="ss-sep" />
+      <button className="btn btn-ghost ss-small" title="Chart from the selected cells" onClick={onChart}>
+        <BarChart3 size={14} /> Chart
+      </button>
+      <button className="btn btn-ghost ss-small" title="Import a CSV file as a new sheet" onClick={() => file.current?.click()}>
+        <Upload size={14} /> Import CSV
+      </button>
+      <input
+        ref={file}
+        type="file"
+        accept=".csv,.tsv,.txt,text/csv"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0]
+          e.target.value = ''
+          if (f) onImportCSV(await f.text(), f.name)
+        }}
+      />
+      <button className="btn btn-ghost ss-small" title="Save this sheet as a CSV file" onClick={onExportCSV}>
+        <Download size={14} /> Export CSV
+      </button>
       <span className="ss-sep" />
       <div className="ss-calcwrap">
         <button className="btn btn-ghost ss-small" title="Put a Damage Calculator result in this cell (or drag one from the sidebar)" onClick={() => setCalcOpen(!calcOpen)}>

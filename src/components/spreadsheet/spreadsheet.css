@@ -369,3 +369,77 @@
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
   font-size: 13px;
 }
+.ss-frozen {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 8;
+  overflow: hidden;
+  background: var(--bg);
+  pointer-events: none;
+}
+.ss-frozen > div {
+  position: relative;
+}
+.ss-frozen-top {
+  box-shadow: 0 2px 0 var(--accent);
+}
+.ss-frozen-left {
+  box-shadow: 2px 0 0 var(--accent);
+}
+.ss-frozen-corner {
+  z-index: 9;
+  box-shadow: 2px 2px 0 var(--accent);
+}
+.ss-head.frozen {
+  z-index: 1;
+  background: var(--bg-elevated);
+}
+.ss-chart {
+  position: absolute;
+  z-index: 7;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 0.25);
+  cursor: default;
+  user-select: none;
+}
+.ss-chart-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 6px 0 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: move;
+}
+.ss-chart-title {
+  flex: 1;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: text;
+}
+.ss-chart-axis {
+  fill: var(--text-muted);
+  font-size: 10px;
+}
+.ss-chart-grid {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.ss-chart-size {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+  background: linear-gradient(135deg, transparent 50%, var(--text-muted) 50%);
+  border-bottom-right-radius: var(--radius);
+}

@@ -36,9 +36,26 @@ export interface Cell {
   s?: CellStyle
 }
 
+export type ChartType = 'bar' | 'line' | 'pie'
+
+/** A chart floating over the sheet, drawn from a range like A1:C6. */
+export interface Chart {
+  id: Id
+  range: string
+  type: ChartType
+  title: string
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export interface Sheet {
   id: Id
   name: string
+  /** Rows at the top and columns at the left that stay put while scrolling. */
+  freeze?: { rows: number; cols: number }
+  charts?: Chart[]
   /** Keyed by A1 address, e.g. "B12". */
   cells: Record<string, Cell>
   colWidths: Record<number, number>
