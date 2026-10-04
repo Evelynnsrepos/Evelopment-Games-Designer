@@ -1,0 +1,34 @@
+.fx-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.fx-matrix {
+  border-collapse: collapse;
+}
+.fx-matrix th,
+.fx-matrix td {
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.fx-matrix thead th {
+  text-align: center;
+}
+.fx-matrix tbody th {
+  text-align: left;
+}
+.fx-matrix td select {
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.fx-matrix td select option {
+  background: var(--bg-elevated);
+}
+.fx-self {
+  background: var(--bg-hover);
+}

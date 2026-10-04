@@ -33,6 +33,7 @@ export const COMPONENT_TYPES = [
   'skill-tree',
   'abilities',
   'crafting',
+  'factions',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

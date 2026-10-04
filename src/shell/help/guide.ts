@@ -349,6 +349,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Enter how many you want to make to see the total raw materials and crafting time, with crafts rounded up like in a game (a smelt that gives 2 bars runs twice for 3 bars). Recipes that go in a circle are pointed out.',
     ],
   },
+  factions: {
+    title: 'Factions',
+    body: [
+      'Make the factions of your world with a color, leader, members, towns, a description and their goals.',
+      'The relations matrix shows how every faction feels about every other one, from at war to allied, colored red to green. Pick a level in any cell, or use the sliders on a faction page for finer steps.',
+      'With Same both ways on, a relation is mutual. Turn it off when feelings differ, like a kingdom that trusts a guild that secretly hates it.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
