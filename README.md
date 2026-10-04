@@ -19,7 +19,9 @@
 </p>
 
 <p align="center">
-  <img src="docs/images/items.jpg" width="800" alt="The Item List with item cards">
+  <a href="docs/media/egd-0.10.mp4"><img src="docs/images/preview-0.10.webp" width="800" alt="Evelopment Games Designer 0.10 in action: new project from a genre, skill tree, combat simulator, tiling layout and engine export"></a>
+  <br>
+  <a href="docs/media/egd-0.10.mp4">▶ Watch the 0.10 video with sound</a>
 </p>
 
 **One program for designing your whole game.** Story, lore wiki, characters, towns, items, enemies, maps,
