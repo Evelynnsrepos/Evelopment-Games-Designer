@@ -466,6 +466,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'The graph warns about long flat stretches, where players may get bored, and about high peaks right after each other with no breather between.',
     ],
   },
+  pitch: {
+    title: 'Pitch Deck',
+    body: [
+      'Make slides to pitch your game. Build from project starts a deck with a title slide, your vision, selling points and design pillars (from Vision & Pillars) and slides of characters and items with their pictures.',
+      'Each slide has a layout: title, text, picture and text, design pillars, or a selection of items, characters, towns or enemies. Change the order with the arrows.',
+      'Present shows the deck full screen. Click or use the arrow keys, space or Enter to move on, and Esc to stop.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

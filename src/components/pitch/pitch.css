@@ -1,0 +1,188 @@
+.pi {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.pi-head {
+  padding: 0 12px;
+}
+.pi .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.pi-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.pi-list {
+  flex: 0 0 180px;
+  overflow-y: auto;
+  padding: 6px;
+  border-right: 1px solid var(--border);
+}
+.pi-thumb {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.pi-thumb.on {
+  border-color: var(--accent);
+}
+.pi-thumb span {
+  color: var(--text-muted);
+}
+.pi-stage {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  overflow: auto;
+  container-type: inline-size;
+}
+.pi-side {
+  flex: 0 0 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+.pi-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+  font-size: 13px;
+}
+.pi-slide {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  padding: 6% 7%;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #1c1c26, #2b2240);
+  color: #f4f2fa;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.35);
+  font-size: clamp(10px, 1.9cqi, 22px);
+}
+.pi-slide h1 {
+  position: relative;
+  margin: 0;
+  font-size: 3.2em;
+}
+.pi-slide h2 {
+  margin: 0 0 0.6em;
+  font-size: 2em;
+}
+.pi-slide p {
+  position: relative;
+  margin: 0.6em 0 0;
+  white-space: pre-wrap;
+  font-size: 1.15em;
+  line-height: 1.5;
+  opacity: 0.9;
+}
+.pi-l-title {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.pi-l-title .pi-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.35;
+}
+.pi-split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5%;
+  height: 100%;
+  align-items: center;
+}
+.pi-split .pi-img {
+  width: 100%;
+  max-height: 100%;
+  border-radius: 8px;
+  object-fit: cover;
+}
+.pi-pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 4%;
+}
+.pi-pillars > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  padding: 1em;
+  border-top: 0.3em solid;
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.06);
+}
+.pi-pillars span {
+  opacity: 0.8;
+}
+.pi-entities {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 3%;
+}
+.pi-entity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+}
+.pi-entity img,
+.pi-noimg {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgb(255 255 255 / 0.08);
+}
+.pi-entity span {
+  font-size: 0.75em;
+  opacity: 0.75;
+}
+.pi-present {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  display: grid;
+  place-items: center;
+  background: #000;
+  container-type: inline-size;
+  cursor: pointer;
+}
+.pi-present .pi-slide {
+  max-width: min(100vw, 177.7vh);
+  border-radius: 0;
+  box-shadow: none;
+}
+.pi-count {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  color: rgb(255 255 255 / 0.5);
+  font-size: 13px;
+}
