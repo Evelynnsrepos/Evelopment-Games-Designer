@@ -458,6 +458,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'The overview shows the scores per build, so you see if changes helped, and every open finding with the worst first and the areas with the most problems.',
     ],
   },
+  pacing: {
+    title: 'Pacing Graph',
+    body: [
+      'Plan the player journey as beats: moments like the opening, an ambush or the first boss, each with a kind, a time, how the player should feel and notes.',
+      'Every beat has a value from 0 to 10 on each curve: intensity and story stakes to start with, and add your own like difficulty. Drag the points up and down on the graph, or use the sliders.',
+      'The graph warns about long flat stretches, where players may get bored, and about high peaks right after each other with no breather between.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
