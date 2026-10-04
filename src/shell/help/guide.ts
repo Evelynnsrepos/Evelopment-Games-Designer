@@ -372,6 +372,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Note pins a numbered note on the map for puzzles, secrets or ambushes; the notes are listed on the right. The palette counts how many enemies, chests and so on the level has. Export saves the level as a PNG.',
     ],
   },
+  achievements: {
+    title: 'Achievements',
+    body: [
+      'List your achievements with a type, a picture, what players see, how it unlocks, the reward and points. Progress achievements get a number of steps, like 100 slimes.',
+      'Mark achievements as hidden until unlocked, and set how many players you expect to get each one, so you can balance easy and rare ones.',
+      'The toolbar adds up the points and warns when you go over 1000, the usual budget for a full game on consoles.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

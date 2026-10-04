@@ -36,6 +36,7 @@ export const COMPONENT_TYPES = [
   'factions',
   'family-tree',
   'level-layout',
+  'achievements',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

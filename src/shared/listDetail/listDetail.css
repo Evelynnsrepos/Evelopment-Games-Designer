@@ -166,3 +166,6 @@
 .ld-detail table tbody tr:hover {
   background: var(--bg-hover);
 }
+.ach-over {
+  color: var(--danger);
+}
