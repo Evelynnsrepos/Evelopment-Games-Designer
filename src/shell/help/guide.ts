@@ -102,6 +102,14 @@ export const BASICS: Record<string, GuideTopic> = {
       'Design Book at the bottom of the sidebar turns your project into one game design document with a cover, contents, images and info boxes. Pick the parts and entries to include, then save it as a web page or print it; choose Save as PDF as the printer for a PDF.',
     ],
   },
+  engines: {
+    title: 'Export to a game engine',
+    body: [
+      'Engine export at the bottom of the sidebar (or Ctrl+K) writes your items, characters, towns and enemies (with stats, categories and pictures), quests, dialogue and translations into your game project.',
+      'Godot 4 gets the data and an autoload script: add egd/egd_data.gd as an Autoload named Egd and use Egd.items or Egd.find("items", "fire_sword"). Unity gets the data in Resources and C# classes with EgdData.Load(). Unreal gets DataTable CSVs to import with a matching struct. Plain JSON works with anything.',
+      'Export again whenever something changes; the files are overwritten. A README_EGD.md in the folder explains the files.',
+    ],
+  },
   look: {
     title: 'Project look (theming)',
     body: [

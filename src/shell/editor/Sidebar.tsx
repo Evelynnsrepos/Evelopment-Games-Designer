@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Gem, Settings, Trash2, Users } from 'lucide-react'
+import { BookOpen, Boxes, ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Gem, Settings, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -9,6 +9,7 @@ import { leaves } from '../workspace/layoutTree'
 import { useHelp } from '../help/help'
 import { openSettings } from '../settings/open'
 import { openDesignBook } from '../designBook/open'
+import { useEngineExport } from '../engineExport/open'
 import { openRarities } from '@/shared/categories'
 import { usePlugins } from '../plugins/plugins'
 import { ProjectThemeDialog } from './projectTheme'
@@ -197,6 +198,10 @@ export function Sidebar() {
         <button className="sidebar-row" title="Design Book: export your game design document" onClick={openDesignBook}>
           <BookOpen size={16} />
           {!collapsed && <span>Design Book</span>}
+        </button>
+        <button className="sidebar-row" title="Export your data to Godot, Unity or Unreal" onClick={() => useEngineExport.setState({ open: true })}>
+          <Boxes size={16} />
+          {!collapsed && <span>Engine export</span>}
         </button>
         <button className="sidebar-row" title="Settings" onClick={openSettings}>
           <Settings size={16} />

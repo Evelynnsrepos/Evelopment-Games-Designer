@@ -1,0 +1,57 @@
+.modal:has(.ee) {
+  width: min(560px, calc(100vw - 32px));
+}
+.ee {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ee h3,
+.ee p {
+  margin: 0;
+}
+.ee-engines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ee-engine {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.ee-engine.on {
+  border-color: var(--accent);
+}
+.ee-engine span {
+  grid-column: 2;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.ee-folder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.ee-folder code {
+  overflow: hidden;
+  font-size: 12px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.ee .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.ee-ok {
+  color: #2f9e44;
+}
+.ee-bad {
+  color: var(--danger);
+}
