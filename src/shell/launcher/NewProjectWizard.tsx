@@ -4,6 +4,7 @@ import type { ComponentType } from '@/core/model'
 import { defaultProjectsDir } from '@/core/project'
 import { allManifests } from '@/core/registry'
 import { useAppStore, useProjectStore } from '@/core/state'
+import { applyTemplate, TEMPLATES, type Template } from './templates'
 import './launcher.css'
 
 /** Three-step new project flow (spec 5, NP-1..NP-6). */
@@ -12,6 +13,7 @@ export function NewProjectWizard() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [components, setComponents] = useState<ComponentType[]>([])
+  const [template, setTemplate] = useState<Template | null>(null)
   const [location, setLocation] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,6 +31,8 @@ export function NewProjectWizard() {
     setError(null)
     try {
       await useProjectStore.getState().create({ name, description, components, parentDir: location || undefined })
+      const root = useProjectStore.getState().root
+      if (template && root) await applyTemplate(root, template)
       useAppStore.getState().go('editor')
     } catch (e) {
       setError((e as Error).message)
@@ -89,7 +93,24 @@ export function NewProjectWizard() {
         {step === 2 && (
           <>
             <h2>Which tools does this project need?</h2>
-            <p className="muted">You can add more later from the sidebar.</p>
+            <p className="muted">Start from a genre or pick tools yourself. You can add more later from the sidebar.</p>
+            <div className="template-row">
+              {TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  title={t.description}
+                  className={`template-chip${template?.id === t.id ? ' on' : ''}`}
+                  onClick={() => {
+                    setTemplate(template?.id === t.id ? null : t)
+                    if (template?.id !== t.id) setComponents(t.components.filter((c) => manifests.some((m) => m.type === c)))
+                  }}
+                >
+                  {t.name}
+                </button>
+              ))}
+            </div>
+            {template && <p className="muted">{template.description} The vision page starts with the genre and suggested pillars, and the task board with first steps.</p>}
             <div className="component-checklist">
               {manifests.map((m) => (
                 <label key={m.type} title={m.description}>

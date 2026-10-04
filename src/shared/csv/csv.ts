@@ -1,5 +1,3 @@
-import { normRange, parseAddr, type Range } from './model'
-
 /** Rows of a CSV file. Finds the separator itself (comma, semicolon or tab) and handles quotes. */
 export function parseCSV(text: string): string[][] {
   const clean = text.replace(/^﻿/, '')
@@ -41,12 +39,4 @@ export function parseCSV(text: string): string[][] {
 
 export function toCSV(rows: string[][]): string {
   return rows.map((r) => r.map((v) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v)).join(',')).join('\r\n') + '\r\n'
-}
-
-/** "A1:C6" → the range, or null. */
-export function parseRange(ref: string): Range | null {
-  const [a, b = a] = ref.toUpperCase().replace(/\$/g, '').split(':')
-  const p = parseAddr(a)
-  const q = parseAddr(b)
-  return p && q ? normRange(p, q) : null
 }

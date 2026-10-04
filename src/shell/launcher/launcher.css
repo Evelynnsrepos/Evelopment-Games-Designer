@@ -171,3 +171,21 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
 }
+.template-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.template-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+}
+.template-chip.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-text);
+}

@@ -49,6 +49,8 @@ export const COMPONENT_TYPES = [
   'playtests',
   'pacing',
   'pitch',
+  'localization',
+  'storyboard',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

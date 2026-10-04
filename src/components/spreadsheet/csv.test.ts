@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { parseCSV, parseRange, toCSV } from './csv'
+import { parseCSV, toCSV } from '@/shared/csv'
+import { parseRange } from './range'
 
 describe('csv', () => {
   it('reads commas, semicolons, tabs, quotes and line breaks', () => {

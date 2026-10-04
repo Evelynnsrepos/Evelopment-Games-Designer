@@ -474,6 +474,21 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Present shows the deck full screen. Click or use the arrow keys, space or Enter to move on, and Esc to stop.',
     ],
   },
+  localization: {
+    title: 'Localization',
+    body: [
+      'A table of every text players see, by key, with a column per language. The first language is the source; add more with + Language, and the bar shows how much of each is translated.',
+      'Collect texts from the project fills the table with the names and descriptions of items, characters, towns and enemies, quest names, summaries and objectives, and every dialogue line and choice. Run it again after changes: new texts are added and changed source texts updated, translations stay.',
+      'Show only what is missing in a language, and export the table as CSV for translators or your engine; Import CSV brings their work back.',
+    ],
+  },
+  storyboard: {
+    title: 'Storyboard',
+    body: [
+      'Plan cutscenes frame by frame. Each frame has a picture (a sketch, a screenshot, anything), a shot like wide or close-up, a camera move, how many seconds it lasts, what happens, the dialogue and the sound.',
+      'Add, duplicate and reorder frames in the strip. Play animatic shows the frames one after another for their seconds with the dialogue as subtitles, so you can feel the timing of the scene.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

@@ -1,0 +1,87 @@
+.lc {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.lc .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lc-langs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.lc-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.lc-lang em {
+  color: var(--text-muted);
+}
+.lc-progress {
+  display: inline-block;
+  width: 70px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--bg-hover);
+}
+.lc-progress span {
+  display: block;
+  height: 100%;
+  background: #2f9e44;
+}
+.lc-table-wrap {
+  flex: 1;
+  overflow: auto;
+}
+.lc-empty {
+  padding: 16px;
+}
+.lc-table {
+  border-collapse: collapse;
+  min-width: 100%;
+  font-size: 13px;
+}
+.lc-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 6px;
+  background: var(--bg-elevated);
+  text-align: left;
+}
+.lc-table td {
+  padding: 0;
+  border: 1px solid var(--border);
+  vertical-align: top;
+}
+.lc-table input,
+.lc-table textarea {
+  width: 100%;
+  min-width: 140px;
+  padding: 5px 6px;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  resize: vertical;
+}
+.lc-key {
+  font-family: ui-monospace, monospace !important;
+  font-size: 12px !important;
+}
+.lc-ctx {
+  color: var(--text-muted) !important;
+}
+.lc-missing {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
