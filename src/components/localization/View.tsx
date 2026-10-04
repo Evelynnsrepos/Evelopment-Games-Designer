@@ -32,23 +32,30 @@ export default function View({ active }: PanelProps) {
   const collect = async () => {
     if (!root) return
     const found: Found[] = []
+    // Same names get _2, _3… so every entry keeps its own key.
+    const used = new Map<string, number>()
+    const unique = (base: string) => {
+      const n = (used.get(base) ?? 0) + 1
+      used.set(base, n)
+      return n === 1 ? base : `${base}_${n}`
+    }
     for (const [type, list] of Object.entries(entities) as [string, Entity[]][]) {
       for (const e of list) {
-        const k = `${type}.${slug(e.name)}`
+        const k = unique(`${type}.${slug(e.name)}`)
         found.push({ key: `${k}.name`, context: `${type} name`, text: e.name }, { key: `${k}.description`, context: `${type} description`, text: e.description })
       }
     }
     {
       const quests = await loadDocumentNow<{ quests?: { name: string; summary: string; objectives: { text: string }[] }[] }>(root, 'quests', 'quests', () => ({ quests: [] }))
       for (const qu of quests?.quests ?? []) {
-        const k = `quest.${slug(qu.name)}`
+        const k = unique(`quest.${slug(qu.name)}`)
         found.push({ key: `${k}.name`, context: 'Quest name', text: qu.name }, { key: `${k}.summary`, context: 'Quest summary', text: qu.summary })
         qu.objectives.forEach((o, i) => found.push({ key: `${k}.objective_${i + 1}`, context: 'Quest objective', text: o.text }))
       }
     }
     for (const dd of documents.filter((x) => x.type === 'dialogue')) {
       const dl = await loadDocumentNow<{ lines?: { id: string; speakerName: string; text: string; choices: { id: string; text: string }[] }[] }>(root, 'dialogue', dd.id, () => ({ lines: [] }))
-      const k = `dialogue.${slug(dd.title)}`
+      const k = unique(`dialogue.${slug(dd.title)}`)
       ;(dl?.lines ?? []).forEach((l, i) => {
         found.push({ key: `${k}.line_${i + 1}`, context: `Dialogue "${dd.title}"${l.speakerName ? `, ${l.speakerName}` : ''}`, text: l.text })
         l.choices.forEach((c, j) => found.push({ key: `${k}.line_${i + 1}.choice_${j + 1}`, context: `Choice in "${dd.title}"`, text: c.text }))

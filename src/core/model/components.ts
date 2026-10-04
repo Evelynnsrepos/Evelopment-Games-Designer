@@ -51,6 +51,7 @@ export const COMPONENT_TYPES = [
   'pitch',
   'localization',
   'storyboard',
+  'ui-flow',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

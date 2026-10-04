@@ -489,6 +489,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Add, duplicate and reorder frames in the strip. Play animatic shows the frames one after another for their seconds with the dialogue as subtitles, so you can feel the timing of the scene.',
     ],
   },
+  'ui-flow': {
+    title: 'UI Flow',
+    body: [
+      'Mock up your menus and screens. Pick a size (phone, tablet, desktop or console, popup) and click with the Screen tool to place a screen; double-click it to name it.',
+      'Place widgets with the Widget tool: buttons, toggles, sliders, text fields, lists, picture placeholders, tabs and bars; double-click to change their text. Resize anything with its handles.',
+      'Join screens with arrows to show where each button leads, add notes and comments, and drag everything around like on the other boards.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
