@@ -1,7 +1,8 @@
 import type { Id } from '@/core/model'
 import { blendPixel, CANVAS_BLENDS, type BlendMode } from './blend'
 import { colorStroke, StrokeStamper, type BrushSettings } from './brushes'
-import { GlCompositor, parseHex, type GlLayer } from './gl'
+import { GlCompositor, parseHex, type GlLayer, type GlSource } from './gl'
+import { layerTree, type LayerNode } from './layers'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
 import { TileHistory, tilesIn, type Rect } from './tiles'
 
@@ -368,26 +369,44 @@ export class SketchEngine {
 
   private renderGpu(doc: LayerStack, withBackground: boolean): HTMLCanvasElement {
     const gpu = this.gpu!
-    const stack: GlLayer[] = []
-    let base: string | null = null
-    for (const layer of doc.layers) {
-      const { canvas, live } = this.livePixels(layer)
-      // The live preview has its own texture so the layer's own texture stays valid.
-      const key = live ? `${layer.id}:live` : layer.id
-      const version = live ? ++this.previewVersion : (this.layerVersions.get(layer.id) ?? 0)
-      const entry: GlLayer = { source: canvas, version, key, opacity: layer.opacity, blend: layer.blend, clipTo: layer.clip ? base : null }
-      if (!layer.clip) base = key
-      // A clipping base must be in the stack even when hidden, with no effect of its own.
-      stack.push(layer.visible ? entry : { ...entry, opacity: 0 })
-    }
-    gpu.prune(new Set([...stack.map((l) => l.key), ...doc.layers.map((l) => l.id)]))
+    const keys = new Set(doc.layers.map((l) => l.id))
+    const stack = this.glNodes(layerTree(doc.layers), keys)
+    gpu.prune(keys)
     const bg = withBackground && doc.backgroundColor ? parseHex(doc.backgroundColor) : null
     return gpu.render(stack, bg)
   }
 
+  /** A layer's (or mask's) pixels as a GPU source; the live preview has its own texture so the layer's own stays valid. */
+  private glSource(layer: SketchLayer, keys: Set<string>): GlSource {
+    const { canvas, live } = this.livePixels(layer)
+    const key = live ? `${layer.id}:live` : layer.id
+    keys.add(key)
+    return { source: canvas, key, version: live ? ++this.previewVersion : (this.layerVersions.get(layer.id) ?? 0) }
+  }
+
+  private glNodes(nodes: LayerNode[], keys: Set<string>): GlLayer[] {
+    const out: GlLayer[] = []
+    let base: GlLayer | null = null
+    for (const { layer, children, mask } of nodes) {
+      const m = mask?.visible ? this.glSource(mask, keys) : null
+      const clip = layer.clip && base ? { clipTo: base.key, clipMask: base.mask } : { clipTo: null }
+      if (children) {
+        // Groups are never clipping bases; hidden groups are skipped with everything inside.
+        if (!layer.clip) base = null
+        if (!layer.visible) continue
+        out.push({ source: this.scratch.canvas, version: 0, key: layer.id, opacity: layer.opacity, blend: layer.blend, mask: m, ...clip, children: this.glNodes(children, keys) })
+        continue
+      }
+      const entry: GlLayer = { ...this.glSource(layer, keys), opacity: layer.opacity, blend: layer.blend, mask: m, ...clip }
+      if (!layer.clip) base = entry
+      // A clipping base must be in the stack even when hidden, with no effect of its own.
+      out.push(layer.visible ? entry : { ...entry, opacity: 0 })
+    }
+    return out
+  }
+
   private renderCanvas2d(doc: LayerStack, withBackground: boolean): HTMLCanvasElement {
     const { ctx, canvas } = this.composite
-    ctx.save()
     ctx.globalCompositeOperation = 'source-over'
     ctx.globalAlpha = 1
     ctx.clearRect(0, 0, this.width, this.height)
@@ -395,32 +414,72 @@ export class SketchEngine {
       ctx.fillStyle = doc.backgroundColor
       ctx.fillRect(0, 0, this.width, this.height)
     }
-    let base: HTMLCanvasElement | null = null
-    for (const layer of doc.layers) {
-      let src = this.livePixels(layer).canvas
-      if (layer.clip && base) {
-        // Clipping mask: keep only where the base layer has pixels.
-        const tmp = makeCanvas(this.width, this.height)
-        tmp.ctx.drawImage(src, 0, 0)
-        tmp.ctx.globalCompositeOperation = 'destination-in'
-        tmp.ctx.drawImage(base, 0, 0)
-        src = tmp.canvas
-      } else if (!layer.clip) {
-        base = this.ensure(layer.id).canvas
+    this.compose2d(ctx, layerTree(doc.layers), 0)
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 1
+    return canvas
+  }
+
+  /** Canvases for groups and masked layers, per group depth (Canvas 2D path). */
+  private pool: Canvas2D[] = []
+  private pooled(i: number): Canvas2D {
+    const c = (this.pool[i] ??= makeCanvas(this.width, this.height))
+    c.ctx.globalCompositeOperation = 'source-over'
+    c.ctx.globalAlpha = 1
+    c.ctx.clearRect(0, 0, this.width, this.height)
+    return c
+  }
+
+  /** Mask pixels as alpha (brightness x alpha), cached per mask version. */
+  private maskCache = new Map<Id, { version: number; c: Canvas2D }>()
+  private maskAlpha(mask: SketchLayer): HTMLCanvasElement {
+    const { canvas: src, live } = this.livePixels(mask)
+    const version = this.layerVersions.get(mask.id) ?? 0
+    const hit = this.maskCache.get(mask.id)
+    if (hit && hit.version === version && !live) return hit.c.canvas
+    const c = hit?.c ?? makeCanvas(this.width, this.height)
+    const img = src.getContext('2d')!.getImageData(0, 0, this.width, this.height)
+    lumaToAlpha(img.data)
+    c.ctx.putImageData(img, 0, 0)
+    this.maskCache.set(mask.id, { version: live ? -1 : version, c })
+    return c.canvas
+  }
+
+  private compose2d(ctx: CanvasRenderingContext2D, nodes: LayerNode[], depth: number) {
+    let base: { canvas: HTMLCanvasElement; mask: HTMLCanvasElement | null } | null = null
+    for (const { layer, children, mask } of nodes) {
+      const m = mask?.visible ? this.maskAlpha(mask) : null
+      const clipTo = layer.clip ? base : null
+      let src: HTMLCanvasElement
+      if (children) {
+        if (!layer.clip) base = null
+        if (!layer.visible) continue
+        const g = this.pooled(depth * 2)
+        this.compose2d(g.ctx, children, depth + 1)
+        src = g.canvas
+      } else {
+        src = this.livePixels(layer).canvas
+        if (!layer.clip) base = { canvas: this.ensure(layer.id).canvas, mask: m }
+        if (!layer.visible) continue
       }
-      if (!layer.visible) continue
+      if (m || clipTo) {
+        // Keep only where the mask and the clipping base let it through.
+        const t = this.pooled(depth * 2 + 1)
+        t.ctx.drawImage(src, 0, 0)
+        t.ctx.globalCompositeOperation = 'destination-in'
+        if (m) t.ctx.drawImage(m, 0, 0)
+        if (clipTo) {
+          t.ctx.drawImage(clipTo.canvas, 0, 0)
+          if (clipTo.mask) t.ctx.drawImage(clipTo.mask, 0, 0)
+        }
+        src = t.canvas
+      }
       if (CANVAS_BLENDS.has(layer.blend)) {
         ctx.globalAlpha = layer.opacity
         ctx.globalCompositeOperation = layer.blend as GlobalCompositeOperation
         ctx.drawImage(src, 0, 0)
-      } else {
-        ctx.restore()
-        cpuBlend(ctx, src, layer.blend, layer.opacity)
-        ctx.save()
-      }
+      } else cpuBlend(ctx, src, layer.blend, layer.opacity)
     }
-    ctx.restore()
-    return canvas
   }
 
   /** The color under a canvas pixel in the flattened picture, as #rrggbb, or null if transparent. */
@@ -445,6 +504,14 @@ export class SketchEngine {
     const data = this.ensure(layerId).ctx.getImageData(0, 0, this.width, this.height).data
     for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false
     return true
+  }
+}
+
+/** Mask pixels to alpha: brightness (0.299, 0.587, 0.114) times alpha, like the GPU path. */
+export function lumaToAlpha(d: Uint8ClampedArray) {
+  for (let i = 0; i < d.length; i += 4) {
+    d[i + 3] = Math.round(((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) * d[i + 3]) / 255)
+    d[i] = d[i + 1] = d[i + 2] = 0
   }
 }
 
