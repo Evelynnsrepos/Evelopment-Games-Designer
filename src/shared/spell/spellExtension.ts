@@ -99,7 +99,7 @@ export const SpellCheck = Extension.create<SpellOptions>({
         props: {
           decorations: (state) => key.getState(state),
           attributes: (): Record<string, string> => (spellAvailable() ? { spellcheck: 'false' } : {}),
-          // A click opens the card like Grammarly and still places the caret.
+          // A click opens the suggestion card and still places the caret.
           handleClick: (view, pos, event) => {
             const hit = hitAt(view, pos, event)
             if (hit) options.onMisspelling(hit)

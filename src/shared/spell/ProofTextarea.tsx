@@ -132,7 +132,7 @@ export function ProofTextarea({ ref, onScroll, onContextMenu, onClick, ...props 
           e.preventDefault()
           setHit(next)
         }}
-        // A click opens the card like Grammarly and still places the caret.
+        // A click opens the suggestion card and still places the caret.
         onClick={(e) => {
           onClick?.(e)
           const next = hitAt(e)

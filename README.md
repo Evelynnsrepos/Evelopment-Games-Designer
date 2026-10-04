@@ -51,12 +51,13 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 - **Tiling editor**: open several tools side by side, drag a tool from the sidebar to split the screen, and resize the splits.
 - **Layout Mode**: press `Esc` to close or rearrange tools with big, easy targets.
 - **Auto-save** about a second after every edit, **undo/redo** in every tool, and **rolling backups** of the last 10 saves.
-- **Work together**: share a project with an invite code and edit it live with others, peer to peer, on Windows, Mac and Linux. No account or server; offline changes merge when you reconnect.
+- **Work together**: share a project with an invite code and edit it live with others, peer to peer, on Windows, Mac and Linux. No account needed; offline changes merge when you reconnect.
+- **Work through a server** (optional): put a project on your own [Evelopment Games Designer Server](https://github.com/Evelynnsrepos/Evelopment-Games-Designer-Server) so people can join and sync even when nobody else is online. Each person gets their own connect code, for editing or view only, and the server can offer plugins.
 - **Light and dark themes** (dark by default), plus a **Project look** per project: accent, background and wallpaper.
-- **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1` or click Help).
+- **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1`). The **Help** button also shows how to report a problem on GitHub.
 - **Click** a tool in the sidebar to show only that tool; **Shift-click** to open it next to the ones already open.
 - **Spell check** in English and German with suggestions on right-click, your own word list, and names from your project counted as correct.
-- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, like Grammarly, with blue underlines and one-click fixes.
+- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, with blue underlines and a card with up to 3 fixes. Pick Small (1.1 GB, fast) or Better (2.5 GB, catches more).
 - **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
 - **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
 - **Pen size, opacity and smoothing** sliders on every drawing canvas.
@@ -107,6 +108,8 @@ your IP address on direct connections, and when a direct connection is not possi
 through public relay servers run by n0, a US company (iroh).
 The app only goes online when you share a project: teammates' computers then connect to each other directly and encrypted,
 using public relay servers by [n0](https://n0.computer) only to find each other or when a direct connection is not possible. Relays cannot read your project.
+
+**Working through a server** sends the project to the server you connect to and nobody else. Whoever runs that server can read the projects on it, so only use servers you trust.
 
 ## Community
 
