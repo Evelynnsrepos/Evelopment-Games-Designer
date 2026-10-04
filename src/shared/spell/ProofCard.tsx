@@ -27,7 +27,7 @@ const UI = {
   close: 'Close',
 }
 
-/** Grammarly-style card on an underline: what kind of mistake, about 3 fixes, Dismiss and Add to dictionary. */
+/** Suggestion card on an underline: what kind of mistake, about 3 fixes, Dismiss and Add to dictionary. */
 export function ProofCard({ hit, replace, onClose }: { hit: ProofHit; replace: (from: number, to: number, text: string) => void; onClose: () => void }) {
   const [options, setOptions] = useState<string[]>([])
   const [loading, setLoading] = useState(true)

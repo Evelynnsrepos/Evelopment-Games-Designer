@@ -19,7 +19,7 @@ const UI = {
   wordsHint: 'Words you added with "Add to dictionary". Names of your items, characters, towns and enemies are always known.',
   noWords: 'No words yet.',
   ai: 'AI helper',
-  aiAbout: 'An AI model that runs on this computer and checks your grammar and spelling as you write, like Grammarly. Click a blue underline for its suggestions. Nothing is sent to the internet.',
+  aiAbout: 'An AI model that runs on this computer and checks your grammar and spelling as you write. Click a blue underline for its suggestions. Nothing is sent to the internet.',
   aiModels: 'Model',
   aiDownload: 'Download',
   aiRemove: 'Remove AI helper',

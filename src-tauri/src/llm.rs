@@ -222,7 +222,7 @@ fn ensure_server(app: &AppHandle, model: &str) -> Result<u16, String> {
 }
 
 /// The paragraph with its spelling, grammar and punctuation fixed, for underlining what changed
-/// (like Grammarly). A small model is far better at rewriting text than at listing mistakes, so the
+/// in the suggestion card. A small model is far better at rewriting text than at listing mistakes, so the
 /// app diffs the answer itself. `lang` is "en" or "de"; asking in the text's language stops the
 /// model from translating German into English.
 #[tauri::command]

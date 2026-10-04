@@ -6,7 +6,7 @@ import { findMisspelled, knownWords, suggest, tokenize } from './spell'
 /**
  * Spelling and AI grammar issues for plain paragraphs, shared by the rich text
  * editor and ProofTextarea. The AI helper rewrites a paragraph correctly and
- * the differences become blue underlines, like Grammarly.
+ * the differences become blue underlines.
  */
 export interface Issue {
   from: number
@@ -220,7 +220,7 @@ export function fixOptions(text: string, from: number, to: number, fix: string |
     .catch(() => {})
 }
 
-/** Grammarly-style card title for a fix. */
+/** Suggestion card title for a fix. */
 export function fixTitle(bad: string, fix: string | undefined, misspelled: boolean): string {
   if (misspelled || fix === undefined) return 'Correct the spelling'
   const letters = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, '')
