@@ -24,6 +24,7 @@ pub fn run() {
       llm::llm_remove,
       llm::llm_check,
       llm::llm_options,
+      llm::llm_ask,
       plugins::plugin_download,
       collab_commands::collab_start,
       collab_commands::collab_addr,

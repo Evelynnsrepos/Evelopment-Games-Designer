@@ -197,7 +197,7 @@ fn ensure_server(app: &AppHandle, model: &str) -> Result<u16, String> {
   let mut cmd = Command::new(&exe);
   cmd
     .arg("-m").arg(&model)
-    .args(["--host", "127.0.0.1", "--port", &port.to_string(), "-c", "2048"])
+    .args(["--host", "127.0.0.1", "--port", &port.to_string(), "-c", "4096"])
     .current_dir(exe.parent().unwrap())
     .stdout(Stdio::null())
     .stderr(Stdio::null());
@@ -301,6 +301,37 @@ were running",
     let json: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
     let text = json["choices"][0]["message"]["content"].as_str().unwrap_or_default();
     Ok(text.lines().map(str::to_string).collect())
+  })
+  .await
+  .map_err(|e| e.to_string())?
+}
+
+/// Answer a question about the project from the notes the app picked for it ("Ask your project", v0.10).
+/// Runs on the local AI helper only. It must answer from the notes alone and never write new content
+/// (stories, scenes, dialogue, names, ideas): the user's ideas stay theirs.
+#[tauri::command]
+pub async fn llm_ask(app: AppHandle, question: String, notes: String, model: String) -> Result<String, String> {
+  tauri::async_runtime::spawn_blocking(move || {
+    let port = ensure_server(&app, &model)?;
+    let system = "You look things up in a game designer's own notes. Answer only with facts that are written in the project notes below, \
+      and name the entries you used. If the notes do not contain the answer, say that the project does not say yet. \
+      Never write, invent or suggest anything new: no stories, scenes, dialogue, names, plots, ideas or continuations. \
+      If you are asked to, say that this tool only answers about what is already written. \
+      When asked to check for contradictions, list each one with the two conflicting statements, or say you found none. \
+      Answer briefly, in the language of the question.";
+    let body = serde_json::json!({
+      "messages": [
+        { "role": "system", "content": format!("{system}\n\nProject notes:\n{notes}") },
+        { "role": "user", "content": question }
+      ],
+      "temperature": 0,
+      "max_tokens": 350
+    });
+    let mut resp = ureq::post(&format!("http://127.0.0.1:{port}/v1/chat/completions"))
+      .send_json(&body)
+      .map_err(|e| format!("The AI helper failed: {e}"))?;
+    let json: serde_json::Value = resp.body_mut().read_json().map_err(|e| e.to_string())?;
+    Ok(json["choices"][0]["message"]["content"].as_str().unwrap_or_default().trim().to_string())
   })
   .await
   .map_err(|e| e.to_string())?
