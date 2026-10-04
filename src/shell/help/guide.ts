@@ -435,6 +435,13 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Each feature has an effort in days, a status and the design pillar it serves (from Vision & Pillars). Enter the days until release: the planner adds up must and should and tells you when they do not fit, so you know what to move or cut.',
     ],
   },
+  tasks: {
+    title: 'Task Board',
+    body: [
+      'Keep the work on your game in four columns: to do, doing, review and done. Drag tasks between columns and click one to give it a person, a due date, a priority and notes.',
+      'Link a task to what it is about: type a name to find items, characters, towns, enemies, wiki articles or any document, and click the link later to jump there. Filter the board by title or person.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

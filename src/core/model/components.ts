@@ -44,6 +44,7 @@ export const COMPONENT_TYPES = [
   'balance',
   'vision',
   'scope',
+  'tasks',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]
