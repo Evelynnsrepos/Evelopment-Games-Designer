@@ -1,0 +1,371 @@
+.ss {
+  --ss-grid: color-mix(in srgb, var(--border) 70%, transparent);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  user-select: none;
+}
+.ss-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ss-toolbar .icon-btn.on {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
+.ss-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--border);
+}
+.ss-small {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+.ss-select {
+  width: auto;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.ss-dp {
+  min-width: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ss-color {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.ss-color:hover {
+  background: var(--bg-hover);
+}
+.ss-color input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.ss-linecolor {
+  width: 16px;
+  height: 8px;
+}
+.ss-calcwrap {
+  position: relative;
+}
+.ss-calcmenu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  min-width: 200px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+}
+.ss-calcmenu p {
+  margin: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ss-calcmenu button,
+.ss-menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+.ss-calcmenu button:hover,
+.ss-menu button:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+.ss-menu button:disabled {
+  color: var(--text-muted);
+}
+.ss-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.ss-namebox {
+  min-width: 70px;
+  padding: 3px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font: 12px ui-monospace, monospace;
+}
+.ss-fx {
+  font-style: italic;
+  color: var(--text-muted);
+}
+.ss-barinput {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  font: 13px ui-monospace, monospace;
+  user-select: text;
+}
+.ss-main {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+.ss-corner {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 3;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.ss-colhead,
+.ss-rowhead {
+  position: absolute;
+  z-index: 2;
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.ss-colhead {
+  right: 0;
+  top: 0;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+}
+.ss-rowhead {
+  left: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border);
+}
+.ss-head {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border-right: 1px solid var(--ss-grid);
+  border-bottom: 1px solid var(--ss-grid);
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.ss-colhead .ss-head {
+  top: 0;
+  height: 100%;
+}
+.ss-rowhead .ss-head {
+  left: 0;
+}
+.ss-head.on {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--text);
+}
+.ss-head.whole {
+  background: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.ss-colhead .ss-head::after,
+.ss-rowhead .ss-head::after {
+  content: "";
+  position: absolute;
+}
+.ss-colhead .ss-head::after {
+  right: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+}
+.ss-rowhead .ss-head::after {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  cursor: row-resize;
+}
+.ss-gridwrap {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  outline: none;
+}
+.ss-body {
+  position: absolute;
+  inset: 0;
+  overflow: auto;
+  cursor: cell;
+}
+.ss-canvas {
+  position: relative;
+}
+.ss-vline,
+.ss-hline {
+  position: absolute;
+  background: var(--ss-grid);
+  pointer-events: none;
+}
+.ss-vline {
+  top: 0;
+  width: 1px;
+}
+.ss-hline {
+  left: 0;
+  height: 1px;
+}
+.ss-cell {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 0 4px;
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ss-sel,
+.ss-active,
+.ss-fillpreview {
+  position: absolute;
+  z-index: 4;
+  box-sizing: border-box;
+  pointer-events: none;
+}
+.ss-sel {
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ss-active {
+  border: 2px solid var(--accent);
+}
+.ss-fillpreview {
+  border: 2px dashed var(--accent);
+}
+.ss-handle {
+  position: absolute;
+  z-index: 5;
+  width: 8px;
+  height: 8px;
+  box-sizing: border-box;
+  border: 1px solid var(--bg);
+  background: var(--accent);
+  cursor: crosshair;
+}
+.ss-editor {
+  position: absolute;
+  z-index: 6;
+  box-sizing: border-box;
+  padding: 0 3px;
+  border: 2px solid var(--accent);
+  outline: none;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  user-select: text;
+}
+.ss-calcpanel {
+  position: absolute;
+  right: 12px;
+  top: 96px;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 220px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+  font-size: 12px;
+}
+.ss-calcpanel label {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  align-items: center;
+  gap: 6px;
+}
+.ss-calcpanel .input {
+  padding: 3px 6px;
+  font-size: 12px;
+  user-select: text;
+}
+.ss-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.ss-tabs {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+}
+.ss-tab {
+  padding: 5px 14px;
+  border: none;
+  border-right: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.ss-tab.on {
+  background: var(--bg);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+.ss-addtab {
+  font-weight: 700;
+}
+.ss-status {
+  padding: 0 10px;
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.ss-menu {
+  position: fixed;
+  z-index: 1000;
+  min-width: 200px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.3);
+  font-size: 13px;
+}

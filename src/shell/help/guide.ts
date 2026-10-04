@@ -295,6 +295,35 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Chest / drop table: list what can drop, either one entry picked by weight or each entry with its own chance, or load an enemy drop table. Mark one entry as the target to see its chance per opening and how many openings a 50, 90 or 99% chance takes.',
     ],
   },
+  spreadsheet: {
+    title: 'Spreadsheet',
+    body: [
+      'Works like Excel. Click a cell and type; start with = for a formula, like =SUM(A1:A10) or =IF(B2>100, "rich", "poor"). Hundreds of Excel functions work, including VLOOKUP, SUMIF, ROUND, DATE and TEXT.',
+      'While writing a formula, click or drag over cells to put their address in, even on another sheet. Sheets reference each other with Sheet2!A1. Add sheets with the + at the bottom; double-click a tab to rename it, right-click to move or delete it.',
+      'Drag the small square at the corner of the selection to fill: numbers and dates continue their step, "Wave 1" becomes "Wave 2", month and weekday names keep going, and formulas move their cell references along. Double-click it to fill down as far as the column next to it goes. Ctrl+D and Ctrl+R fill down and right.',
+      'The toolbar sets bold, italic, underline, text and fill colors, alignment, number formats (number, percent, currency, date, text) with decimals, and borders with a thickness and color. Right-click a row or column header to insert or delete; drag a header edge to resize; right-click a selection to sort it.',
+      'Damage Calculator results can live in a cell: drag a Damage Calculator preset from the sidebar onto a cell, or use Calculator in the toolbar. The cell shows =CALC("Preset name"). The panel that opens lets you take any calculator input from a cell, so the sheet can run the formula for every row.',
+    ],
+    tips: ['Copy and paste work with other programs too; pasted text with tabs fills several cells.', 'Select numbers to see their sum, average and count at the bottom right.'],
+  },
+  principles: {
+    title: 'Writing Principles',
+    body: [
+      'A collection of rules for good stories and game writing, ready to use: show, don’t tell; setup and payoff; information theory; save the player from themselves; and more, each with what it means and often an example.',
+      'Story structures such as the Hero’s Journey, the three-act structure, the story circle, Save the Cat, Kishōtenketsu, the seven-point structure and Freytag’s pyramid are listed as numbered steps.',
+      'Make it yours: add principles and categories, edit or delete any entry, star the ones that matter for your game, and sort by your own order, A to Z or starred first. Deleted built-in entries can be brought back with Restore.',
+    ],
+  },
+  'gameplay-loop': {
+    title: 'Gameplay Loop',
+    body: [
+      'Map the loop your players repeat, like explore, fight, loot, upgrade. Each step sits on a circular timeline; the arrows show the direction the loop runs.',
+      'Click a step to flesh it out: its type (action, challenge, reward, progression, social, rest), its segment color, what the player does, what it gives them, how many minutes it takes and notes. Move steps earlier or later around the circle.',
+      'Turn on Size steps by time to make the circle a real timeline: each step takes up as much of the circle as it takes time in the game.',
+      'Add branches to a step for ideas, variants or open questions, and branch off branches for more detail. Make several documents for different loops, like a core loop, a session loop and a long-term loop.',
+    ],
+    tips: ['Scroll to zoom and drag the empty space to move around.'],
+  },
   reviews: {
     title: 'Reviews',
     body: [

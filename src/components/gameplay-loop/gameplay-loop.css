@@ -1,0 +1,156 @@
+.gl {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+.gl-head {
+  padding: 0 12px;
+}
+.gl-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.gl-toolbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gl-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+.gl-total {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.gl-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+.gl-canvas {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  cursor: grab;
+  user-select: none;
+}
+.gl-track {
+  fill: none;
+  stroke: var(--bg-hover);
+}
+.gl-arc,
+.gl-node,
+.gl-card {
+  cursor: pointer;
+}
+.gl-arc:hover path:first-child,
+.gl-arc.on path:first-child {
+  filter: brightness(1.15);
+}
+.gl-num {
+  fill: var(--text);
+  font-size: 14px;
+  font-weight: 700;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+.gl-label {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  dominant-baseline: central;
+}
+.gl-sub {
+  fill: var(--text-muted);
+  font-size: 11px;
+}
+.gl-center {
+  fill: var(--text);
+  font-size: 18px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.gl-branchline {
+  stroke: var(--text-muted);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+  opacity: 0.7;
+}
+.gl-card rect {
+  fill: var(--bg-elevated);
+  stroke: var(--border);
+  stroke-width: 1.5;
+}
+.gl-card rect.on,
+.gl-card:hover rect {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+.gl-cardtitle {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.gl-side {
+  flex: 0 0 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-left: 1px solid var(--border);
+  overflow-y: auto;
+}
+.gl-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+.gl-from {
+  font-size: 12px;
+}
+.gl-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+.gl-field .input {
+  color: var(--text);
+}
+.gl-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.gl-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: auto;
+}
+.gl-danger:hover {
+  color: var(--danger);
+}
+.gl-colors {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gl-colors input[type='color'] {
+  width: 44px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+}

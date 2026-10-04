@@ -136,3 +136,10 @@ function normalizeGrowthRow<T extends Partial<GrowthRow>>(r: T): GrowthRow {
     expression: r.expression ?? '',
   }
 }
+
+/** A Damage Calculator preset's formula and its input values, for use outside the calculator (Spreadsheet CALC, v0.9). */
+export function damagePresetFormula(doc: DamagePresetDoc): { expression: string; values: Record<string, number> } {
+  const lib = doc.formulaId === null ? undefined : getFormula(doc.formulaId)
+  if (lib) return { expression: lib.expression, values: { ...defaultValues(lib), ...doc.values } }
+  return { expression: doc.expression, values: { ...doc.values } }
+}

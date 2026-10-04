@@ -27,6 +27,9 @@ export const COMPONENT_TYPES = [
   'dialogue',
   'gacha',
   'reviews',
+  'spreadsheet',
+  'principles',
+  'gameplay-loop',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

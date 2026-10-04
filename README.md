@@ -92,6 +92,9 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 | **Dialogue Editor** | Branching conversations as a graph with speakers, choices, conditions and flags, a play-through mode, and export to JSON, Yarn Spinner or Ink. |
 | **Gacha & Loot Simulator** | Banner rates, hard and soft pity and 50/50s simulated over thousands of players, plus chest and drop table chances. |
 | **Reviews** | Everything with a status or comments on one board, with a "needs review" filter. |
+| **Spreadsheet** | Excel-style sheets: hundreds of Excel functions, formulas across sheets, a fill handle that continues numbers, dates and names, cell formatting with colored borders, and Damage Calculator results in cells. |
+| **Writing Principles** | A collection of story and game-writing rules (show, don't tell; information theory; save the player from themselves…) and story structures like the Hero's Journey, ready to extend and sort. |
+| **Gameplay Loop** | The loop players repeat as a circular timeline: flesh out each step, size steps by time, and branch notes off them. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.
