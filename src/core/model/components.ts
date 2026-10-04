@@ -34,6 +34,7 @@ export const COMPONENT_TYPES = [
   'abilities',
   'crafting',
   'factions',
+  'family-tree',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]

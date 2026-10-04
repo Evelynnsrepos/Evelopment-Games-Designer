@@ -357,6 +357,13 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'With Same both ways on, a relation is mutual. Turn it off when feelings differ, like a kingdom that trusts a guild that secretly hates it.',
     ],
   },
+  'family-tree': {
+    title: 'Family Tree',
+    body: [
+      'Show how your characters are related. Add characters from the Character List, then click someone to add their parents, children and partners. Generations line up in rows with partners side by side and children under their parents.',
+      'Every link can carry a note like adopted, married or divorced. Double-click a character, or use Open character page, to jump to their entry. The app stops you from making someone their own ancestor.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
