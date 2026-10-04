@@ -513,7 +513,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Look things up in your own world, like Who rules Ashvale? or What do we know about the Moon Gem?. The AI helper reads the entries that fit the question (items, characters, towns, enemies, wiki articles, writing, quests, dialogue and timelines), answers only from them and names what it used; click a source to open it.',
       'Check an entry looks for contradictions between one entry and the rest of the project, like a character who is dead in one article and alive in another.',
-      'Everything is local: the AI helper runs on this computer, nothing leaves your PC, it works offline and no training data is collected. Your ideas stay your ideas: it does not write stories, scenes, dialogue, names or ideas for you, and turns such requests away. It is optional: turn it on in Settings (Show the Ask your project tool) and download the AI helper there; until then it does not appear in Add tool.',
+      'Everything is local: the AI helper runs on this computer, nothing leaves your PC, it works offline and no training data is collected. Your ideas stay your ideas: it does not write stories, scenes, dialogue, names or ideas for you, and turns such requests away. It is optional, like the grammar check: download the AI helper in Settings, then turn on Show the Ask your project tool there; until then it does not appear in Add tool.',
     ],
   },
   reviews: {

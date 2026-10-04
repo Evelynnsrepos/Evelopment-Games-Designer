@@ -19,13 +19,13 @@ const UI = {
   wordsHint: 'Words you added with "Add to dictionary". Names of your items, characters, towns and enemies are always known.',
   noWords: 'No words yet.',
   ai: 'AI helper',
-  aiAbout: 'An AI model that runs on this computer and checks your grammar and spelling as you write. Click a blue underline for its suggestions. Nothing is sent to the internet.',
+  aiAbout: 'An AI model that runs on this computer and checks your grammar and spelling as you write. Click a blue underline for its suggestions. It can also show the Ask your project tool, which looks things up in your own notes. Nothing is sent to the internet.',
   aiModels: 'Model',
   aiDownload: 'Download',
   aiRemove: 'Remove AI helper',
   aiRemoveAsk: 'Delete the downloaded AI helper and its models from this computer?',
   aiUse: 'Check grammar with the AI helper',
-  askProject: 'Show the Ask your project tool (looks things up in your own notes; local only, never writes for you)',
+  askProject: 'Show the Ask your project tool (looks things up in your notes, never writes for you)',
   aiProgram: 'Downloading program',
   aiModel: 'Downloading model',
   close: 'Close',
@@ -101,15 +101,17 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
             <h3>{UI.ai}</h3>
             <p className="muted settings-hint">{UI.aiAbout}</p>
             {ai.installed && (
-              <label className="settings-check">
-                <input type="checkbox" checked={s.aiHelper} onChange={(e) => s.update({ aiHelper: e.target.checked })} />
-                {UI.aiUse}
-              </label>
+              <>
+                <label className="settings-check">
+                  <input type="checkbox" checked={s.aiHelper} onChange={(e) => s.update({ aiHelper: e.target.checked })} />
+                  {UI.aiUse}
+                </label>
+                <label className="settings-check">
+                  <input type="checkbox" checked={s.askProject} onChange={(e) => s.update({ askProject: e.target.checked })} />
+                  {UI.askProject}
+                </label>
+              </>
             )}
-            <label className="settings-check">
-              <input type="checkbox" checked={s.askProject} onChange={(e) => s.update({ askProject: e.target.checked })} />
-              {UI.askProject}
-            </label>
             <h4>{UI.aiModels}</h4>
             {AI_MODELS.map((m) => (
               <div key={m.id} className="settings-model">
