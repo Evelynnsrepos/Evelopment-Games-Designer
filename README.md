@@ -51,7 +51,7 @@ create in the Item List can be linked from the Wiki, dropped by an enemy, and co
 The app is licensed under the [GPL-3.0](LICENSE), and everything it is built from is open source too: all
 libraries (MIT, Apache-2.0, BSD, ISC, MPL-2.0, GPL-3.0 and similar), the English (SCOWL) and German
 (igerman98, GPL) spell check dictionaries, and the optional downloads for the local helpers (llama.cpp, MIT,
-and Qwen models, Apache-2.0). There is no closed part, no account and no tracking.
+and Qwen models, Apache-2.0). There is no closed part, no account and no tracking ([privacy policy](PRIVACY.md)).
 
 ## Features
 
@@ -294,6 +294,10 @@ The product spec is in [`docs/SPEC.md`](docs/SPEC.md), and [`AGENTS.md`](AGENTS.
 
 Found a bug or have an idea? Please [open an issue](../../issues) or come say hi on [Discord](https://discord.gg/AGfaBwNKfN).
 Pull requests are welcome.
+
+## Privacy
+
+No account, no telemetry, no tracking: your projects stay on your computer. See the [privacy policy](PRIVACY.md) ([Datenschutzerklärung](DATENSCHUTZ.md)) for the few things that go online, and only when you use them.
 
 ## License
 

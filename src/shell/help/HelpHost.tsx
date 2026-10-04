@@ -1,4 +1,4 @@
-import { BookOpen, Bug, CircleHelp, Compass, ExternalLink, FolderGit2, Palette, Puzzle, Rocket, Save, Search, SpellCheck, Link2, LayoutPanelLeft, Users, Wrench, X, type LucideIcon } from 'lucide-react'
+import { BookOpen, Bug, CircleHelp, Compass, ExternalLink, FolderGit2, LayoutPanelLeft, Link2, Palette, Puzzle, Rocket, Save, Search, ShieldCheck, SpellCheck, Users, Wrench, X, type LucideIcon } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { allManifests } from '@/core/registry'
 import { useAppStore } from '@/core/state'
@@ -74,6 +74,9 @@ function HelpDialog() {
           </button>
           <button className="btn" onClick={() => help.openGuide()}>
             <BookOpen size={15} /> User guide (F1)
+          </button>
+          <button className="btn" onClick={() => void openExternalUrl(`${REPO_URL}/blob/main/PRIVACY.md`)}>
+            <ShieldCheck size={15} /> Privacy policy
           </button>
         </div>
         <p className="help-report-url">

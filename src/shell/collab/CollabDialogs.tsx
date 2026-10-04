@@ -31,7 +31,7 @@ const T = {
   shareTitle: 'Work together',
   shareIntro:
     'Share this project so others can edit it live from their own computer (Windows, Mac or Linux). Everyone keeps a full copy, and changes made offline merge when you reconnect. No account or server needed.',
-  privacy: 'Privacy: computers connect directly, so the people you work with can see your IP address. When a direct connection is not possible, the encrypted traffic goes through public relay servers run by n0, a US company (iroh). Project contents stay end-to-end encrypted.',
+  privacy: 'Privacy: computers connect directly, so the people you work with can see your IP address. To find each other, and when a direct connection is not possible, the app uses public lookup and relay servers run by n0, a US company (iroh); they see your IP address and a random device ID. Project contents stay end-to-end encrypted.',
   yourName: 'Your name',
   namePlaceholder: 'How others see you',
   startSharing: 'Share project',
