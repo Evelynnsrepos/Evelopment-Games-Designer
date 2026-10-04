@@ -23,7 +23,7 @@ export function Sidebar() {
   const meta = useProjectStore((s) => s.meta)
   const updateMeta = useProjectStore((s) => s.updateMeta)
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const [addOpen, setAddOpen] = useState(false)
+  const [addOpen, setAddOpen] = useState<React.CSSProperties | null>(null)
   const [themeOpen, setThemeOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(() => {
@@ -51,8 +51,14 @@ export function Sidebar() {
   const enabled = meta.enabledComponents.map(getManifest).filter((m): m is ComponentManifest => !!m && shownTool(m.type, askProject))
   const available = allManifests().filter((m) => !meta.enabledComponents.includes(m.type) && shownTool(m.type, askProject))
 
+  /** The Add tool menu opens below the button, or above it when there is little room. */
+  const openAdd = (e: React.MouseEvent<HTMLButtonElement>) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const below = window.innerHeight - r.bottom
+    setAddOpen(below > 260 ? { left: r.left + 4, top: r.bottom, maxHeight: below - 8 } : { left: r.left + 4, bottom: window.innerHeight - r.top, maxHeight: r.top - 8 })
+  }
   const addTool = async (m: ComponentManifest) => {
-    setAddOpen(false)
+    setAddOpen(null)
     if (!BACKGROUND_TOOLS.includes(m.type) && (await toolHasContent(m.type))) setRestoring(m)
     else useProjectStore.getState().enableComponent(m.type)
   }
@@ -167,20 +173,13 @@ export function Sidebar() {
             </div>
           )
         })}
-      </div>
-
-      <div className="sidebar-bottom">
-        <button className="sidebar-row" title={moreOpen ? 'Show fewer buttons' : 'Show all buttons'} aria-expanded={moreOpen} onClick={toggleMore}>
-          {moreOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-          {!collapsed && <span>{moreOpen ? 'Show less' : 'Show more'}</span>}
+        <button className="sidebar-row" title="Add tool" data-tour="add-component" onClick={openAdd}>
+          <Plus size={16} />
+          {!collapsed && <span>Add tool</span>}
         </button>
-        <div style={{ position: 'relative' }} data-tour="add-component">
-          <button className="sidebar-row" title="Add tool" onClick={() => setAddOpen(!addOpen)}>
-            <Plus size={16} />
-            {!collapsed && <span>Add tool</span>}
-          </button>
-          {addOpen && (
-            <div className="menu" style={{ bottom: '100%', left: 4 }} onMouseLeave={() => setAddOpen(false)}>
+        {addOpen && (
+          <div className="menu-backdrop" onMouseDown={() => setAddOpen(null)}>
+            <div className="menu" style={{ position: 'fixed', overflowY: 'auto', ...addOpen }} onMouseDown={(e) => e.stopPropagation()}>
               {available.map((m) => (
                 <button key={m.type} onClick={() => void addTool(m)}>
                   {m.name}
@@ -188,8 +187,15 @@ export function Sidebar() {
               ))}
               {available.length === 0 && <div className="sidebar-menu-note">Every tool is already added.</div>}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+      </div>
+
+      <div className="sidebar-bottom">
+        <button className="sidebar-row" title={moreOpen ? 'Show fewer buttons' : 'Show all buttons'} aria-expanded={moreOpen} onClick={toggleMore}>
+          {moreOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {!collapsed && <span>{moreOpen ? 'Show less' : 'Show more'}</span>}
+        </button>
         {toolMenu && (
           <div className="menu-backdrop" onMouseDown={() => setToolMenu(null)} onContextMenu={(e) => e.preventDefault()}>
             <div className="menu" style={{ position: 'fixed', left: toolMenu.x, top: toolMenu.y }} onMouseDown={(e) => e.stopPropagation()}>
