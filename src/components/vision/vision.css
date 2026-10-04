@@ -1,0 +1,99 @@
+.vi {
+  height: 100%;
+  overflow-y: auto;
+}
+.vi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px 24px 40px;
+}
+.vi-page h2 {
+  margin: 18px 0 2px;
+}
+.vi-page p {
+  margin: 0;
+}
+.vi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.vi-field .input {
+  color: var(--text);
+  font-size: 14px;
+}
+.vi-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+.vi-usp {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.vi-usp > span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+.vi-add {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.vi-pillars {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+.vi-pillar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-top: 4px solid;
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+}
+.vi-pillar-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.vi-pillar-head input[type='color'] {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.vi-pillar-title {
+  font-weight: 600;
+}
+.vi-yes,
+.vi-no {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+.vi-yes {
+  color: #2f9e44;
+}
+.vi-no {
+  color: var(--danger);
+}

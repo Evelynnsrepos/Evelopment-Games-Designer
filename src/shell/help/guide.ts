@@ -420,6 +420,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Difficulty curve charts the average of an enemy stat per level and points out levels where it jumps or drops much more than usual. Gaps lists entries without numbers and enemies that drop nothing.',
     ],
   },
+  vision: {
+    title: 'Vision & Pillars',
+    body: [
+      'The one page that says what your game is: the elevator pitch, the vision, the player fantasy, genre, platforms, audience and what makes it special.',
+      'Design pillars are three to five rules every feature must serve. For each pillar, write why it matters, what it means and what it rules out. When you are unsure about an idea, check which pillar it supports.',
+      'Add references (games, films, books and what you take from each) and anti-goals: things you decided against so nobody adds them later.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
