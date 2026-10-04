@@ -28,7 +28,7 @@
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
 know about each other. Free, fully open source, offline, for Windows, macOS and Linux.
 
-> **Status:** early development. All 18 tools work, but expect rough edges and changes to the project format.
+> **Status:** early development. Every tool works, but expect rough edges and changes to the project format.
 
 ## Why
 
@@ -83,6 +83,8 @@ and Qwen models, Apache-2.0). There is no closed part, no account and no trackin
 - **Search with `Ctrl+K`**: find any tool, document, item, character, town, enemy or wiki article, or run a command.
 - **Design Book**: turn the project into one game design document with a cover, contents, images and info boxes, as a web page or PDF.
 - **Review status and comments** on every tool window and entry, from Idea to Final, with a Reviews board.
+- **Genre templates**: start a new project as an RPG, action game, roguelike, strategy game, visual novel, gacha or cozy game and get the right tools, a vision page with pillars and a starter task list.
+- **Engine export**: send your items, characters, towns, enemies, quests, dialogue and translations to Godot 4, Unity or Unreal, or as plain JSON.
 
 ### The tools
 
@@ -111,9 +113,32 @@ and Qwen models, Apache-2.0). There is no closed part, no account and no trackin
 | **Dialogue Editor** | Branching conversations as a graph with speakers, choices, conditions and flags, a play-through mode, and export to JSON, Yarn Spinner or Ink. |
 | **Gacha & Loot Simulator** | Banner rates, hard and soft pity and 50/50s simulated over thousands of players, plus chest and drop table chances. |
 | **Reviews** | Everything with a status or comments on one board, with a "needs review" filter. |
-| **Spreadsheet** | Excel-style sheets: hundreds of Excel functions, formulas across sheets, a fill handle that continues numbers, dates and names, cell formatting with colored borders, and Damage Calculator results in cells. |
+| **Spreadsheet** | Excel-style sheets: hundreds of Excel functions, formulas across sheets, a fill handle that continues numbers, dates and names, cell formatting with colored borders, Damage Calculator results in cells, CSV import and export, charts, and frozen rows and columns. |
 | **Writing Principles** | A collection of story and game-writing rules (show, don't tell; information theory; save the player from themselves…) and story structures like the Hero's Journey, ready to extend and sort. |
 | **Gameplay Loop** | The loop players repeat as a circular timeline: flesh out each step, size steps by time, and branch notes off them. |
+| **Skill Tree** | Skill and talent trees with ranks, costs and requirements, plus a build planner. |
+| **Abilities & Spells** | Abilities and spells with costs, cooldowns and numbers from Damage Calculator formulas. |
+| **Crafting & Recipes** | Recipes with ingredients, stations and times, a crafting tree and the raw materials anything needs. |
+| **Factions** | Factions with leaders, members and towns, and a matrix of how they feel about each other. |
+| **Family Tree** | Characters from the Character List as a family tree with parents, children and partners. |
+| **Level Layout** | Paint levels and dungeons on a tile grid: rooms, doors, enemies, loot, spawns and numbered notes. |
+| **Achievements** | Achievements with how they unlock, points, rewards, hidden ones and how rare they should be. |
+| **Names & Languages** | Generate names from a language's sounds and build a small made-up language with a dictionary and translator. |
+| **Calendar & Eras** | Your world's months, weekdays and eras, a month view and a date calculator; timelines show era years. |
+| **Economy Simulator** | Currency sources and sinks simulated over hours of play: balances, purchases and inflation warnings. |
+| **Combat Simulator** | Two teams fight many times with a damage formula: win rates, fight length, damage and an example fight. |
+| **Balance Dashboard** | Item and enemy numbers that stick out, the enemy difficulty curve and gaps in your data. |
+| **Vision & Pillars** | Elevator pitch, vision, player fantasy, selling points, design pillars, references and anti-goals on one page. |
+| **Scope Planner** | Every feature sorted into must, should, could, won't and cut, with effort against the days you have. |
+| **Task Board** | A to-do board with pictures, your own columns and categories, and tasks linked to the entries they are about. |
+| **History** | Earlier versions of items, characters, towns and enemies: compare what changed and restore. |
+| **Playtests** | Playtest sessions with scores and findings, scores per build and every open problem in one place. |
+| **Pacing Graph** | The player journey as beats on a graph of intensity, story stakes or your own curves, with pacing advice. |
+| **Pitch Deck** | Slides built from your vision, pillars, characters and items, presented full screen. |
+| **Localization** | A string table of every player-facing text in every language, collected from the project, with CSV import and export. |
+| **Storyboard** | Cutscene frames with shots, camera moves, dialogue and timing, played back as an animatic. |
+| **UI Flow** | Menu and screen mockups in phone, tablet or desktop frames with buttons, sliders and lists, joined with arrows. |
+| **Ask Your Project** | Optional: look things up in your own notes and find contradictions, with the AI helper running only on your computer. It never writes for you. |
 
 ### Everything is connected
 - Custom categories (like *Element* or *Faction*) are created once and used on items, characters, towns and enemies.
