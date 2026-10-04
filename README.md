@@ -24,7 +24,7 @@
 
 **One program for designing your whole game.** Story, lore wiki, characters, towns, items, enemies, maps,
 timelines, mood boards, brainstorm boards and balancing calculators all live in one project, and they all
-know about each other. Free, open source, offline, for Windows, macOS and Linux.
+know about each other. Free, fully open source, offline, for Windows, macOS and Linux.
 
 > **Status:** early development. All 18 tools work, but expect rough edges and changes to the project format.
 
@@ -33,6 +33,23 @@ know about each other. Free, open source, offline, for Windows, macOS and Linux.
 Designing a game usually means juggling a dozen apps: a wiki here, a spreadsheet for drop rates there, a
 whiteboard app, a writing app, a map tool. Evelopment Games Designer keeps everything in one project, so an item you
 create in the Item List can be linked from the Wiki, dropped by an enemy, and counted by the Resource Calculator.
+
+## Your ideas, made by you
+
+- **No generative AI.** Evelopment Games Designer never writes stories or makes images for you. Everything in
+  your project comes from your own creativity.
+- **Optional local helpers only.** If you want, you can download a small AI model in Settings that runs on your
+  own computer to check spelling and grammar and to look things up in your own notes (lore check, for example
+  "does anything contradict this?"). Both are off until you turn them on, and they never write anything for you.
+- **Nothing leaves your PC.** The helpers work offline. No data is collected, nothing is uploaded, and nothing is
+  used for training.
+
+## Fully open source
+
+The app is licensed under the [GPL-3.0](LICENSE), and everything it is built from is open source too: all
+libraries (MIT, Apache-2.0, BSD, ISC, MPL-2.0, GPL-3.0 and similar), the English (SCOWL) and German
+(igerman98, GPL) spell check dictionaries, and the optional downloads for the local helpers (llama.cpp, MIT,
+and Qwen models, Apache-2.0). There is no closed part, no account and no tracking.
 
 ## Features
 
