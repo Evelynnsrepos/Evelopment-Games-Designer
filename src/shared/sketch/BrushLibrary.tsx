@@ -27,7 +27,7 @@ const UI = {
 
 const DRAG = 'application/x-egd-brush'
 
-/** Brush library popover: sets on the left, brushes with stroke previews on the right (like Procreate). */
+/** Brush library popover: sets on the left, brushes with stroke previews on the right. */
 export function BrushLibrary({ mode, color, at, onClose }: { mode: 'brush' | 'eraser'; color: string; at: { x: number; y: number }; onClose: () => void }) {
   const lib = useBrushLibrary()
   const current = mode === 'brush' ? lib.brushId : lib.eraserId

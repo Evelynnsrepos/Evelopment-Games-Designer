@@ -16,8 +16,8 @@ import {
 } from './brushes'
 
 /**
- * The brush library (v0.5) belongs to this computer, not a project, like
- * Procreate's: the same brushes in every project. Saved in the app data folder.
+ * The brush library (v0.5) belongs to this computer, not a project:
+ * the same brushes in every project. Saved in the app data folder.
  */
 interface LibraryState extends BrushLibrary {
   loaded: boolean

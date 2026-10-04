@@ -23,7 +23,7 @@ interface SketchToolDoc extends SketchDoc {
 
 const createDoc = (): SketchToolDoc => ({ ...createSketchDoc(), started: false })
 
-/** Sketch (v0.5): a Procreate-style drawing tool with pressure brushes, layers, selection and mirror. */
+/** Sketch (v0.5): a drawing tool with pressure brushes, layers, selection and mirror. */
 export default function View({ documentId, active }: PanelProps) {
   const doc = useDocument<SketchToolDoc>('sketch', documentId!, createDoc)
   const title = useProjectStore((s) => s.meta?.documents.find((d) => d.id === documentId)?.title ?? 'Sketch')

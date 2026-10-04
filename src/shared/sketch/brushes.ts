@@ -1,7 +1,7 @@
 import { newId, type Id } from '@/core/model'
 
 /**
- * Brushes (v0.5), modelled on Procreate's Brush Library and Brush Studio:
+ * Brushes (v0.5), with a Brush Library and Brush Studio:
  * brushes live in sets, every brush has a stroke preview, and all settings
  * can be edited. A stroke is a row of stamps ("dabs") of the brush shape.
  * Stamps are drawn as an alpha mask and colored once per stroke, so colored
@@ -117,7 +117,7 @@ const base: BrushSettings = {
 
 type Def = [id: string, name: string, settings: Partial<BrushSettings>]
 
-/** The default library: sets and brushes in the spirit of Procreate's. Ids are fixed so built-ins can be reset. */
+/** The default library: sets and brushes. Ids are fixed so built-ins can be reset. */
 const DEFAULT_SETS: [setId: string, name: string, brushes: Def[]][] = [
   [
     'sketching',
@@ -469,7 +469,7 @@ export function colorStroke(mask: HTMLCanvasElement, out: CanvasRenderingContext
   out.restore()
 }
 
-/** Procreate-style preview: an S-curve left to right, pressure rising then falling off at the end. */
+/** Preview: an S-curve left to right, pressure rising then falling off at the end. */
 export function drawPreview(canvas: HTMLCanvasElement, brush: BrushSettings, color: string) {
   const w = canvas.width
   const h = canvas.height

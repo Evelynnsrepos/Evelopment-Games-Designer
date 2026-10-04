@@ -138,7 +138,7 @@ interface View {
   scale: number
 }
 
-/** A Procreate-style raster editor: pressure brushes, layers with blend modes, selection, mirror and references (v0.5). */
+/** A raster editor: pressure brushes, layers with blend modes, selection, mirror and references (v0.5). */
 export function SketchEditor({ doc, update, active, title, actions, swatches = SWATCHES, panel, editorRef }: SketchEditorProps) {
   const root = useProjectStore((s) => s.root)
   const engineRef = useRef<SketchEngine | null>(null)
@@ -182,7 +182,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   }, [])
   const brushMode = tool === 'eraser' ? 'eraser' : 'brush'
   const brush = lib.brushes.find((b) => b.id === (brushMode === 'eraser' ? lib.eraserId : lib.brushId)) ?? lib.brushes[0]
-  // Like Procreate, the sliders change the brush itself and are remembered.
+  // The sliders change the brush itself and are remembered.
   const setBrush = (patch: Partial<typeof brush>) => lib.updateBrush(brush.id, patch)
 
   // ---- Loading and saving layer pixels -------------------------------------
@@ -721,7 +721,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           <section>
             <div className="sketch-current-brush">
               <button className="sketch-brush-pick" title={UI.library} onClick={(e) => {
-                  // Opens to the left of the side panel, over the canvas, like Procreate's popover.
+                  // Opens to the left of the side panel, over the canvas.
                   const r = e.currentTarget.getBoundingClientRect()
                   setLibraryAt({ x: Math.max(8, r.left - 572), y: Math.max(8, Math.min(r.top, window.innerHeight - 470)) })
                   setLibraryOpen(libraryOpen ? null : brushMode)

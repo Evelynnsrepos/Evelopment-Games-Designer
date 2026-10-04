@@ -16,7 +16,7 @@ const UI = {
   done: 'Done',
 }
 
-/** Edit every setting of a brush, with a drawing pad to try it (like Procreate's Brush Studio). */
+/** Edit every setting of a brush, with a drawing pad to try it. */
 export function BrushStudio({ brushId, color, onClose }: { brushId: Id; color: string; onClose: () => void }) {
   const brush = useBrushLibrary((s) => s.brushes.find((b) => b.id === brushId))
   const update = useBrushLibrary((s) => s.updateBrush)

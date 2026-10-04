@@ -1,5 +1,5 @@
 /**
- * QuickShape (v0.5), like Procreate's: draw a rough shape, keep holding at the
+ * QuickShape (v0.5): draw a rough shape, keep holding at the
  * end, and it snaps to a clean line, polyline, triangle, rectangle, circle or
  * ellipse. Pure geometry, no canvas.
  */
@@ -174,7 +174,7 @@ const snapAngle = (a: Pt, b: Pt, stepDeg = 15): Pt => {
 }
 
 /**
- * The "perfect" version (Shift, like Procreate's second-finger tap): lines snap
+ * The "perfect" version (Shift): lines snap
  * to 15° steps, ellipses become circles, rectangles squares, triangles equilateral.
  */
 export function perfect(shape: Shape): Shape {

@@ -222,7 +222,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
   sketch: {
     title: 'Sketch',
     body: [
-      'Draw and paint like in Procreate. Pick a canvas size when you start a new drawing.',
+      'Draw and paint with pressure brushes and layers. Pick a canvas size when you start a new drawing.',
       'Brushes: Pencil, Ink, Marker, Paint and Airbrush. With a pen tablet, pressing harder makes lines thicker or stronger. Size, opacity and smoothing are on the right; [ and ] change the size.',
       'Layers have opacity, blend modes (Multiply, Screen, Overlay and more), alpha lock (paint only on what is there), clipping masks, duplicate, merge down and reordering. Double-click a layer to rename it.',
       'Selection: lasso (L) or rectangle (M). Painting, fill, clear, flip and move (V) only affect the selection. Ctrl+D deselects.',
