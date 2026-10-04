@@ -154,3 +154,36 @@
   background: none;
   cursor: pointer;
 }
+.gl-sim {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 14px 18px;
+}
+.gl-sim h3 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 4px;
+}
+.gl-sim p {
+  margin: 0 0 8px;
+}
+.gl-simtable {
+  width: auto;
+  margin-bottom: 6px;
+}
+.gl-simtable .input,
+.gl-simtable .calc-number {
+  width: 110px;
+}
+.gl-sim .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.gl-warn {
+  color: var(--danger);
+}

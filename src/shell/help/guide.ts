@@ -320,6 +320,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Map the loop your players repeat, like explore, fight, loot, upgrade. Each step sits on a circular timeline; the arrows show the direction the loop runs.',
       'Click a step to flesh it out: its type (action, challenge, reward, progression, social, rest), its segment color, what the player does, what it gives them, how many minutes it takes and notes. Move steps earlier or later around the circle.',
       'Turn on Size steps by time to make the circle a real timeline: each step takes up as much of the circle as it takes time in the game.',
+      'Simulate shows how the loop plays out over time: add resources like gold, XP or potions, enter what each step gains or spends, and play the loop as many times as you like. A chart shows every resource per loop, goals tell you after how many loops and minutes they are reached, and you are warned when a resource runs out because the loop spends more than it gains.',
       'Add branches to a step for ideas, variants or open questions, and branch off branches for more detail. Make several documents for different loops, like a core loop, a session loop and a long-term loop.',
     ],
     tips: ['Scroll to zoom and drag the empty space to move around.'],

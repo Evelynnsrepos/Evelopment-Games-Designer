@@ -29,6 +29,19 @@ export interface LoopNode {
   notes: string
   /** Own segment color; empty = the color of its type. */
   color?: string
+  /** Resources this step gains (+) or spends (-) each time it is played (v0.10). */
+  effects?: { resourceId: Id; amount: number }[]
+}
+
+/** Something the loop produces or uses up: gold, XP, energy, potions… (v0.10). */
+export interface LoopResource {
+  id: Id
+  name: string
+  start: number
+  /** Gains grow by this percent every loop (e.g. better areas give more). */
+  growth: number
+  /** Target to reach; 0 = none. */
+  goal: number
 }
 
 export interface Branch {
@@ -45,6 +58,9 @@ export interface LoopDoc {
   branches: Branch[]
   /** Size the arcs by time instead of evenly. */
   timed: boolean
+  resources?: LoopResource[]
+  /** Loops to simulate. */
+  simLoops?: number
 }
 
 export const newNode = (title = 'New step', kind: NodeKind = 'action'): LoopNode => ({ id: newId(), title, kind, does: '', gives: '', minutes: 1, notes: '' })
@@ -61,7 +77,7 @@ export function createLoopDoc(): LoopDoc {
   return { nodes, branches: [], timed: false }
 }
 
-export const normalizeLoop = (d: Partial<LoopDoc> | undefined): LoopDoc => ({ nodes: d?.nodes ?? [], branches: d?.branches ?? [], timed: d?.timed ?? false })
+export const normalizeLoop = (d: Partial<LoopDoc> | undefined): LoopDoc => ({ ...d, nodes: d?.nodes ?? [], branches: d?.branches ?? [], timed: d?.timed ?? false, resources: d?.resources ?? [], simLoops: d?.simLoops ?? 20 })
 
 export const kindColor = (k: NodeKind) => NODE_KINDS.find((x) => x.id === k)?.color ?? '#9aa0a6'
 export const nodeColor = (n: LoopNode) => n.color || kindColor(n.kind)
@@ -128,4 +144,48 @@ export function depth(branches: Branch[], b: Branch): number {
     p = branches.find((x) => x.id === p)?.parentId ?? null
   }
   return n
+}
+
+export const newResource = (name = 'Gold'): LoopResource => ({ id: newId(), name, start: 0, growth: 0, goal: 0 })
+
+export interface SimResult {
+  /** Resource amounts after each loop (index 0 = start). */
+  history: Record<Id, number[]>
+  /** Minutes played after each loop. */
+  minutes: number[]
+  /** First time a resource would go below zero. */
+  shortfalls: { resourceId: Id; loop: number; step: string }[]
+  /** First loop at which each goal is reached. */
+  goals: Record<Id, number | null>
+}
+
+/**
+ * Play the loop `loops` times: each step adds or takes its resources. Gains
+ * grow by the resource's growth percent per loop; spending stays the same.
+ */
+export function simulate(d: LoopDoc, loops = d.simLoops ?? 20): SimResult {
+  const res = d.resources ?? []
+  const amount: Record<Id, number> = Object.fromEntries(res.map((r) => [r.id, r.start]))
+  const history: Record<Id, number[]> = Object.fromEntries(res.map((r) => [r.id, [r.start]]))
+  const goals: Record<Id, number | null> = Object.fromEntries(res.map((r) => [r.id, r.goal > 0 && r.start >= r.goal ? 0 : null]))
+  const shortfalls: SimResult['shortfalls'] = []
+  const minutes = [0]
+  const perLoop = totalMinutes(d)
+  for (let loop = 1; loop <= Math.min(10000, Math.max(0, loops)); loop++) {
+    for (const n of d.nodes) {
+      for (const e of n.effects ?? []) {
+        const r = res.find((x) => x.id === e.resourceId)
+        if (!r) continue
+        const delta = e.amount > 0 ? e.amount * Math.pow(1 + r.growth / 100, loop - 1) : e.amount
+        amount[r.id] += delta
+        if (amount[r.id] < 0 && !shortfalls.some((s) => s.resourceId === r.id)) shortfalls.push({ resourceId: r.id, loop, step: n.title })
+      }
+    }
+    for (const r of res) {
+      history[r.id].push(Math.round(amount[r.id] * 100) / 100)
+      if (goals[r.id] === null && r.goal > 0 && amount[r.id] >= r.goal) goals[r.id] = loop
+    }
+    minutes.push(perLoop * loop)
+  }
+  return { history, minutes, shortfalls, goals }
 }

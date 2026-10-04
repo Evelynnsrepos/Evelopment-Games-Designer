@@ -31,3 +31,26 @@ describe('gameplay loop', () => {
     expect(moveNode(d, d.nodes[1].id, 1).nodes.map((n) => n.title)).toEqual(['Explore', 'Loot', 'Fight', 'Upgrade'])
   })
 })
+
+describe('loop simulation', async () => {
+  const { simulate, newResource } = await import('./model')
+  it('adds and spends resources each loop, with growing gains', () => {
+    const d = createLoopDoc()
+    const gold = { ...newResource('Gold'), start: 5, goal: 40 }
+    const potions = { ...newResource('Potions'), start: 1 }
+    const doc = {
+      ...d,
+      resources: [gold, potions],
+      nodes: d.nodes.map((n, i) =>
+        i === 2 ? { ...n, effects: [{ resourceId: gold.id, amount: 10 }] } : i === 1 ? { ...n, effects: [{ resourceId: potions.id, amount: -1 }] } : n,
+      ),
+    }
+    const r = simulate(doc, 4)
+    expect(r.history[gold.id]).toEqual([5, 15, 25, 35, 45])
+    expect(r.goals[gold.id]).toBe(4)
+    expect(r.shortfalls).toEqual([{ resourceId: potions.id, loop: 2, step: 'Fight' }])
+    expect(r.minutes[4]).toBe(32)
+    const grown = simulate({ ...doc, resources: [{ ...gold, growth: 100 }, potions] }, 2)
+    expect(grown.history[gold.id]).toEqual([5, 15, 35])
+  })
+})

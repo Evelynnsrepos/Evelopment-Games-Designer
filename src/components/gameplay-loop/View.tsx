@@ -22,6 +22,7 @@ import {
   type LoopNode,
   type NodeKind,
 } from './model'
+import { SimPanel } from './SimPanel'
 import './gameplay-loop.css'
 
 const R = 190
@@ -79,6 +80,7 @@ export default function View({ documentId, active }: PanelProps) {
   useUndoRedoKeys(doc, active)
   const [sel, setSel] = useState<{ kind: 'node' | 'branch'; id: Id } | null>(null)
   const [view, setView] = useState({ x: 0, y: 0, k: 1 })
+  const [mode, setMode] = useState<'loop' | 'sim'>('loop')
   const pan = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null)
   if (!doc.data) return null
   const d = normalizeLoop(doc.data)
@@ -120,6 +122,14 @@ export default function View({ documentId, active }: PanelProps) {
         <PresetHeader documentId={documentId!} kind="Gameplay loop" undo={doc.undo} redo={doc.redo} canUndo={doc.canUndo} canRedo={doc.canRedo} />
       </div>
       <div className="gl-toolbar">
+        <div className="calc-segmented" role="tablist">
+          <button className={mode === 'loop' ? 'on' : ''} onClick={() => setMode('loop')}>
+            Loop
+          </button>
+          <button className={mode === 'sim' ? 'on' : ''} onClick={() => setMode('sim')}>
+            Simulate
+          </button>
+        </div>
         <button className="btn btn-primary" onClick={addStep}>
           <Plus size={14} /> {node ? 'Add step after this' : 'Add step'}
         </button>
@@ -131,6 +141,9 @@ export default function View({ documentId, active }: PanelProps) {
           {d.nodes.length} steps · one loop takes about {total} min
         </span>
       </div>
+      {mode === 'sim' ? (
+        <SimPanel d={d} set={set} />
+      ) : (
       <div className="gl-body">
         <svg
           className="gl-canvas"
@@ -309,6 +322,7 @@ export default function View({ documentId, active }: PanelProps) {
           </aside>
         )}
       </div>
+      )}
     </div>
   )
 }
