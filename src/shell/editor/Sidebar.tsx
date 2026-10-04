@@ -26,6 +26,21 @@ export function Sidebar() {
   const [addOpen, setAddOpen] = useState(false)
   const [themeOpen, setThemeOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
+  const [moreOpen, setMoreOpen] = useState(() => {
+    try {
+      return localStorage.getItem('egd.sidebar.more') !== '0'
+    } catch {
+      return true
+    }
+  })
+  const toggleMore = () => {
+    setMoreOpen(!moreOpen)
+    try {
+      localStorage.setItem('egd.sidebar.more', moreOpen ? '0' : '1')
+    } catch {
+      // only a convenience
+    }
+  }
   const [toolMenu, setToolMenu] = useState<{ manifest: ComponentManifest; x: number; y: number } | null>(null)
   const [closing, setClosing] = useState<ComponentManifest | null>(null)
   const [restoring, setRestoring] = useState<ComponentManifest | null>(null)
@@ -155,6 +170,10 @@ export function Sidebar() {
       </div>
 
       <div className="sidebar-bottom">
+        <button className="sidebar-row" title={moreOpen ? 'Show fewer buttons' : 'Show all buttons'} aria-expanded={moreOpen} onClick={toggleMore}>
+          {moreOpen ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+          {!collapsed && <span>{moreOpen ? 'Show less' : 'Show more'}</span>}
+        </button>
         <div style={{ position: 'relative' }} data-tour="add-component">
           <button className="sidebar-row" title="Add tool" onClick={() => setAddOpen(!addOpen)}>
             <Plus size={16} />
@@ -188,27 +207,31 @@ export function Sidebar() {
         {shareOpen && <ShareDialog onClose={() => setShareOpen(false)} />}
         {closing && <CloseToolDialog manifest={closing} onDone={(c) => void finishClose(c)} />}
         {restoring && <RestoreToolDialog manifest={restoring} onDone={(c) => void finishRestore(c)} />}
-        <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>
-          <Palette size={16} />
-          {!collapsed && <span>Project look</span>}
-        </button>
-        {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
-        <button className="sidebar-row" title="Rarities: colors, borders, icons and ratings" onClick={openRarities}>
-          <Gem size={16} />
-          {!collapsed && <span>Rarities</span>}
-        </button>
-        <button className="sidebar-row" title="Design Book: export your game design document" onClick={openDesignBook}>
-          <BookOpen size={16} />
-          {!collapsed && <span>Design Book</span>}
-        </button>
-        <button className="sidebar-row" title="Export your data to Godot, Unity or Unreal" onClick={() => useEngineExport.setState({ open: true })}>
-          <Boxes size={16} />
-          {!collapsed && <span>Engine export</span>}
-        </button>
-        <button className="sidebar-row" title="Settings" onClick={openSettings}>
-          <Settings size={16} />
-          {!collapsed && <span>Settings</span>}
-        </button>
+        {moreOpen && (
+          <>
+            <button className="sidebar-row" title="Project look" data-tour="project-look" onClick={() => setThemeOpen(true)}>
+              <Palette size={16} />
+              {!collapsed && <span>Project look</span>}
+            </button>
+            {themeOpen && <ProjectThemeDialog onClose={() => setThemeOpen(false)} />}
+            <button className="sidebar-row" title="Rarities: colors, borders, icons and ratings" onClick={openRarities}>
+              <Gem size={16} />
+              {!collapsed && <span>Rarities</span>}
+            </button>
+            <button className="sidebar-row" title="Design Book: export your game design document" onClick={openDesignBook}>
+              <BookOpen size={16} />
+              {!collapsed && <span>Design Book</span>}
+            </button>
+            <button className="sidebar-row" title="Export your data to Godot, Unity or Unreal" onClick={() => useEngineExport.setState({ open: true })}>
+              <Boxes size={16} />
+              {!collapsed && <span>Engine export</span>}
+            </button>
+            <button className="sidebar-row" title="Settings" onClick={openSettings}>
+              <Settings size={16} />
+              {!collapsed && <span>Settings</span>}
+            </button>
+          </>
+        )}
         <button className="sidebar-row" title="Help" data-tour="help" onClick={() => useHelp.getState().openReport()}>
           <CircleHelp size={16} />
           {!collapsed && <span>Help</span>}
