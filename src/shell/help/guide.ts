@@ -295,6 +295,17 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Chest / drop table: list what can drop, either one entry picked by weight or each entry with its own chance, or load an enemy drop table. Mark one entry as the target to see its chance per opening and how many openings a 50, 90 or 99% chance takes.',
     ],
   },
+  spreadsheet: {
+    title: 'Spreadsheet',
+    body: [
+      'Works like Excel. Click a cell and type; start with = for a formula, like =SUM(A1:A10) or =IF(B2>100, "rich", "poor"). Hundreds of Excel functions work, including VLOOKUP, SUMIF, ROUND, DATE and TEXT.',
+      'While writing a formula, click or drag over cells to put their address in, even on another sheet. Sheets reference each other with Sheet2!A1. Add sheets with the + at the bottom; double-click a tab to rename it, right-click to move or delete it.',
+      'Drag the small square at the corner of the selection to fill: numbers and dates continue their step, "Wave 1" becomes "Wave 2", month and weekday names keep going, and formulas move their cell references along. Double-click it to fill down as far as the column next to it goes. Ctrl+D and Ctrl+R fill down and right.',
+      'The toolbar sets bold, italic, underline, text and fill colors, alignment, number formats (number, percent, currency, date, text) with decimals, and borders with a thickness and color. Right-click a row or column header to insert or delete; drag a header edge to resize; right-click a selection to sort it.',
+      'Damage Calculator results can live in a cell: drag a Damage Calculator preset from the sidebar onto a cell, or use Calculator in the toolbar. The cell shows =CALC("Preset name"). The panel that opens lets you take any calculator input from a cell, so the sheet can run the formula for every row.',
+    ],
+    tips: ['Copy and paste work with other programs too; pasted text with tabs fills several cells.', 'Select numbers to see their sum, average and count at the bottom right.'],
+  },
   reviews: {
     title: 'Reviews',
     body: [
