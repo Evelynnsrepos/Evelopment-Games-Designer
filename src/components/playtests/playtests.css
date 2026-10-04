@@ -1,0 +1,39 @@
+.pt-finding {
+  padding: 4px 0;
+}
+.pt-finding.fixed .pt-text {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+.pt-text {
+  flex: 1;
+  min-width: 200px;
+}
+.pt-area {
+  width: 130px !important;
+}
+.pt-overview h3 {
+  margin: 16px 0 6px;
+}
+.pt-overview p {
+  margin: 4px 0;
+}
+.pt-table {
+  width: auto;
+}
+.pt-bar {
+  display: inline-block;
+  max-width: 80px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--accent);
+  vertical-align: middle;
+}
+.pt-table td:nth-child(n + 3) {
+  min-width: 120px;
+}
+.pt-sev {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}

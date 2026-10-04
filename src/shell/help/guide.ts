@@ -450,6 +450,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'History stays on your computer; it is not shared when working together.',
     ],
   },
+  playtests: {
+    title: 'Playtests',
+    body: [
+      'Log every playtest: date, tester, build, minutes played, scores from 1 to 10 for fun, difficulty (5 means just right) and clarity, notes and quotes.',
+      'Add findings to a session with a severity (blocker, major, minor, idea) and where in the game it happened; tick them off when fixed.',
+      'The overview shows the scores per build, so you see if changes helped, and every open finding with the worst first and the areas with the most problems.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [

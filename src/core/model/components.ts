@@ -46,6 +46,7 @@ export const COMPONENT_TYPES = [
   'scope',
   'tasks',
   'history',
+  'playtests',
 ] as const
 
 export type BuiltInComponentType = (typeof COMPONENT_TYPES)[number]
