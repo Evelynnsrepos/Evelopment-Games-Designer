@@ -291,6 +291,14 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Chest / drop table: list what can drop, either one entry picked by weight or each entry with its own chance, or load an enemy drop table. Mark one entry as the target to see its chance per opening and how many openings a 50, 90 or 99% chance takes.',
     ],
   },
+  principles: {
+    title: 'Writing Principles',
+    body: [
+      'A collection of rules for good stories and game writing, ready to use: show, don’t tell; setup and payoff; information theory; save the player from themselves; and more, each with what it means and often an example.',
+      'Story structures such as the Hero’s Journey, the three-act structure, the story circle, Save the Cat, Kishōtenketsu, the seven-point structure and Freytag’s pyramid are listed as numbered steps.',
+      'Make it yours: add principles and categories, edit or delete any entry, star the ones that matter for your game, and sort by your own order, A to Z or starred first. Deleted built-in entries can be brought back with Restore.',
+    ],
+  },
   reviews: {
     title: 'Reviews',
     body: [
