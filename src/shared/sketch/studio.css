@@ -112,41 +112,8 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 4px;
 }
-.studio-curve {
-  display: flex;
-  gap: 10px;
-  align-items: flex-start;
-}
-.studio-curve svg {
-  flex: none;
-  touch-action: none;
-}
-.studio-curve-bg {
-  fill: var(--bg-sunken);
-  stroke: var(--border);
-}
 .studio-curve-grid line {
   stroke: var(--border);
-}
-.studio-curve-line {
-  fill: none;
-  stroke: var(--accent);
-  stroke-width: 2;
-}
-.studio-curve-point {
-  fill: var(--bg-elevated);
-  stroke: var(--accent);
-  stroke-width: 2;
-  cursor: grab;
-}
-.studio-curve-side {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 12px;
-}
-.studio-curve-help {
-  max-width: 200px;
 }
 .studio-texture {
   display: flex;
@@ -392,4 +359,23 @@
   display: flex;
   align-items: center;
   gap: 3px;
+}
+
+/* Size presets under the size slider. */
+.sketch-size-presets {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.sketch-size-presets .btn {
+  padding: 2px 0;
+  font-size: 11px;
+}
+.sketch-size-presets .btn.is-empty {
+  color: var(--text-muted);
+  border-style: dashed;
+}
+.sketch-size-presets .btn.is-active {
+  border-color: var(--accent);
+  color: var(--accent);
 }

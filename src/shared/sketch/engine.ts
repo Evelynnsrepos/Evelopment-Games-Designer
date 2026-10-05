@@ -2,7 +2,8 @@ import type { Id } from '@/core/model'
 import { blendPixel, CANVAS_BLENDS, type BlendMode } from './blend'
 import { brushReach, colorStroke, compositeStroke, isWet, StrokeStamper, type BrushSettings } from './brushes'
 import { WetStamper } from './brushWet'
-import { GlCompositor, parseHex, type GlLayer } from './gl'
+import { GlCompositor, parseHex, type GlLayer, type GlSource } from './gl'
+import { layerTree, type LayerNode } from './layers'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
 import { TileHistory, tilesIn, type Rect } from './tiles'
 
@@ -17,11 +18,11 @@ import { TileHistory, tilesIn, type Rect } from './tiles'
 
 type Canvas2D = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }
 
-function makeCanvas(w: number, h: number): Canvas2D {
+function makeCanvas(w: number, h: number, colorSpace: PredefinedColorSpace = 'srgb'): Canvas2D {
   const canvas = document.createElement('canvas')
   canvas.width = w
   canvas.height = h
-  const ctx = canvas.getContext('2d', { willReadFrequently: false })!
+  const ctx = canvas.getContext('2d', { willReadFrequently: false, colorSpace })!
   return { canvas, ctx }
 }
 
@@ -31,6 +32,8 @@ export interface StrokeOptions {
   color: string
   symmetry: SymmetryMode
   erase: boolean
+  /** Copies of each dab for a symmetry guide; replaces `symmetry` when set (Sketch Pro guides). */
+  mirror?: ((p: { x: number; y: number }) => { x: number; y: number }[]) | null
   /** Smudge tool: drag the colours already on the layer with the brush's shape. */
   smudge?: boolean
 }
@@ -49,27 +52,68 @@ export class SketchEngine {
   private strokeOpts: StrokeOptions | null = null
   /** How far the stroke being drawn reaches (dab centers), so undo only keeps those tiles. */
   private strokeBounds: { x0: number; y0: number; x1: number; y1: number } | null = null
+  /** Predicted points ahead of the pen, shown for one frame only and never saved (Sketch Pro). */
+  private predicted: Canvas2D | null = null
+  private joined: Canvas2D | null = null
   /** The stroke colored, ready to composite. */
   private paint: Canvas2D
   /** Pixels being moved with the Move tool, lifted off their layer. */
-  private floating: { layerId: Id; piece: Canvas2D; rects: Rect[]; before: ImageData[]; dx: number; dy: number } | null = null
+  private floating: { layerId: Id; piece: Canvas2D; rects: Rect[]; before: ImageData[]; dx: number; dy: number; view?: HTMLCanvasElement | null } | null = null
   private history = new TileHistory()
   /** Bumped per layer whenever its pixels change, so the GPU only uploads changed layers. */
   private layerVersions = new Map<Id, number>()
   private previewVersion = 0
   private gpu: GlCompositor | null
+  private selPath: Path2D | null = null
+  /** The selection as an alpha mask (soft edges allowed); null = everything. */
+  private sel: Canvas2D | null = null
   /** Painting only lands inside this path (canvas pixels); null = everywhere. */
-  selection: Path2D | null = null
+  get selection(): Path2D | null {
+    return this.selPath
+  }
+  set selection(path: Path2D | null) {
+    this.selPath = path
+    this.sel = null
+    if (!path) return
+    this.sel = this.canvas()
+    this.sel.ctx.fillStyle = '#fff'
+    this.sel.ctx.fill(path)
+  }
+  /** The selection as a mask canvas (alpha = how selected); setting it keeps the canvas. */
+  get selectionMask(): HTMLCanvasElement | null {
+    return this.sel?.canvas ?? null
+  }
+  set selectionMask(mask: HTMLCanvasElement | null) {
+    this.selPath = null
+    this.sel = mask ? { canvas: mask, ctx: mask.getContext('2d')! } : null
+  }
+  readonly colorSpace: PredefinedColorSpace
   /** Bumped on every visible change; the view redraws when it changes. */
   version = 0
 
-  constructor(width: number, height: number) {
+  constructor(width: number, height: number, colorSpace: PredefinedColorSpace = 'srgb') {
     this.width = width
     this.height = height
-    this.composite = makeCanvas(width, height)
-    this.scratch = makeCanvas(width, height)
-    this.paint = makeCanvas(width, height)
-    this.gpu = GlCompositor.create(width, height)
+    this.colorSpace = colorSpace
+    this.composite = this.canvas()
+    this.scratch = this.canvas()
+    this.paint = this.canvas()
+    this.gpu = GlCompositor.create(width, height, colorSpace)
+  }
+
+  /** A blank canvas at document size in the document's colour space. */
+  canvas(): Canvas2D {
+    return makeCanvas(this.width, this.height, this.colorSpace)
+  }
+
+  /** Keep only what lies inside the selection (no-op without one). */
+  private keepSelected(ctx: CanvasRenderingContext2D) {
+    if (!this.sel) return
+    ctx.save()
+    ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = 'destination-in'
+    ctx.drawImage(this.sel.canvas, 0, 0)
+    ctx.restore()
   }
 
   /** True when layers are blended on the GPU. */
@@ -89,7 +133,7 @@ export class SketchEngine {
   private ensure(id: Id): Canvas2D {
     let c = this.layers.get(id)
     if (!c) {
-      c = makeCanvas(this.width, this.height)
+      c = this.canvas()
       this.layers.set(id, c)
     }
     return c
@@ -123,7 +167,7 @@ export class SketchEngine {
   /** Mirror copies of a dab, remembering how far the stroke reaches. */
   private mirrorFor(opts: StrokeOptions) {
     return (q: { x: number; y: number }) => {
-      const pts = mirrored(q, this.width, this.height, opts.symmetry)
+      const pts = opts.mirror ? opts.mirror(q) : mirrored(q, this.width, this.height, opts.symmetry)
       const b = (this.strokeBounds ??= { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity })
       for (const m of pts) {
         b.x0 = Math.min(b.x0, m.x)
@@ -136,7 +180,8 @@ export class SketchEngine {
   }
 
   beginStroke(opts: StrokeOptions, p: InputPoint) {
-    this.stroke = makeCanvas(this.width, this.height)
+    this.stroke = this.canvas()
+    this.predicted = null
     this.strokeOpts = opts
     this.strokeBounds = null
     this.stamper = this.newStamper(opts)
@@ -150,10 +195,34 @@ export class SketchEngine {
     this.version++
   }
 
+  /**
+   * Show predicted points ahead of the stroke (pointer prediction). They are
+   * drawn for the live view only: the next call, the end of the stroke or a
+   * restroke throws them away, so they never reach the layer or undo.
+   */
+  predict(points: InputPoint[], from: InputPoint | null) {
+    if (!this.stroke || !this.strokeOpts || this.stamper instanceof WetStamper) return
+    if (!points.length) {
+      if (this.predicted) this.version++
+      this.predicted = null
+      return
+    }
+    const pred = (this.predicted ??= this.canvas())
+    pred.ctx.clearRect(0, 0, this.width, this.height)
+    const opts = this.strokeOpts
+    const mirror = (q: { x: number; y: number }) => (opts.mirror ? opts.mirror(q) : mirrored(q, this.width, this.height, opts.symmetry))
+    // No dual brush or live taper here: those need full-size canvases of their own.
+    const s = new StrokeStamper(pred.ctx, { ...opts.brush, dual: null, tipAnimation: false, stabilization: 0, motionFilter: 0 }, mirror, 3, opts.color)
+    if (from) s.add(from)
+    for (const p of points) s.add(p)
+    this.version++
+  }
+
   /** Replace the stroke being drawn with new points (QuickShape). */
   restroke(points: InputPoint[]) {
     if (!this.stroke || !this.strokeOpts) return
     this.stroke.ctx.clearRect(0, 0, this.width, this.height)
+    this.predicted = null
     this.strokeBounds = null
     this.stamper = this.newStamper(this.strokeOpts, 1)
     for (const p of points) this.stamper.add(p)
@@ -167,14 +236,6 @@ export class SketchEngine {
     return new StrokeStamper(this.stroke!.ctx, opts.brush, this.mirrorFor(opts), seed, opts.color)
   }
 
-  /** Draw the stroke into `ctx` the way it will land on the layer. */
-  private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
-    if (this.stamper instanceof WetStamper) return this.stamper.composite(ctx, this.selection)
-    const area = this.strokeArea(opts) ?? undefined
-    colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
-    compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: this.selection, area })
-  }
-
   /** Where the stroke being drawn can have paint. */
   private strokeArea(opts: StrokeOptions): Rect | null {
     const b = this.strokeBounds
@@ -182,10 +243,46 @@ export class SketchEngine {
     return b ? { x: b.x0 - reach, y: b.y0 - reach, w: b.x1 - b.x0 + 2 * reach, h: b.y1 - b.y0 + 2 * reach } : null
   }
 
+  /** Draw the stroke into `ctx` the way it will land on the layer (with predicted points for the live view only). */
+  private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions, live = false) {
+    if (this.stamper instanceof WetStamper) {
+      // The wet copy of the layer replaces the layer, inside the selection.
+      const p = this.paint.ctx
+      p.save()
+      p.globalCompositeOperation = 'copy'
+      p.drawImage(this.stamper.result, 0, 0)
+      p.restore()
+      this.keepSelected(p)
+      ctx.save()
+      if (this.sel) {
+        ctx.globalCompositeOperation = 'destination-out'
+        ctx.drawImage(this.sel.canvas, 0, 0)
+        ctx.globalCompositeOperation = 'source-over'
+      } else ctx.clearRect(0, 0, this.width, this.height)
+      ctx.drawImage(p.canvas, 0, 0)
+      ctx.restore()
+      return
+    }
+    let mask = this.stroke!.canvas
+    if (live && this.predicted) {
+      // The prediction joins the stroke mask the same way dabs do, so the preview has no seam.
+      const m = (this.joined ??= this.canvas()).ctx
+      m.clearRect(0, 0, this.width, this.height)
+      m.drawImage(mask, 0, 0)
+      m.drawImage(this.predicted.canvas, 0, 0)
+      mask = m.canvas
+    }
+    const area = this.strokeArea(opts) ?? undefined
+    colorStroke(mask, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
+    this.keepSelected(this.paint.ctx)
+    compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: null, area })
+  }
+
   /** Finish the stroke: merge it into the layer and record undo. Returns the changed layer. */
   endStroke(): Id | null {
     const opts = this.strokeOpts
     if (!this.stroke || !opts) return null
+    this.predicted = null
     this.stamper?.finish()
     const layer = this.ensure(opts.layer.id)
     const area = this.strokeArea(opts)
@@ -198,6 +295,7 @@ export class SketchEngine {
   }
 
   cancelStroke() {
+    this.predicted = null
     this.stroke = null
     this.stamper = null
     this.strokeOpts = null
@@ -239,27 +337,28 @@ export class SketchEngine {
   /** Clear the selection (or the whole layer). */
   clear(layerId: Id): Id {
     return this.edit(layerId, (ctx) => {
-      if (this.selection) {
-        ctx.clip(this.selection)
-      }
-      ctx.clearRect(0, 0, this.width, this.height)
+      if (!this.sel) return ctx.clearRect(0, 0, this.width, this.height)
+      ctx.globalCompositeOperation = 'destination-out'
+      ctx.drawImage(this.sel.canvas, 0, 0)
     })
   }
 
   /** Fill the selection (or the whole layer) with a color. */
   fill(layerId: Id, color: string, alphaLock: boolean): Id {
+    const paint = this.canvas()
+    paint.ctx.fillStyle = color
+    paint.ctx.fillRect(0, 0, this.width, this.height)
+    this.keepSelected(paint.ctx)
     return this.edit(layerId, (ctx) => {
-      if (this.selection) ctx.clip(this.selection)
       ctx.globalCompositeOperation = alphaLock ? 'source-atop' : 'source-over'
-      ctx.fillStyle = color
-      ctx.fillRect(0, 0, this.width, this.height)
+      ctx.drawImage(paint.canvas, 0, 0)
     })
   }
 
   /** Flip the selection (or the whole layer) horizontally or vertically. */
   flip(layerId: Id, axis: 'x' | 'y'): Id {
     return this.edit(layerId, (ctx) => {
-      const src = makeCanvas(this.width, this.height)
+      const src = this.canvas()
       src.ctx.drawImage(ctx.canvas, 0, 0)
       ctx.clearRect(0, 0, this.width, this.height)
       ctx.translate(axis === 'x' ? this.width : 0, axis === 'y' ? this.height : 0)
@@ -273,14 +372,14 @@ export class SketchEngine {
     const layer = this.ensure(layerId)
     const rects = tilesIn({ x: 0, y: 0, w: this.width, h: this.height }, this.width, this.height)
     const before = this.snapshot(layerId, rects)
-    const piece = makeCanvas(this.width, this.height)
-    piece.ctx.save()
-    if (this.selection) piece.ctx.clip(this.selection)
+    const piece = this.canvas()
     piece.ctx.drawImage(layer.canvas, 0, 0)
-    piece.ctx.restore()
+    this.keepSelected(piece.ctx)
     layer.ctx.save()
-    if (this.selection) layer.ctx.clip(this.selection)
-    layer.ctx.clearRect(0, 0, this.width, this.height)
+    if (this.sel) {
+      layer.ctx.globalCompositeOperation = 'destination-out'
+      layer.ctx.drawImage(this.sel.canvas, 0, 0)
+    } else layer.ctx.clearRect(0, 0, this.width, this.height)
     layer.ctx.restore()
     this.floating = { layerId, piece, rects, before, dx: 0, dy: 0 }
     this.touched(layerId)
@@ -299,12 +398,13 @@ export class SketchEngine {
     if (!f) return null
     this.floating = null
     const layer = this.ensure(f.layerId)
-    if (!f.dx && !f.dy) {
+    if (!f.dx && !f.dy && !f.view) {
       f.rects.forEach((r, i) => layer.ctx.putImageData(f.before[i], r.x, r.y))
       this.touched(f.layerId)
       return null
     }
-    layer.ctx.drawImage(f.piece.canvas, Math.round(f.dx), Math.round(f.dy))
+    if (f.view) layer.ctx.drawImage(f.view, 0, 0)
+    else layer.ctx.drawImage(f.piece.canvas, Math.round(f.dx), Math.round(f.dy))
     this.history.push(f.layerId, f.rects, f.before, this.snapshot(f.layerId, f.rects))
     this.touched(f.layerId)
     return f.layerId
@@ -314,10 +414,90 @@ export class SketchEngine {
     return !!this.floating
   }
 
+  /** The lifted pixels (at their original place) while moving or transforming. */
+  get floatingPiece(): HTMLCanvasElement | null {
+    return this.floating?.piece.canvas ?? null
+  }
+
+  /** Show (and later drop) the lifted pixels as this document-size picture instead (transform). */
+  setFloatingView(view: HTMLCanvasElement | null) {
+    if (!this.floating) return
+    this.floating.view = view
+    this.version++
+  }
+
+  /** Put the lifted pixels back where they were, without an undo step. */
+  cancelMove() {
+    const f = this.floating
+    if (!f) return
+    this.floating = null
+    const { ctx } = this.ensure(f.layerId)
+    f.rects.forEach((r, i) => ctx.putImageData(f.before[i], r.x, r.y))
+    this.touched(f.layerId)
+  }
+
+  /** Pixels of one layer, or of the flattened picture (no background) when `layerId` is null. */
+  pixels(doc: LayerStack, layerId: Id | null): ImageData {
+    if (layerId) return this.ensure(layerId).ctx.getImageData(0, 0, this.width, this.height)
+    const c = this.canvas()
+    c.ctx.drawImage(this.render(doc, false), 0, 0)
+    return c.ctx.getImageData(0, 0, this.width, this.height)
+  }
+
+  /** Paint a colour where `mask` (one byte per pixel) is set, inside the selection. keepAlpha recolours existing pixels only. */
+  fillMask(layerId: Id, mask: Uint8Array, color: string, keepAlpha: boolean): Id {
+    const alpha = this.canvas()
+    const img = alpha.ctx.createImageData(this.width, this.height)
+    for (let p = 0; p < mask.length; p++) img.data[p * 4 + 3] = mask[p]
+    alpha.ctx.putImageData(img, 0, 0)
+    const paint = this.canvas()
+    paint.ctx.fillStyle = color
+    paint.ctx.fillRect(0, 0, this.width, this.height)
+    paint.ctx.globalCompositeOperation = 'destination-in'
+    paint.ctx.drawImage(alpha.canvas, 0, 0)
+    this.keepSelected(paint.ctx)
+    return this.edit(layerId, (ctx) => {
+      ctx.globalCompositeOperation = keepAlpha ? 'source-atop' : 'source-over'
+      ctx.drawImage(paint.canvas, 0, 0)
+    })
+  }
+
+  /** Invert the colours of the selection (or the whole layer). */
+  invert(layerId: Id): Id {
+    const inv = this.canvas()
+    const src = this.ensure(layerId)
+    const img = src.ctx.getImageData(0, 0, this.width, this.height)
+    for (let i = 0; i < img.data.length; i += 4) {
+      img.data[i] = 255 - img.data[i]
+      img.data[i + 1] = 255 - img.data[i + 1]
+      img.data[i + 2] = 255 - img.data[i + 2]
+    }
+    inv.ctx.putImageData(img, 0, 0)
+    this.keepSelected(inv.ctx)
+    return this.edit(layerId, (ctx) => {
+      if (this.sel) {
+        ctx.globalCompositeOperation = 'destination-out'
+        ctx.drawImage(this.sel.canvas, 0, 0)
+        ctx.globalCompositeOperation = 'source-over'
+      } else ctx.clearRect(0, 0, this.width, this.height)
+      ctx.drawImage(inv.canvas, 0, 0)
+    })
+  }
+
+  /** Flatten `stack` (bottom to top, groups and masks included) into one layer's pixels, with undo. */
+  mergeInto(stack: SketchLayer[], targetId: Id): Id {
+    const merged = this.canvas()
+    merged.ctx.drawImage(this.render({ layers: stack, backgroundColor: null }, false), 0, 0)
+    return this.edit(targetId, (ctx) => {
+      ctx.clearRect(0, 0, this.width, this.height)
+      ctx.drawImage(merged.canvas, 0, 0)
+    })
+  }
+
   /** Merge `upper` into `lower` with the upper layer's opacity and blend mode. */
   mergeDown(upper: SketchLayer, lowerId: Id): Id {
     const lower: SketchLayer = { ...upper, id: lowerId, opacity: 1, blend: 'source-over', clip: false, visible: true }
-    const merged = makeCanvas(this.width, this.height)
+    const merged = this.canvas()
     merged.ctx.drawImage(this.render({ layers: [lower, { ...upper, clip: false, visible: true }], backgroundColor: null }, false), 0, 0)
     return this.edit(lowerId, (ctx) => {
       ctx.clearRect(0, 0, this.width, this.height)
@@ -334,6 +514,12 @@ export class SketchEngine {
   }
 
   undo(): Id | null {
+    // Undo while moving just puts the pixels back.
+    if (this.floating) {
+      const id = this.floating.layerId
+      this.cancelMove()
+      return id
+    }
     return this.replay(this.history.undo(), 'before')
   }
 
@@ -361,7 +547,8 @@ export class SketchEngine {
     s.globalAlpha = 1
     s.clearRect(0, 0, this.width, this.height)
     s.drawImage(src, 0, 0)
-    if (stroking) this.applyStroke(s, this.strokeOpts!)
+    if (stroking) this.applyStroke(s, this.strokeOpts!, true)
+    else if (this.floating!.view) s.drawImage(this.floating!.view, 0, 0)
     else s.drawImage(this.floating!.piece.canvas, this.floating!.dx, this.floating!.dy)
     return { canvas: this.scratch.canvas, live: true }
   }
@@ -380,26 +567,44 @@ export class SketchEngine {
 
   private renderGpu(doc: LayerStack, withBackground: boolean): HTMLCanvasElement {
     const gpu = this.gpu!
-    const stack: GlLayer[] = []
-    let base: string | null = null
-    for (const layer of doc.layers) {
-      const { canvas, live } = this.livePixels(layer)
-      // The live preview has its own texture so the layer's own texture stays valid.
-      const key = live ? `${layer.id}:live` : layer.id
-      const version = live ? ++this.previewVersion : (this.layerVersions.get(layer.id) ?? 0)
-      const entry: GlLayer = { source: canvas, version, key, opacity: layer.opacity, blend: layer.blend, clipTo: layer.clip ? base : null }
-      if (!layer.clip) base = key
-      // A clipping base must be in the stack even when hidden, with no effect of its own.
-      stack.push(layer.visible ? entry : { ...entry, opacity: 0 })
-    }
-    gpu.prune(new Set([...stack.map((l) => l.key), ...doc.layers.map((l) => l.id)]))
+    const keys = new Set(doc.layers.map((l) => l.id))
+    const stack = this.glNodes(layerTree(doc.layers), keys)
+    gpu.prune(keys)
     const bg = withBackground && doc.backgroundColor ? parseHex(doc.backgroundColor) : null
     return gpu.render(stack, bg)
   }
 
+  /** A layer's (or mask's) pixels as a GPU source; the live preview has its own texture so the layer's own stays valid. */
+  private glSource(layer: SketchLayer, keys: Set<string>): GlSource {
+    const { canvas, live } = this.livePixels(layer)
+    const key = live ? `${layer.id}:live` : layer.id
+    keys.add(key)
+    return { source: canvas, key, version: live ? ++this.previewVersion : (this.layerVersions.get(layer.id) ?? 0) }
+  }
+
+  private glNodes(nodes: LayerNode[], keys: Set<string>): GlLayer[] {
+    const out: GlLayer[] = []
+    let base: GlLayer | null = null
+    for (const { layer, children, mask } of nodes) {
+      const m = mask?.visible ? this.glSource(mask, keys) : null
+      const clip = layer.clip && base ? { clipTo: base.key, clipMask: base.mask } : { clipTo: null }
+      if (children) {
+        // Groups are never clipping bases; hidden groups are skipped with everything inside.
+        if (!layer.clip) base = null
+        if (!layer.visible) continue
+        out.push({ source: this.scratch.canvas, version: 0, key: layer.id, opacity: layer.opacity, blend: layer.blend, mask: m, ...clip, children: this.glNodes(children, keys) })
+        continue
+      }
+      const entry: GlLayer = { ...this.glSource(layer, keys), opacity: layer.opacity, blend: layer.blend, mask: m, ...clip }
+      if (!layer.clip) base = entry
+      // A clipping base must be in the stack even when hidden, with no effect of its own.
+      out.push(layer.visible ? entry : { ...entry, opacity: 0 })
+    }
+    return out
+  }
+
   private renderCanvas2d(doc: LayerStack, withBackground: boolean): HTMLCanvasElement {
     const { ctx, canvas } = this.composite
-    ctx.save()
     ctx.globalCompositeOperation = 'source-over'
     ctx.globalAlpha = 1
     ctx.clearRect(0, 0, this.width, this.height)
@@ -407,32 +612,72 @@ export class SketchEngine {
       ctx.fillStyle = doc.backgroundColor
       ctx.fillRect(0, 0, this.width, this.height)
     }
-    let base: HTMLCanvasElement | null = null
-    for (const layer of doc.layers) {
-      let src = this.livePixels(layer).canvas
-      if (layer.clip && base) {
-        // Clipping mask: keep only where the base layer has pixels.
-        const tmp = makeCanvas(this.width, this.height)
-        tmp.ctx.drawImage(src, 0, 0)
-        tmp.ctx.globalCompositeOperation = 'destination-in'
-        tmp.ctx.drawImage(base, 0, 0)
-        src = tmp.canvas
-      } else if (!layer.clip) {
-        base = this.ensure(layer.id).canvas
+    this.compose2d(ctx, layerTree(doc.layers), 0)
+    ctx.globalCompositeOperation = 'source-over'
+    ctx.globalAlpha = 1
+    return canvas
+  }
+
+  /** Canvases for groups and masked layers, per group depth (Canvas 2D path). */
+  private pool: Canvas2D[] = []
+  private pooled(i: number): Canvas2D {
+    const c = (this.pool[i] ??= this.canvas())
+    c.ctx.globalCompositeOperation = 'source-over'
+    c.ctx.globalAlpha = 1
+    c.ctx.clearRect(0, 0, this.width, this.height)
+    return c
+  }
+
+  /** Mask pixels as alpha (brightness x alpha), cached per mask version. */
+  private maskCache = new Map<Id, { version: number; c: Canvas2D }>()
+  private maskAlpha(mask: SketchLayer): HTMLCanvasElement {
+    const { canvas: src, live } = this.livePixels(mask)
+    const version = this.layerVersions.get(mask.id) ?? 0
+    const hit = this.maskCache.get(mask.id)
+    if (hit && hit.version === version && !live) return hit.c.canvas
+    const c = hit?.c ?? this.canvas()
+    const img = src.getContext('2d')!.getImageData(0, 0, this.width, this.height)
+    lumaToAlpha(img.data)
+    c.ctx.putImageData(img, 0, 0)
+    this.maskCache.set(mask.id, { version: live ? -1 : version, c })
+    return c.canvas
+  }
+
+  private compose2d(ctx: CanvasRenderingContext2D, nodes: LayerNode[], depth: number) {
+    let base: { canvas: HTMLCanvasElement; mask: HTMLCanvasElement | null } | null = null
+    for (const { layer, children, mask } of nodes) {
+      const m = mask?.visible ? this.maskAlpha(mask) : null
+      const clipTo = layer.clip ? base : null
+      let src: HTMLCanvasElement
+      if (children) {
+        if (!layer.clip) base = null
+        if (!layer.visible) continue
+        const g = this.pooled(depth * 2)
+        this.compose2d(g.ctx, children, depth + 1)
+        src = g.canvas
+      } else {
+        src = this.livePixels(layer).canvas
+        if (!layer.clip) base = { canvas: this.ensure(layer.id).canvas, mask: m }
+        if (!layer.visible) continue
       }
-      if (!layer.visible) continue
+      if (m || clipTo) {
+        // Keep only where the mask and the clipping base let it through.
+        const t = this.pooled(depth * 2 + 1)
+        t.ctx.drawImage(src, 0, 0)
+        t.ctx.globalCompositeOperation = 'destination-in'
+        if (m) t.ctx.drawImage(m, 0, 0)
+        if (clipTo) {
+          t.ctx.drawImage(clipTo.canvas, 0, 0)
+          if (clipTo.mask) t.ctx.drawImage(clipTo.mask, 0, 0)
+        }
+        src = t.canvas
+      }
       if (CANVAS_BLENDS.has(layer.blend)) {
         ctx.globalAlpha = layer.opacity
         ctx.globalCompositeOperation = layer.blend as GlobalCompositeOperation
         ctx.drawImage(src, 0, 0)
-      } else {
-        ctx.restore()
-        cpuBlend(ctx, src, layer.blend, layer.opacity)
-        ctx.save()
-      }
+      } else cpuBlend(ctx, src, layer.blend, layer.opacity)
     }
-    ctx.restore()
-    return canvas
   }
 
   /** The color under a canvas pixel in the flattened picture, as #rrggbb, or null if transparent. */
@@ -457,6 +702,14 @@ export class SketchEngine {
     const data = this.ensure(layerId).ctx.getImageData(0, 0, this.width, this.height).data
     for (let i = 3; i < data.length; i += 4) if (data[i] !== 0) return false
     return true
+  }
+}
+
+/** Mask pixels to alpha: brightness (0.299, 0.587, 0.114) times alpha, like the GPU path. */
+export function lumaToAlpha(d: Uint8ClampedArray) {
+  for (let i = 0; i < d.length; i += 4) {
+    d[i + 3] = Math.round(((0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) * d[i + 3]) / 255)
+    d[i] = d[i + 1] = d[i + 2] = 0
   }
 }
 

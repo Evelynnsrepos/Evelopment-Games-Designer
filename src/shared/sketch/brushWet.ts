@@ -57,13 +57,9 @@ export class WetStamper extends StrokeStamper {
     this.carried = []
   }
 
-  /** Draw the painted copy onto `ctx` (the layer, or its live preview). */
-  composite(ctx: Ctx, selection: Path2D | null) {
-    ctx.save()
-    if (selection) ctx.clip(selection)
-    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height)
-    ctx.drawImage(this.work.canvas, 0, 0)
-    ctx.restore()
+  /** The painted copy of the layer; it replaces the layer (inside the selection). */
+  get result(): HTMLCanvasElement {
+    return this.work.canvas
   }
 
   private fit(c: Ctx, s: number) {

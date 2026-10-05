@@ -1,8 +1,8 @@
 import { newId, type Id } from '@/core/model'
 import { CANVAS_BLENDS, type BlendMode } from './blend'
 import { shiftColor } from './brushColor'
-import { curveAt, type CurvePoint } from './brushCurve'
 import { PathSmoother } from './brushPath'
+import { applyCurve, type CurvePoint } from './pen'
 import { GRAINS, grainCanvas, imageTip, seeded, SHAPES, tipImage, type BrushGrain, type BrushShape } from './brushTextures'
 
 /**
@@ -481,8 +481,10 @@ export interface StrokePoint {
   y: number
   /** 0..1; mice count as full pressure. */
   pressure: number
-  /** 0 = pen upright .. 1 = lying flat. */
+  /** 0 = pen upright .. 1 = lying flat (or give `altitude`). */
   tilt?: number
+  /** Radians: pi/2 = pen upright, 0 = lying flat (pen input's PenPoint). */
+  altitude?: number
   /** Direction the pen leans, radians. */
   azimuth?: number
   /** ms; when missing, the time the point arrives. */
@@ -491,14 +493,8 @@ export interface StrokePoint {
   pen?: boolean
 }
 
-/** Tilt and azimuth of a pen from a pointer event (0 tilt when the device has none). */
-export function penTilt(e: { tiltX?: number; tiltY?: number; altitudeAngle?: number; azimuthAngle?: number }): { tilt: number; azimuth: number } {
-  const tx = e.tiltX ?? 0
-  const ty = e.tiltY ?? 0
-  if (typeof e.altitudeAngle === 'number' && (tx || ty || e.altitudeAngle !== Math.PI / 2))
-    return { tilt: 1 - e.altitudeAngle / (Math.PI / 2), azimuth: e.azimuthAngle ?? 0 }
-  return { tilt: Math.min(1, Math.hypot(tx, ty) / 90), azimuth: Math.atan2(ty, tx) }
-}
+/** 0 = upright .. 1 = flat, from `tilt` or the pen's altitude. */
+const tiltOf = (p: StrokePoint) => p.tilt ?? (p.altitude !== undefined ? Math.max(0, 1 - p.altitude / (Math.PI / 2)) : 0)
 
 /** A stroke point with its speed (0..1), as stamped. */
 interface Pt extends StrokePoint {
@@ -752,7 +748,7 @@ export class StrokeStamper {
           if (dist + t > limit) return { i, t, dist, rng: this.rngState }
           const k = t / d
           const p: Pt = { ...b, x: lerp(a.x, b.x, k), y: lerp(a.y, b.y, k), pressure: lerp(a.pressure, b.pressure, k), speed: lerp(a.speed, b.speed, k) }
-          if (a.tilt !== undefined && b.tilt !== undefined) p.tilt = lerp(a.tilt, b.tilt, k)
+          if (a.tilt !== undefined || a.altitude !== undefined) p.tilt = lerp(tiltOf(a), tiltOf(b), k)
           this.stampPoint(p, angle, dist + t, total, to)
           t += this.stepAt(p, dist + t, total)
         }
@@ -767,11 +763,11 @@ export class StrokeStamper {
   /** Pressure, tilt and speed after the brush's curves (0..1). */
   private inputs(p: Pt) {
     const b = this.brush
-    const tiltDeg = (p.tilt ?? 0) * 90
+    const tiltDeg = tiltOf(p) * 90
     return {
-      pressure: curveAt(b.pressureCurve, p.pressure),
-      tilt: p.tilt ? curveAt(b.tiltCurve, clamp01((tiltDeg - b.tiltAngle) / Math.max(1, 90 - b.tiltAngle))) : 0,
-      speed: curveAt(b.speedCurve, p.speed),
+      pressure: applyCurve(b.pressureCurve, p.pressure),
+      tilt: tiltDeg ? applyCurve(b.tiltCurve, clamp01((tiltDeg - b.tiltAngle) / Math.max(1, 90 - b.tiltAngle))) : 0,
+      speed: applyCurve(b.speedCurve, p.speed),
     }
   }
 

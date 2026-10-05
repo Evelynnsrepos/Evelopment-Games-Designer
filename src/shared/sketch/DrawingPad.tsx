@@ -1,9 +1,10 @@
 import { Eraser } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { drawPreview, penTilt, scaledBrush, type BrushSettings } from './brushes'
+import { drawPreview, scaledBrush, type BrushSettings } from './brushes'
 import { SketchEngine } from './engine'
 import { newLayer, type SketchDoc } from './model'
 import { preloadBrush } from './library'
+import { penData } from './pen'
 
 const UI = {
   thumbnail: 'Library preview',
@@ -62,14 +63,12 @@ export function DrawingPad({ brush, color: startColor }: { brush: BrushSettings;
 
   const point = (e: PointerEvent | React.PointerEvent) => {
     const r = view.current!.getBoundingClientRect()
-    const pen = e.pointerType === 'pen'
     return {
       x: ((e.clientX - r.left) / r.width) * W,
       y: ((e.clientY - r.top) / r.height) * H,
-      pressure: pen ? Math.max(0.05, e.pressure) : 1,
-      pen,
+      ...penData(e as PointerEvent),
+      pen: e.pointerType === 'pen',
       time: e.timeStamp,
-      ...(pen ? penTilt(e as PointerEvent) : {}),
     }
   }
 

@@ -157,7 +157,9 @@ export function BrushStudio({ brushId, color, onClose }: { brushId: Id; color: s
     </Row>
   )
   const curve = (key: 'pressureCurve' | 'tiltCurve' | 'speedCurve', xLabel: string) => (
-    <CurveEditor value={s[key]} xLabel={xLabel} yLabel="Effect" onChange={(c: CurvePoint[]) => set({ [key]: c }, key)} />
+    <div className="studio-curve" title={xLabel}>
+      <CurveEditor points={s[key]} onChange={(c: CurvePoint[]) => set({ [key]: c }, key)} />
+    </div>
   )
 
   const done = () => {

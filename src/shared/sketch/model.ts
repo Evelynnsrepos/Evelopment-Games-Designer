@@ -7,6 +7,7 @@ import { newId, type AssetPath, type Id } from '@/core/model'
  */
 
 import type { BlendMode } from './blend'
+import type { DrawingGuide } from './guides'
 
 export { BLEND_MODES, type BlendMode } from './blend'
 
@@ -23,6 +24,19 @@ export interface SketchLayer {
   clip: boolean
   /** PNG with the layer's pixels; null = empty. */
   image: AssetPath | null
+  // Sketch Pro layer features; all optional so older drawings open unchanged.
+  /** 'group' holds other layers (they point to it with `parent`); 'mask' hides the layer below where it is dark. */
+  kind?: 'group' | 'mask'
+  /** The group this layer is in; null/missing = top level. */
+  parent?: Id | null
+  /** Group folded shut in the layer list. */
+  collapsed?: boolean
+  /** No painting or editing. */
+  locked?: boolean
+  /** Fills, ColorDrop and the magic wand look at this layer's lines. */
+  reference?: boolean
+  /** Shown while drawing, left out of exports. */
+  private?: boolean
 }
 
 /** An image floating over the canvas to draw from; not part of the picture. */
@@ -45,6 +59,12 @@ export interface SketchDoc {
   references: SketchReference[]
   /** The picture without background as a transparent PNG, for placing it elsewhere (Moodboard stickers). */
   sticker?: AssetPath | null
+  /** Colour space of the canvas; missing = sRGB. Display P3 only where the webview supports it. */
+  colorSpace?: 'srgb' | 'display-p3'
+  /** Saved selections, each a PNG mask in the project's assets. */
+  selections?: { id: Id; name: string; image: AssetPath }[]
+  /** Drawing guide and the layers with Drawing Assist (Sketch Pro); missing = no guide. */
+  guide?: DrawingGuide
 }
 
 export const newLayer = (name: string): SketchLayer => ({
