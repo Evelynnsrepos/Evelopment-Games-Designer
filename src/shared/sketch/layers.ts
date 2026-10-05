@@ -157,6 +157,22 @@ export function groupLayers(layers: SketchLayer[], ids: Id[], name: string): { l
   return { layers: out, group }
 }
 
+/** Insert a new layer right above another one (same group), or on top when `aboveId` is missing. */
+export function insertAbove(layers: SketchLayer[], layer: SketchLayer, aboveId: Id | undefined): SketchLayer[] {
+  const out = editTree(layers, (tree) => {
+    const at = aboveId ? locate(tree, aboveId) : null
+    if (at) at.list.splice(at.index + 1, 0, { layer })
+    else tree.push({ layer })
+  })
+  return out
+}
+
+/** A layer or group with everything inside, as its own stack (for merging and exporting). */
+export function subtreeStack(layers: SketchLayer[], id: Id): SketchLayer[] {
+  const ids = subtreeIds(layers, id)
+  return layers.filter((l) => ids.has(l.id)).map((l) => (l.id === id ? { ...l, parent: null, visible: true } : l))
+}
+
 /** Dissolve a group: its contents take its place. */
 export function ungroup(layers: SketchLayer[], groupId: Id): SketchLayer[] {
   return editTree(layers, (tree) => {
@@ -205,6 +221,12 @@ export function duplicateTree(layers: SketchLayer[], id: Id): { layers: SketchLa
     at.list.splice(at.index + 1, 0, node)
   })
   return { layers: out, map, top }
+}
+
+/** The mask entry attached to a layer or group, if any. */
+export function maskOf(layers: SketchLayer[], id: Id): SketchLayer | undefined {
+  const at = locate(layerTree(layers), id)
+  return at?.list[at.index].mask
 }
 
 /** A layer and everything inside or attached to it is gone. */

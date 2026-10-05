@@ -99,3 +99,16 @@ describe('layer tree', () => {
     expect(names(exportLayers(priv))).toEqual(['b'])
   })
 })
+
+describe('layer stacks', () => {
+  it('inserts above a layer without stealing its mask, and cuts out subtrees', async () => {
+    const { insertAbove, subtreeStack } = await import('./layers')
+    const { layers } = addMask([L('a'), L('b')], 'a')
+    expect(names(insertAbove(layers, L('n'), 'a'))).toEqual(['a', 'Mask', 'n', 'b'])
+    expect(names(insertAbove(layers, L('n'), undefined))).toEqual(['a', 'Mask', 'b', 'n'])
+    const g = groupLayers(layers, ['a'], 'G')
+    const st = subtreeStack(g.layers, g.group.id)
+    expect(names(st)).toEqual(['a', 'Mask', 'G'])
+    expect(st[2].parent).toBeNull()
+  })
+})

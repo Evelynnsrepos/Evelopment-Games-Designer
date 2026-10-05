@@ -60,6 +60,8 @@ export interface SketchDoc {
   sticker?: AssetPath | null
   /** Colour space of the canvas; missing = sRGB. Display P3 only where the webview supports it. */
   colorSpace?: 'srgb' | 'display-p3'
+  /** Saved selections, each a PNG mask in the project's assets. */
+  selections?: { id: Id; name: string; image: AssetPath }[]
 }
 
 export const newLayer = (name: string): SketchLayer => ({

@@ -1,0 +1,158 @@
+/* Sketch Pro: layer list, selections and transform */
+.sketch-layers-head .sketch-spacer {
+  flex: 1;
+}
+.sketch-layer-list .sketch-layer {
+  display: block;
+  padding: 3px 4px;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+}
+.sketch-layer-list .sketch-layer.is-clip .sketch-layer-row {
+  margin-left: 14px;
+}
+.sketch-layer-list .sketch-layer.is-clip {
+  margin-left: 0;
+}
+.sketch-layer.is-picked {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.sketch-layer.drop-above {
+  border-top-color: var(--accent);
+}
+.sketch-layer.drop-below {
+  border-bottom-color: var(--accent);
+}
+.sketch-layer.drop-inside {
+  outline: 2px dashed var(--accent);
+}
+.sketch-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+.sketch-layer-row .sketch-layer-name {
+  flex: 1;
+  min-width: 0;
+}
+.sketch-fold {
+  padding: 0;
+}
+.sketch-group-icon {
+  width: 44px;
+  color: var(--text-muted);
+}
+.sketch-mask-thumb {
+  display: inline-flex;
+  border-radius: 4px;
+  outline: 1px solid transparent;
+}
+.sketch-mask-thumb.is-active {
+  outline: 2px solid var(--accent);
+}
+.sketch-mask-thumb.is-off {
+  opacity: 0.4;
+}
+.sketch-mask-thumb .sketch-thumb {
+  width: 30px;
+  height: 22px;
+  background: #000;
+}
+.sketch-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+}
+.sketch-private {
+  color: var(--text-muted);
+}
+.sketch-picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  font-size: 12px;
+}
+.sketch-picked .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.sketch-layer-menu {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.sketch-layer-menu button.is-on::after {
+  content: ' ✓';
+  color: var(--accent);
+}
+.sketch-layer-menu button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Selection bar */
+.sketch-selbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.sketch-selbar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.sketch-selbar-slider {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0 4px;
+  color: var(--text-muted);
+}
+.sketch-selbar-slider input {
+  width: 80px;
+}
+.sketch-selbar-saved {
+  position: relative;
+  display: inline-flex;
+}
+.sketch-saved-row {
+  display: flex;
+  align-items: center;
+}
+.sketch-sel-edge-under {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-sel-edge {
+  fill: none;
+  stroke: #111;
+  stroke-width: 1.5;
+  stroke-dasharray: 4 4;
+  vector-effect: non-scaling-stroke;
+  animation: sketch-ants 0.6s linear infinite;
+}
+.sketch-poly-start {
+  fill: var(--accent);
+  stroke: #fff;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-sel-mask {
+  position: absolute;
+  pointer-events: none;
+  image-rendering: auto;
+}

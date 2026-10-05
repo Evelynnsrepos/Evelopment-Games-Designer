@@ -100,7 +100,7 @@ export class GlCompositor {
   private empty: WebGLTexture
   lost = false
 
-  static create(width: number, height: number): GlCompositor | null {
+  static create(width: number, height: number, colorSpace: PredefinedColorSpace = 'srgb'): GlCompositor | null {
     if (!glAllowed.value || typeof document === 'undefined') return null
     try {
       const canvas = document.createElement('canvas')
@@ -108,6 +108,11 @@ export class GlCompositor {
       canvas.height = height
       const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: false })
       if (!gl) return null
+      // Display P3 canvases keep their wider colours through the GPU (where the browser supports it).
+      if (colorSpace !== 'srgb' && 'drawingBufferColorSpace' in gl) {
+        gl.drawingBufferColorSpace = colorSpace
+        gl.unpackColorSpace = colorSpace
+      }
       const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number
       if (width > max || height > max) return null
       return new GlCompositor(canvas, gl)
