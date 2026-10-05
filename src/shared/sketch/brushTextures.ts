@@ -343,9 +343,10 @@ export function tipImage(shape: BrushShape, hardness: number): HTMLCanvasElement
       soft(r + Math.cos(a) * d, r + Math.sin(a) * d, rad * k, 0.6 + rnd() * 0.4)
     }
   } else if (shape === 'bristle') {
-    for (let i = 0; i < 44; i++) soft((8 + rnd() * 112) * k, r + (rnd() - 0.5) * 30 * k, (4 + rnd() * 6) * k, 0.35 + rnd() * 0.5)
+    // Bristles side by side across the stroke (stamps turn with the stroke).
+    for (let i = 0; i < 44; i++) soft(r + (rnd() - 0.5) * 30 * k, (8 + rnd() * 112) * k, (4 + rnd() * 6) * k, 0.35 + rnd() * 0.5)
   } else if (shape === 'rake') {
-    for (let i = 0; i < 9; i++) soft((10 + i * 13.5) * k, r + (rnd() - 0.5) * 4 * k, 5 * k, 0.9)
+    for (let i = 0; i < 9; i++) soft(r + (rnd() - 0.5) * 4 * k, (10 + i * 13.5) * k, 5 * k, 0.9)
   } else if (shape === 'dry') {
     for (let i = 0; i < 70; i++) {
       const y = r + (rnd() - 0.5) * 100 * k

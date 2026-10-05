@@ -6,6 +6,7 @@ import {
   EyeOff,
   FlipHorizontal2,
   FlipVertical2,
+  Fingerprint,
   Hand,
   Image as ImageIcon,
   ImagePlus,
@@ -57,6 +58,7 @@ import './sketch.css'
 const UI = {
   brush: 'Brush (B)',
   eraser: 'Eraser (E)',
+  smudge: 'Smudge (S): drags the colors with the brush',
   lasso: 'Lasso selection (L)',
   rectSelect: 'Rectangle selection (M)',
   move: 'Move (V): drags the selection, or the whole layer',
@@ -95,11 +97,12 @@ const UI = {
   saving: 'Saving…',
 }
 
-type Tool = 'brush' | 'eraser' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand'
+type Tool = 'brush' | 'eraser' | 'smudge' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand'
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
   { id: 'brush', icon: BrushIcon, label: UI.brush, key: 'b' },
   { id: 'eraser', icon: Eraser, label: UI.eraser, key: 'e' },
+  { id: 'smudge', icon: Fingerprint, label: UI.smudge, key: 's' },
   { id: 'lasso', icon: Lasso, label: UI.lasso, key: 'l' },
   { id: 'rect', icon: SquareDashed, label: UI.rectSelect, key: 'm' },
   { id: 'move', icon: Move, label: UI.move, key: 'v' },
@@ -360,10 +363,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (t === 'eyedropper') {
       const picked = engine.pickColor(doc, p.x, p.y)
       if (picked) setColor(picked)
-    } else if (t === 'brush' || t === 'eraser') {
+    } else if (t === 'brush' || t === 'eraser' || t === 'smudge') {
       if (!activeLayer.visible) return
       const pt = { ...p, pressure: pressureOf(e) }
-      engine.beginStroke({ layer: activeLayer, brush, color, symmetry, erase: t === 'eraser' }, pt)
+      engine.beginStroke({ layer: activeLayer, brush, color, symmetry, erase: t === 'eraser', smudge: t === 'smudge' }, pt)
       gesture.current = { kind: 'paint', smooth: pt, pts: [pt], rest: pt }
       armHold()
       setVersion(engine.version)
@@ -628,7 +631,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   // ---- Render --------------------------------------------------------------
 
   const outline = draftSel ?? selectionPts
-  const cursorSize = (tool === 'brush' || tool === 'eraser') && cursor && view ? brush.size * view.scale : 0
+  const cursorSize = (tool === 'brush' || tool === 'eraser' || tool === 'smudge') && cursor && view ? brush.size * view.scale : 0
 
   return (
     <div className="sketch">
@@ -670,7 +673,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           ref={boxRef}
           className={`sketch-stage${doc.backgroundColor ? '' : ' see-through'}`}
           onWheel={onWheel}
-          style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' ? 'none' : 'crosshair' }}
+          style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' || tool === 'smudge' ? 'none' : 'crosshair' }}
         >
           <canvas
             ref={viewCanvas}

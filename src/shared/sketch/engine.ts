@@ -1,6 +1,7 @@
 import type { Id } from '@/core/model'
 import { blendPixel, CANVAS_BLENDS, type BlendMode } from './blend'
-import { brushReach, colorStroke, compositeStroke, StrokeStamper, type BrushSettings } from './brushes'
+import { brushReach, colorStroke, compositeStroke, isWet, StrokeStamper, type BrushSettings } from './brushes'
+import { WetStamper } from './brushWet'
 import { GlCompositor, parseHex, type GlLayer } from './gl'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
 import { TileHistory, tilesIn, type Rect } from './tiles'
@@ -30,6 +31,8 @@ export interface StrokeOptions {
   color: string
   symmetry: SymmetryMode
   erase: boolean
+  /** Smudge tool: drag the colours already on the layer with the brush's shape. */
+  smudge?: boolean
 }
 
 type LayerStack = Pick<SketchDoc, 'layers' | 'backgroundColor'>
@@ -136,7 +139,7 @@ export class SketchEngine {
     this.stroke = makeCanvas(this.width, this.height)
     this.strokeOpts = opts
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, this.mirrorFor(opts), undefined, opts.color)
+    this.stamper = this.newStamper(opts)
     this.stamper.add(p)
     this.version++
   }
@@ -152,13 +155,21 @@ export class SketchEngine {
     if (!this.stroke || !this.strokeOpts) return
     this.stroke.ctx.clearRect(0, 0, this.width, this.height)
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, this.strokeOpts.brush, this.mirrorFor(this.strokeOpts), 1, this.strokeOpts.color)
+    this.stamper = this.newStamper(this.strokeOpts, 1)
     for (const p of points) this.stamper.add(p)
     this.version++
   }
 
+  /** Wet brushes and the Smudge tool mix with the layer's pixels; other brushes stamp a mask. */
+  private newStamper(opts: StrokeOptions, seed?: number): StrokeStamper {
+    if (opts.smudge || (!opts.erase && isWet(opts.brush)))
+      return new WetStamper(this.stroke!.ctx, opts.brush, this.mirrorFor(opts), seed, opts.color, this.ensure(opts.layer.id).canvas, !!opts.smudge)
+    return new StrokeStamper(this.stroke!.ctx, opts.brush, this.mirrorFor(opts), seed, opts.color)
+  }
+
   /** Draw the stroke into `ctx` the way it will land on the layer. */
   private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
+    if (this.stamper instanceof WetStamper) return this.stamper.composite(ctx, this.selection)
     const area = this.strokeArea(opts) ?? undefined
     colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
     compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: this.selection, area })
