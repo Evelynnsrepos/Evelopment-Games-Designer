@@ -123,6 +123,7 @@ export const IMAGE_TARGETS: { type: ComponentType; label: string }[] = [
   { type: 'moodboard', label: 'Moodboard' },
   { type: 'design-language', label: 'Design Language' },
   { type: 'asset-pool', label: 'Asset Pool' },
+  { type: 'storyboard', label: 'Storyboard' },
 ]
 
 /**

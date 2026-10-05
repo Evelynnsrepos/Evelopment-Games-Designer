@@ -3,13 +3,17 @@ import { useEffect, useMemo, useState } from 'react'
 import { pickAndImportAssets, useAssetUrl } from '@/core/assets'
 import { newId, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
-import { useDocument, useProjectStore, useUndoRedoKeys } from '@/core/state'
+import { useDocument, useIntentHandler, useProjectStore, useUndoRedoKeys, type Intent } from '@/core/state'
 import { NumberInput, PresetHeader } from '@/shared/calculators'
 import '@/shared/listDetail/listDetail.css'
 import { ProofTextarea } from '@/shared/spell'
 import './storyboard.css'
 
-/** Storyboard for cutscenes (v0.10): frames with shots, camera moves, dialogue and timing, played as an animatic. */
+/**
+ * Storyboard for cutscenes (v0.10): frames with shots, camera moves, dialogue and timing, played as an animatic.
+ * Intents: `add-image` ({ path, name }) adds one frame with the picture; `add-frames` ({ frames: { path, name, seconds }[] })
+ * adds several (Sketch frames and pages).
+ */
 
 const SHOTS = ['Wide', 'Medium', 'Close-up', 'Extreme close-up', 'Over the shoulder', 'Point of view', 'Aerial', 'Insert'] as const
 const CAMERA = ['Static', 'Pan', 'Tilt', 'Zoom in', 'Zoom out', 'Tracking', 'Shake', 'Cut'] as const
@@ -32,6 +36,17 @@ interface StoryboardDoc {
 const newFrame = (): Frame => ({ id: newId(), image: null, shot: 'Wide', camera: 'Static', seconds: 3, action: '', dialogue: '', sound: '' })
 const createStoryboardDoc = (): StoryboardDoc => ({ frames: [newFrame()] })
 
+/** Frames for an `add-image` or `add-frames` intent; empty for anything else. */
+function framesFromIntent(intent: Intent): Frame[] {
+  const list = intent.action === 'add-image' ? [intent] : intent.action === 'add-frames' && Array.isArray(intent.frames) ? (intent.frames as Record<string, unknown>[]) : []
+  return list
+    .filter((f) => typeof f?.path === 'string')
+    .map((f) => ({ ...newFrame(), image: f.path as string, seconds: typeof f.seconds === 'number' && f.seconds > 0 ? f.seconds : 3 }))
+}
+
+/** A frame nobody has touched yet (the one a new storyboard starts with). */
+const isBlank = (f: Frame) => !f.image && !f.action && !f.dialogue && !f.sound
+
 function FrameImage({ path, className }: { path: string | null; className: string }) {
   const url = useAssetUrl(path)
   return url ? <img className={className} src={url} alt="" /> : <div className={`${className} sb-blank`}>No picture</div>
@@ -44,6 +59,17 @@ export default function View({ documentId, active }: PanelProps) {
   const [sel, setSel] = useState(0)
   const [playing, setPlaying] = useState<number | null>(null)
   const frames = useMemo(() => doc.data?.frames ?? [], [doc.data])
+
+  useIntentHandler(
+    'storyboard',
+    (intent) => {
+      const added = framesFromIntent(intent)
+      if (!added.length) return
+      // Pictures sent from other tools go at the end; an untouched starting frame makes way for them.
+      doc.update((d) => ({ ...d, frames: [...(d.frames.length === 1 && isBlank(d.frames[0]) ? [] : d.frames), ...added] }))
+    },
+    !!doc.data,
+  )
 
   useEffect(() => {
     if (playing === null) return

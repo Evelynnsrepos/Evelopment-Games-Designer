@@ -72,6 +72,9 @@ import { Type } from 'lucide-react'
 import { useImportedFonts } from './fonts'
 import { TextBoxes, TextPanel } from './TextPanel'
 import { useTextLayers, useTextTool } from './textLayers'
+// Sketch Pro: Animation Assist and Page Assist (feat/sketch-text)
+import { AssistBar, AssistButtons } from './AssistBar'
+import { useAssist } from './assistView'
 
 const UI_PRO = {
   rotateLeft: 'Turn view left (,)',
@@ -363,6 +366,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     [root, engine],
   )
 
+  // Sketch Pro: Animation Assist and Page Assist (the view below draws through it).
+  const adoptLayer = useCallback((id: Id) => void loaded.current.set(id, null), [])
+  const assist = useAssist({ doc, update, engine, activeId: activeLayer?.id, setActive: setActiveLayerId, markDirty, adopt: adoptLayer, limit: maxLayers(doc.width, doc.height) })
+
   // ---- View ---------------------------------------------------------------
 
   const fit = useCallback(() => {
@@ -397,7 +404,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.transform(...viewMatrix(view))
     // Transparent: nothing is drawn behind the picture, so the app's own background and wallpaper show through.
     ctx.imageSmoothingEnabled = view.scale < 1 || !!view.rot
-    ctx.drawImage(engine.render(doc), 0, 0)
+    assist.paint(ctx)
     // Transparent pages are just a white outline over the app's wallpaper.
     const px = 1 / view.scale
     ctx.strokeStyle = doc.backgroundColor ? 'rgba(128,128,128,0.6)' : '#ffffff'
@@ -859,6 +866,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
         <ToolButton icon={Download} label={UI.export} onClick={() => void exportPng()} />
+        <AssistButtons assist={assist} />
         {actions?.(async () => {
           await flush()
           return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
@@ -954,6 +962,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               onClose={() => setQuickMenu(null)}
             />
           )}
+          {/* oxlint-disable-next-line react/refs -- the assist cache is only read while drawing */}
+          <AssistBar assist={assist} engine={engine} title={title} />
           {doc.references.map((r) => (
             <ReferenceWindow
               key={r.id}
