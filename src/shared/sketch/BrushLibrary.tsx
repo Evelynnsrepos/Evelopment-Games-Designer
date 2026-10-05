@@ -1,3 +1,4 @@
+import { shrinkBrushImages } from './brushImages'
 import {
   Blend,
   BookOpen,
@@ -174,6 +175,7 @@ export function BrushLibrary({ mode, color, at, onClose }: { mode: 'brush' | 'er
       try {
         for (const s of importBrushFile(f.name, await f.bytes())) {
           if (!s.brushes.length) continue
+          s.brushes = await shrinkBrushImages(s.brushes)
           const id = useBrushLibrary.getState().addSet(s.name, s.brushes, s.icon ?? 'folder')
           s.brushes.forEach((b) => void preloadBrush(b))
           sets.push(s)
@@ -389,12 +391,21 @@ function ImportReport({ report, onClose }: { report: { sets: ImportedSet[]; erro
           <b>
             {s.name}: {s.brushes.length} {s.brushes.length === 1 ? 'brush' : 'brushes'}
           </b>
+          {s.notes?.length ? (
+            <ul className="brushlib-report-notes">
+              {s.notes.map((n, j) => (
+                <li key={j}>
+                  <b>{n.brush}</b>: {n.text}
+                </li>
+              ))}
+            </ul>
+          ) : null}
           {s.unmapped.length > 0 && (
             <details>
               <summary className="muted">{UI.unmapped}</summary>
               <ul>
-                {s.unmapped.map((u) => (
-                  <li key={u.brush}>
+                {s.unmapped.map((u, j) => (
+                  <li key={j}>
                     {u.brush}: <span className="muted">{u.keys.join(', ')}</span>
                   </li>
                 ))}

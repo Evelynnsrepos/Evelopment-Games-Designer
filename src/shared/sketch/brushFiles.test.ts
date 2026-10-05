@@ -129,6 +129,24 @@ describe('brush files', () => {
     expect(s2.brushes[0].grainImage).toBeTruthy()
   })
 
+  it('skips reset copies, adds a second brush as dual, turns oriented shapes with the stroke and replaces missing library shapes', () => {
+    const z = zipSync({
+      'A/Brush.archive': archive({ name: 'Hair', oriented: true, shapeRotation: 0 }),
+      'A/Shape.png': PNG,
+      'A/Reset/Brush.archive': archive({ name: 'Hair' }),
+      'A/Reset/Shape.png': PNG,
+      'B/Brush.archive': archive({ name: 'Short Hair', bundledShapePath: 'Brush-Artery-Short-Hair.jpg', bundledGrainPath: 'Brush-Preset-Blank.png' }),
+      'B/Sub01/Brush.archive': archive({ name: 'Inner', plotJitter: 0.2 }),
+    })
+    const [set] = importBrushFile('pack.brushset', z)
+    expect(set.brushes.map((b) => b.name)).toEqual(['Hair', 'Short Hair'])
+    expect(set.brushes[0].rotation).toBe('follow')
+    expect(set.brushes[1].shape).toBe('fur')
+    expect(set.brushes[1].shapeImage).toBeNull()
+    expect(set.brushes[1].dual?.scatter).toBe(0.2)
+    expect(set.notes?.[0]).toMatchObject({ brush: 'Short Hair' })
+  })
+
   it('refuses files that are not plain zips, or are locked', () => {
     expect(() => importBrushFile('a.brush', new Uint8Array([1, 2, 3]))).toThrow(/not a plain zip/)
     const z = zipSync({ 'Brush.archive': archive({}) })

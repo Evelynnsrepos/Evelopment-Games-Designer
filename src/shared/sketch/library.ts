@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { duplicateIds, hasBigImages, shrinkBrushImages } from './brushImages'
 import { getFs } from '@/core/fs'
 import type { Id } from '@/core/model'
 import { readVersioned, writeVersioned } from '@/core/project'
@@ -90,6 +91,13 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
         })
       }
       set({ loaded: true })
+      // One-time clean-up of libraries made by the first importer: brushes added twice, and huge images.
+      const drop = duplicateIds(get().sets, get().brushes)
+      if (drop.size) change((s) => ({ sets: s.sets.map((x) => ({ ...x, brushIds: x.brushIds.filter((id) => !drop.has(id)) })), brushes: s.brushes.filter((b) => !drop.has(b.id)) }))
+      if (hasBigImages(get().brushes)) {
+        const brushes = await shrinkBrushImages(get().brushes)
+        change(() => ({ brushes }))
+      }
     },
     moveSet(id, beforeId) {
       change((s) => {

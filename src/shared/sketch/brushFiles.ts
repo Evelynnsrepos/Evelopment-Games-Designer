@@ -18,6 +18,8 @@ export interface ImportedSet {
   brushes: BrushDef[]
   /** Settings in the file that have no match here (per brush name). */
   unmapped: { brush: string; keys: string[] }[]
+  /** Things worth knowing about single brushes, e.g. a shape that was not in the file. */
+  notes?: { brush: string; text: string }[]
 }
 
 const FORMAT = 'egd-brushes'
@@ -218,8 +220,51 @@ const BOOL_KEYS: Record<string, (v: boolean, o: Partial<BrushSettings>) => void>
   dynamicsluminanceblending: (v, o) => (o.luminanceBlend = v),
 }
 
+/** Turning the shape with the stroke wins over a fixed angle, so it is applied last. */
+const LATE_BOOL_KEYS: Record<string, (v: boolean, o: Partial<BrushSettings>) => void> = {
+  oriented: (v, o) => {
+    if (v) o.rotation = 'follow'
+  },
+}
+
+/**
+ * Shapes and grains a brush names from the original app's own library are not
+ * inside the file (and are not ours to ship), so the closest shape we draw ourselves is used.
+ */
+const BUNDLED_SHAPES: [RegExp, BrushSettings['shape']][] = [
+  [/hair|fur|artery|strand/i, 'fur'],
+  [/bristle|brush|paint|oil|acrylic|gouache/i, 'bristle'],
+  [/rake|comb/i, 'rake'],
+  [/charcoal|graphite/i, 'charcoal'],
+  [/chalk|pastel|crayon/i, 'chalk'],
+  [/pencil|sketch/i, 'pencil'],
+  [/splat|spray|spatter|noise/i, 'splatter'],
+  [/sponge/i, 'sponge'],
+  [/water|blot|wash/i, 'watercolor'],
+  [/cloud|smoke/i, 'cloud'],
+  [/leaf|foliage/i, 'leaf'],
+  [/grass/i, 'grass'],
+  [/star|sparkle/i, 'star'],
+  [/dry/i, 'dry'],
+  [/square|flat/i, 'square'],
+]
+const BUNDLED_GRAINS: [RegExp, BrushSettings['grain']][] = [
+  [/blank|none|flat|default/i, 'none'],
+  [/canvas|linen/i, 'canvas'],
+  [/water/i, 'watercolor'],
+  [/charcoal/i, 'charcoal'],
+  [/paper|grain/i, 'paper'],
+  [/noise|grit/i, 'noise'],
+  [/concrete|stone/i, 'concrete'],
+  [/sand/i, 'sand'],
+  [/wood/i, 'wood'],
+  [/sponge/i, 'sponge'],
+  [/cloud/i, 'clouds'],
+]
+const SHAPE_LABELS: Record<string, string> = { fur: 'Fur', bristle: 'Bristle', rake: 'Rake', charcoal: 'Charcoal', chalk: 'Chalk', pencil: 'Pencil', splatter: 'Splatter', sponge: 'Sponge', watercolor: 'Watercolor blot', cloud: 'Cloud', leaf: 'Leaf', grass: 'Grass', star: 'Star', dry: 'Dry brush', square: 'Square', round: 'Round' }
+
 /** Bookkeeping in the archive that is not a brush setting. */
-const IGNORED = new Set(['name', 'version', 'creationdate', 'uuid', 'identifier', 'author', 'authorname', 'signature', 'signatureimage'])
+const IGNORED = new Set(['name', 'version', 'creationdate', 'uuid', 'identifier', 'author', 'authorname', 'signature', 'signatureimage', 'oriented', 'bundledshapepath', 'bundledgrainpath'])
 
 /** Our settings from the properties of a .brush archive, and the keys we could not use. */
 export function mapBrushArchive(root: { [k: string]: PlistValue }): { settings: Partial<BrushSettings>; name: string | null; author: string | null; unmapped: string[] } {
@@ -233,6 +278,10 @@ export function mapBrushArchive(root: { [k: string]: PlistValue }): { settings: 
     else if (typeof value === 'number' && BOOL_KEYS[k]) BOOL_KEYS[k](value !== 0, settings)
     else unmapped.push(key)
   }
+  for (const [key, value] of Object.entries(root)) {
+    const late = LATE_BOOL_KEYS[key.toLowerCase()]
+    if (late && (typeof value === 'boolean' || typeof value === 'number')) late(!!value, settings)
+  }
   const str = (k: string) => {
     const v = Object.entries(root).find(([key]) => key.toLowerCase() === k)?.[1]
     return typeof v === 'string' && v.trim() ? v.trim() : null
@@ -240,8 +289,11 @@ export function mapBrushArchive(root: { [k: string]: PlistValue }): { settings: 
   return { settings, name: str('name'), author: str('authorname') ?? str('author'), unmapped: unmapped.sort() }
 }
 
-/** One brush from the files of a .brush folder (archive, Shape.png, Grain.png). */
-function brushFromFolder(files: Record<string, Uint8Array>, prefix: string, fallbackName: string): { brush: BrushDef; unmapped: string[] } | null {
+/** The settings of one .brush folder (archive, Shape.png, Grain.png), plus notes for the import report. */
+function settingsFromFolder(
+  files: Record<string, Uint8Array>,
+  prefix: string,
+): { settings: Partial<BrushSettings>; name: string | null; author: string | null; unmapped: string[]; notes: string[] } | null {
   const get = (n: string) => Object.entries(files).find(([k]) => k.toLowerCase() === (prefix + n).toLowerCase())?.[1]
   const archive = get('Brush.archive')
   if (!archive) return null
@@ -253,15 +305,43 @@ function brushFromFolder(files: Record<string, Uint8Array>, prefix: string, fall
   }
   const props = root && typeof root === 'object' && !Array.isArray(root) && !(root instanceof Uint8Array) && !(root instanceof Date) ? (root as { [k: string]: PlistValue }) : {}
   const { settings, name, author, unmapped } = mapBrushArchive(props)
+  const notes: string[] = []
   const shape = get('Shape.png')
   const grain = get('Grain.png')
+  const bundled = (k: string) => {
+    const v = props[k]
+    return typeof v === 'string' && v && v !== '$null' ? v : null
+  }
   if (shape) settings.shapeImage = pngDataUrl(shape)
+  else if (bundled('bundledShapePath')) {
+    const found = BUNDLED_SHAPES.find(([re]) => re.test(bundled('bundledShapePath')!))?.[1] ?? 'round'
+    settings.shape = found
+    notes.push(`Its shape comes from the original app's own library and is not in the file, so it uses our ${SHAPE_LABELS[found] ?? found} shape instead. You can draw or import a better one in the Brush Studio.`)
+  }
   if (grain) {
     settings.grainImage = pngDataUrl(grain)
     settings.grainDepth ??= 0.8
+  } else if (bundled('bundledGrainPath')) {
+    const found = BUNDLED_GRAINS.find(([re]) => re.test(bundled('bundledGrainPath')!))?.[1] ?? 'none'
+    settings.grain = found
+    if (found !== 'none') notes.push(`Its grain is not in the file, so it uses our ${found} grain instead.`)
   }
-  const brush = normalizeBrush({ ...normalizeSettings(settings), id: newId(), name: name ?? fallbackName, createdAt: Date.now(), ...(author ? { author } : {}) })
-  return { brush, unmapped }
+  return { settings, name, author, unmapped, notes }
+}
+
+/** One brush from a .brush folder; a "Sub01" folder inside it is its second (dual) brush. */
+function brushFromFolder(files: Record<string, Uint8Array>, prefix: string, fallbackName: string): { brush: BrushDef; unmapped: string[]; notes: string[] } | null {
+  const main = settingsFromFolder(files, prefix)
+  if (!main) return null
+  const notes = [...main.notes]
+  const sub = settingsFromFolder(files, prefix + 'Sub01/')
+  const settings: Partial<BrushSettings> = { ...main.settings }
+  if (sub) {
+    settings.dual = normalizeSettings(sub.settings)
+    notes.push(...sub.notes.map((n) => `Second brush: ${n}`))
+  }
+  const brush = normalizeBrush({ ...normalizeSettings(settings), id: newId(), name: main.name ?? fallbackName, createdAt: Date.now(), ...(main.author ? { author: main.author } : {}) })
+  return { brush, unmapped: main.unmapped, notes }
 }
 
 function importBrushZip(fileName: string, bytes: Uint8Array, set: boolean): ImportedSet[] {
@@ -269,7 +349,14 @@ function importBrushZip(fileName: string, bytes: Uint8Array, set: boolean): Impo
   const files = unzip(bytes, ext)
   const base = fileName.replace(/\.(brush|brushset)$/i, '')
   // Folders that hold a Brush.archive; "" is the top of the zip.
-  const folders = [...new Set(Object.keys(files).filter((k) => /(^|\/)brush\.archive$/i.test(k)).map((k) => k.slice(0, k.length - 'Brush.archive'.length)))]
+  // "Reset" folders hold the original settings for resetting, and "SubNN" folders a brush's second (dual) brush; neither is a brush of its own.
+  const folders = [
+    ...new Set(
+      Object.keys(files)
+        .filter((k) => /(^|\/)brush\.archive$/i.test(k) && !/(^|\/)(reset|sub\d+)\//i.test(k))
+        .map((k) => k.slice(0, k.length - 'Brush.archive'.length)),
+    ),
+  ]
   if (!folders.length) throw new BrushFileError(`This ${ext} file has no brushes in it.`)
   let name = base
   const meta = Object.entries(files).find(([k]) => /(^|\/)brushset\.plist$/i.test(k))?.[1]
@@ -292,13 +379,15 @@ function importBrushZip(fileName: string, bytes: Uint8Array, set: boolean): Impo
   }
   const brushes: BrushDef[] = []
   const unmapped: ImportedSet['unmapped'] = []
+  const notes: NonNullable<ImportedSet['notes']> = []
   folders.forEach((f, i) => {
     const got = brushFromFolder(files, f, folders.length > 1 ? `${base} ${i + 1}` : base)
     if (!got) return
     brushes.push(got.brush)
     if (got.unmapped.length) unmapped.push({ brush: got.brush.name, keys: got.unmapped })
+    for (const text of got.notes) notes.push({ brush: got.brush.name, text })
   })
-  return [{ name, brushes, unmapped }]
+  return [{ name, brushes, unmapped, notes }]
 }
 
 /** Read a brush file of any supported kind into sets of new brushes. Throws BrushFileError with a friendly message. */
