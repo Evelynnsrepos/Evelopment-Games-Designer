@@ -1,6 +1,5 @@
 import {
   Brush as BrushIcon,
-  Download,
   Eraser,
   FlipHorizontal2,
   FlipVertical2,
@@ -67,6 +66,8 @@ import { useInputSettings } from './inputSettings'
 import { isEraserEnd, penButton, penData, PenPipeline, type PenPoint } from './pen'
 import { QuickMenu } from './QuickMenu'
 import { flipAbout, pinch, rotateAbout, toDocPoint, viewMatrix, zoomAbout, type View } from './view'
+// Sketch Pro: canvas, time-lapse and files.
+import { useSketchFiles } from './files/SketchFiles'
 
 const UI_PRO = {
   rotateLeft: 'Turn view left (,)',
@@ -362,6 +363,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (!view) fit()
   }, [view, fit])
 
+  // Sketch Pro: canvas changes, stats, time-lapse, import/export, Reference Companion.
+  const files = useSketchFiles({ doc, update, engine, root, title, activeId: activeLayer?.id, setActive: setActiveLayerId, flush, fit })
+
   // Redraw the visible canvas.
   useEffect(() => {
     const canvas = viewCanvas.current
@@ -530,6 +534,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       // Let stabilization catch up with the pen (not for a snapped shape, which is redrawn whole).
       if (!g.snapped) for (const q of g.pipeline.flush()) engine.strokeTo(q)
       markDirty(engine.endStroke())
+      files.stroked()
       if (g.snapped?.drawn && lastPointer.current) {
         setShapeOffer({ shape: g.snapped.drawn, opts: g.opts, pressure: g.snapped.pressure, start: g.pts[0], at: lastPointer.current, editing: false })
       }
@@ -677,6 +682,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       activeLayer && setGuide({ ...guide, assist: guide.assist.includes(activeLayer.id) ? guide.assist.filter((x) => x !== activeLayer.id) : [...guide.assist, activeLayer.id] }),
     export: () => void exportPng(),
     inputSettings: () => setInputOpen(true),
+    ...files.actions,
   }
   /** Run an action; from a pen button the QuickMenu opens where the pen is. */
   const runAction = (id: ActionId, at?: { clientX: number; clientY: number }) => {
@@ -834,7 +840,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={Settings2} label={UI_PRO.input} onClick={() => setInputOpen(true)} />
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
-        <ToolButton icon={Download} label={UI.export} onClick={() => void exportPng()} />
+        {files.buttons}
         {actions?.(async () => {
           await flush()
           return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
@@ -929,6 +935,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               onClose={() => setQuickMenu(null)}
             />
           )}
+          {files.stage}
           {doc.references.map((r) => (
             <ReferenceWindow
               key={r.id}
@@ -972,6 +979,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       </div>
 
       {inputOpen && <InputSettingsDialog onClose={() => setInputOpen(false)} />}
+      {files.dialogs}
       {pickingRef && (
         <ReferencePicker
           onPick={(image) => {

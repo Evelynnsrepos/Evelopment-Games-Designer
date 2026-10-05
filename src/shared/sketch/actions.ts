@@ -33,6 +33,13 @@ export const ACTIONS = [
   { id: 'assist', label: 'Drawing Assist on / off', keys: [] },
   { id: 'export', label: 'Export as PNG', keys: [] },
   { id: 'inputSettings', label: 'Pen and keys settings', keys: [] },
+  // Canvas, time-lapse and files (feat/sketch-files)
+  { id: 'canvasSettings', label: 'Canvas: crop, resize and info', keys: [] },
+  { id: 'flipCanvasX', label: 'Flip canvas horizontally', keys: [] },
+  { id: 'flipCanvasY', label: 'Flip canvas vertically', keys: [] },
+  { id: 'importFile', label: 'Import a file', keys: [] },
+  { id: 'timelapse', label: 'Time-lapse replay', keys: [] },
+  { id: 'companion', label: 'Reference Companion', keys: [] },
 ] as const satisfies readonly { id: string; label: string; keys: readonly string[] }[]
 
 export type ActionId = (typeof ACTIONS)[number]['id']

@@ -1,0 +1,178 @@
+/* Sketch Pro: canvas, time-lapse and files. */
+
+.sketch-files-export {
+  position: relative;
+  display: inline-flex;
+}
+.sketch-files-menu {
+  top: calc(100% + 4px);
+  left: 0;
+  width: 270px;
+}
+.sketch-files-menu-head {
+  margin: 6px 4px 2px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.sketch-files-fps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+}
+.sketch-files-fps .input {
+  width: auto;
+  padding: 2px 6px;
+}
+.sketch-files-note {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  z-index: 20;
+  transform: translateX(-50%);
+  max-width: 80%;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  font-size: 12px;
+}
+
+.modal:has(.sketch-canvas-dlg),
+.modal:has(.sketch-timelapse) {
+  width: min(600px, calc(100vw - 32px));
+}
+.sketch-canvas-dlg,
+.sketch-timelapse {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sketch-canvas-dlg h4 {
+  margin: 8px 0 0;
+}
+.sketch-canvas-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.sketch-canvas-tabs h3 {
+  margin: 0 12px 0 0;
+}
+.sketch-canvas-tabs .is-active {
+  background: var(--bg-hover);
+}
+.sketch-canvas-size {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+.sketch-canvas-size label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+}
+.sketch-canvas-size .input {
+  width: 110px;
+}
+.sketch-canvas-hint {
+  margin: 0;
+  font-size: 12px;
+}
+.sketch-canvas-anchor-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.sketch-canvas-anchor {
+  display: grid;
+  grid-template-columns: repeat(3, 28px);
+  gap: 2px;
+}
+.sketch-canvas-anchor .btn {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  justify-content: center;
+}
+.sketch-canvas-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.sketch-canvas-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.sketch-canvas-info {
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.sketch-canvas-info th {
+  padding: 4px 16px 4px 0;
+  text-align: left;
+  font-weight: normal;
+  color: var(--text-muted);
+}
+
+.sketch-companion-bar {
+  align-items: center;
+  gap: 2px;
+  height: 24px;
+  padding: 0 2px;
+}
+.sketch-companion-tab {
+  padding: 1px 8px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.sketch-companion-tab.is-active {
+  background: var(--bg-elevated);
+  color: var(--text);
+}
+.sketch-companion-view {
+  display: block;
+}
+.sketch-companion-empty {
+  width: 100%;
+  height: 120px;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sketch-timelapse-view {
+  display: flex;
+  justify-content: center;
+  background: var(--bg-hover);
+  border-radius: var(--radius-sm);
+}
+.sketch-timelapse-view canvas {
+  max-width: 100%;
+  max-height: 50vh;
+}
+.sketch-timelapse-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sketch-timelapse-controls input[type='range'] {
+  flex: 1;
+}
+.sketch-timelapse .modal-actions {
+  display: flex;
+}
