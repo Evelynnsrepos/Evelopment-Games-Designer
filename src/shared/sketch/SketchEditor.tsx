@@ -67,6 +67,8 @@ import { useInputSettings } from './inputSettings'
 import { isEraserEnd, penButton, penData, PenPipeline, type PenPoint } from './pen'
 import { QuickMenu } from './QuickMenu'
 import { flipAbout, pinch, rotateAbout, toDocPoint, viewMatrix, zoomAbout, type View } from './view'
+// Sketch Pro: Adjustments, Liquify and Clone.
+import { AdjustMenu, AdjustStudio, type AdjustMode } from './adjust/AdjustStudio'
 
 const UI_PRO = {
   rotateLeft: 'Turn view left (,)',
@@ -221,6 +223,11 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const pinchStart = useRef<{ epoch: number; view: View } | null>(null)
   /** Last pointer position in stage pixels (where the QuickMenu opens from a key). */
   const lastPointer = useRef<{ x: number; y: number } | null>(null)
+
+  // Sketch Pro: Adjustments, Liquify and Clone.
+  const [adjust, setAdjust] = useState<AdjustMode | null>(null)
+  const [adjustMenu, setAdjustMenu] = useState(false)
+  const refresh = useCallback(() => setVersion(engine.version), [engine])
 
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
   const lib = useBrushLibrary()
@@ -684,6 +691,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       activeLayer && setGuide({ ...guide, assist: guide.assist.includes(activeLayer.id) ? guide.assist.filter((x) => x !== activeLayer.id) : [...guide.assist, activeLayer.id] }),
     export: () => void exportPng(),
     inputSettings: () => setInputOpen(true),
+    adjustments: () => setAdjustMenu((o) => !o),
+    liquify: () => setAdjust({ kind: 'liquify' }),
+    clone: () => setAdjust({ kind: 'clone' }),
   }
   /** Run an action; from a pen button the QuickMenu opens where the pen is. */
   const runAction = (id: ActionId, at?: { clientX: number; clientY: number }) => {
@@ -826,6 +836,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={Trash2} label={UI.clear} onClick={() => activeLayer && markDirty(engine.clear(activeLayer.id))} />
         <ToolButton icon={FlipHorizontal2} label={UI.flipX} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'x'))} />
         <ToolButton icon={FlipVertical2} label={UI.flipY} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'y'))} />
+        <AdjustMenu open={adjustMenu} onOpen={setAdjustMenu} onPick={setAdjust} />
         {selectionPts && (
           <>
             <button className={`btn sketch-move-sel${tool === 'move' ? ' is-active' : ''}`} title={UI.moveSelection} onClick={() => setTool('move')}>
@@ -882,6 +893,21 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
                 {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
               </g>
             </svg>
+          )}
+          {adjust && view && activeLayer && (
+            <AdjustStudio
+              key={`${adjust.kind}:${adjust.kind === 'filter' ? adjust.id : ''}:${activeLayer.id}`}
+              mode={adjust}
+              // oxlint-disable-next-line react/refs -- the engine is a mutable drawing surface
+              engine={engine}
+              layerId={activeLayer.id}
+              brush={brush}
+              view={view}
+              toDoc={toDoc}
+              refresh={refresh}
+              commit={markDirty}
+              onClose={() => setAdjust(null)}
+            />
           )}
           {shapeOffer && (
             <div className="shape-edit-bar" style={{ left: shapeOffer.at.x, top: shapeOffer.at.y }} onPointerDown={(e) => e.stopPropagation()}>
