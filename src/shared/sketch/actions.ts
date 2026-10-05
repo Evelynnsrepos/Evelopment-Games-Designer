@@ -7,6 +7,7 @@
 export const ACTIONS = [
   { id: 'tool.brush', label: 'Brush', keys: ['b'] },
   { id: 'tool.eraser', label: 'Eraser', keys: ['e'] },
+  { id: 'tool.smudge', label: 'Smudge', keys: ['s'] },
   { id: 'tool.lasso', label: 'Lasso selection', keys: ['l'] },
   { id: 'tool.rect', label: 'Rectangle selection', keys: ['m'] },
   { id: 'tool.move', label: 'Move', keys: ['v'] },

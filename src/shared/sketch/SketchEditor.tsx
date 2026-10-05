@@ -4,6 +4,7 @@ import {
   Eraser,
   FlipHorizontal2,
   FlipVertical2,
+  Fingerprint,
   FlipHorizontal,
   Hand,
   Image as ImageIcon,
@@ -32,6 +33,7 @@ import { saveBinaryFile, safeFileName } from '@/core/export'
 import { SketchEngine } from './engine'
 import { drawPreview } from './brushes'
 import { BrushLibrary } from './BrushLibrary'
+import { SizePresets } from './SizePresets'
 import { useBrushLibrary } from './library'
 import {
   newLayer,
@@ -91,6 +93,7 @@ interface ShapeOffer {
 const UI = {
   brush: 'Brush (B)',
   eraser: 'Eraser (E)',
+  smudge: 'Smudge (S): drags the colors with the brush',
   lasso: 'Lasso selection (L)',
   rectSelect: 'Rectangle selection (M)',
   move: 'Move (V): drags the selection, or the whole layer',
@@ -129,11 +132,12 @@ const UI = {
   saving: 'Saving…',
 }
 
-type Tool = 'brush' | 'eraser' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand'
+type Tool = 'brush' | 'eraser' | 'smudge' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand'
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
   { id: 'brush', icon: BrushIcon, label: UI.brush, key: 'b' },
   { id: 'eraser', icon: Eraser, label: UI.eraser, key: 'e' },
+  { id: 'smudge', icon: Fingerprint, label: UI.smudge, key: 's' },
   { id: 'lasso', icon: Lasso, label: UI.lasso, key: 'l' },
   { id: 'rect', icon: SquareDashed, label: UI.rectSelect, key: 'm' },
   { id: 'move', icon: Move, label: UI.move, key: 'v' },
@@ -453,7 +457,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (t === 'eyedropper') {
       const picked = engine.pickColor(doc, p.x, p.y)
       if (picked) setColor(picked)
-    } else if (t === 'brush' || t === 'eraser') {
+    } else if (t === 'brush' || t === 'eraser' || t === 'smudge') {
       if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
       const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
       const pipeline = new PenPipeline({
@@ -463,7 +467,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         constraint: assistFor(liveGuide, activeLayer.id, 8 / view.scale),
       })
       const pt = pipeline.push({ ...p, ...penData(e.nativeEvent, input.pressureCurve) }, e.timeStamp)[0] ?? { ...p, pressure: 1 }
-      const opts = { layer: activeLayer, brush: strokeBrush, color, symmetry: 'off' as const, erase: t === 'eraser', mirror: symmetryMirror(liveGuide, activeLayer.id) }
+      const opts = { layer: activeLayer, brush: strokeBrush, color, symmetry: 'off' as const, erase: t === 'eraser', smudge: t === 'smudge', mirror: symmetryMirror(liveGuide, activeLayer.id) }
       engine.beginStroke(opts, pt)
       gesture.current = { kind: 'paint', pipeline, last: pt, opts, pts: [pt], rest: pt }
       armHold()
@@ -642,11 +646,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const resizeBrush = (k: number) => {
     const st = useBrushLibrary.getState()
     const b = st.brushes.find((x) => x.id === (tool === 'eraser' ? st.eraserId : st.brushId))
-    if (b) st.updateBrush(b.id, { size: Math.max(1, Math.min(500, Math.round(b.size * k))) })
+    if (b) st.updateBrush(b.id, { size: Math.max(b.minSize, Math.min(b.maxSize, Math.round(b.size * k))) })
   }
   const sketchActions: Record<ActionId, () => void> = {
     'tool.brush': () => setTool('brush'),
     'tool.eraser': () => setTool('eraser'),
+    'tool.smudge': () => setTool('smudge'),
     'tool.lasso': () => setTool('lasso'),
     'tool.rect': () => setTool('rect'),
     'tool.move': () => setTool('move'),
@@ -806,7 +811,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   // ---- Render --------------------------------------------------------------
 
-  const showBrushCursor = tool === 'brush' || tool === 'eraser' || hoverEraser
+  const showBrushCursor = tool === 'brush' || tool === 'eraser' || tool === 'smudge' || hoverEraser
   const cursorBrush = hoverEraser ? (lib.brushes.find((b) => b.id === lib.eraserId) ?? brush) : brush
 
   return (
@@ -854,7 +859,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           ref={boxRef}
           className={`sketch-stage${doc.backgroundColor ? '' : ' see-through'}`}
           onWheel={onWheel}
-          style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' ? 'none' : 'crosshair' }}
+          style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' || tool === 'smudge' ? 'none' : 'crosshair' }}
         >
           <canvas
             key={colorSpace}
@@ -972,7 +977,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               <button className="sketch-brush-pick" title={UI.library} onClick={(e) => {
                   // Opens to the left of the side panel, over the canvas.
                   const r = e.currentTarget.getBoundingClientRect()
-                  setLibraryAt({ x: Math.max(8, r.left - 572), y: Math.max(8, Math.min(r.top, window.innerHeight - 470)) })
+                  setLibraryAt({ x: Math.max(8, r.left - 652), y: Math.max(8, Math.min(r.top, window.innerHeight - 530)) })
                   setLibraryOpen(libraryOpen ? null : brushMode)
                 }}>
                 <span>{brush.name}</span>
@@ -980,8 +985,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               </button>
               {libraryOpen && <BrushLibrary mode={libraryOpen} color={color} at={libraryAt} onClose={() => setLibraryOpen(null)} />}
             </div>
-            <Slider label={UI.size} min={1} max={500} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
-            <Slider label={UI.opacity} min={0.05} max={1} step={0.05} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
+            <Slider label={UI.size} min={brush.minSize} max={brush.maxSize} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
+            <SizePresets brush={brush} onChange={setBrush} />
+            <Slider label={UI.opacity} min={brush.minOpacity} max={brush.maxOpacity} step={0.01} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
             <Slider label={UI.smoothing} min={0} max={1} step={0.05} value={brush.streamline} onChange={(streamline) => setBrush({ streamline })} percent />
           </section>
 

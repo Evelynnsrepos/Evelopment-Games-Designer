@@ -1,6 +1,7 @@
 import type { Id } from '@/core/model'
 import { blendPixel, CANVAS_BLENDS, type BlendMode } from './blend'
-import { colorStroke, StrokeStamper, type BrushSettings } from './brushes'
+import { brushReach, colorStroke, compositeStroke, isWet, StrokeStamper, type BrushSettings } from './brushes'
+import { WetStamper } from './brushWet'
 import { GlCompositor, parseHex, type GlLayer, type GlSource } from './gl'
 import { layerTree, type LayerNode } from './layers'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
@@ -33,6 +34,8 @@ export interface StrokeOptions {
   erase: boolean
   /** Copies of each dab for a symmetry guide; replaces `symmetry` when set (Sketch Pro guides). */
   mirror?: ((p: { x: number; y: number }) => { x: number; y: number }[]) | null
+  /** Smudge tool: drag the colours already on the layer with the brush's shape. */
+  smudge?: boolean
 }
 
 type LayerStack = Pick<SketchDoc, 'layers' | 'backgroundColor'>
@@ -181,7 +184,7 @@ export class SketchEngine {
     this.predicted = null
     this.strokeOpts = opts
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, this.mirrorFor(opts))
+    this.stamper = this.newStamper(opts)
     this.stamper.add(p)
     this.version++
   }
@@ -198,7 +201,7 @@ export class SketchEngine {
    * restroke throws them away, so they never reach the layer or undo.
    */
   predict(points: InputPoint[], from: InputPoint | null) {
-    if (!this.stroke || !this.strokeOpts) return
+    if (!this.stroke || !this.strokeOpts || this.stamper instanceof WetStamper) return
     if (!points.length) {
       if (this.predicted) this.version++
       this.predicted = null
@@ -208,7 +211,8 @@ export class SketchEngine {
     pred.ctx.clearRect(0, 0, this.width, this.height)
     const opts = this.strokeOpts
     const mirror = (q: { x: number; y: number }) => (opts.mirror ? opts.mirror(q) : mirrored(q, this.width, this.height, opts.symmetry))
-    const s = new StrokeStamper(pred.ctx, opts.brush, mirror, 3)
+    // No dual brush or live taper here: those need full-size canvases of their own.
+    const s = new StrokeStamper(pred.ctx, { ...opts.brush, dual: null, tipAnimation: false, stabilization: 0, motionFilter: 0 }, mirror, 3, opts.color)
     if (from) s.add(from)
     for (const p of points) s.add(p)
     this.version++
@@ -220,13 +224,45 @@ export class SketchEngine {
     this.stroke.ctx.clearRect(0, 0, this.width, this.height)
     this.predicted = null
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, this.strokeOpts.brush, this.mirrorFor(this.strokeOpts), 1)
+    this.stamper = this.newStamper(this.strokeOpts, 1)
     for (const p of points) this.stamper.add(p)
     this.version++
   }
 
+  /** Wet brushes and the Smudge tool mix with the layer's pixels; other brushes stamp a mask. */
+  private newStamper(opts: StrokeOptions, seed?: number): StrokeStamper {
+    if (opts.smudge || (!opts.erase && isWet(opts.brush)))
+      return new WetStamper(this.stroke!.ctx, opts.brush, this.mirrorFor(opts), seed, opts.color, this.ensure(opts.layer.id).canvas, !!opts.smudge)
+    return new StrokeStamper(this.stroke!.ctx, opts.brush, this.mirrorFor(opts), seed, opts.color)
+  }
+
+  /** Where the stroke being drawn can have paint. */
+  private strokeArea(opts: StrokeOptions): Rect | null {
+    const b = this.strokeBounds
+    const reach = brushReach(opts.brush)
+    return b ? { x: b.x0 - reach, y: b.y0 - reach, w: b.x1 - b.x0 + 2 * reach, h: b.y1 - b.y0 + 2 * reach } : null
+  }
+
   /** Draw the stroke into `ctx` the way it will land on the layer (with predicted points for the live view only). */
   private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions, live = false) {
+    if (this.stamper instanceof WetStamper) {
+      // The wet copy of the layer replaces the layer, inside the selection.
+      const p = this.paint.ctx
+      p.save()
+      p.globalCompositeOperation = 'copy'
+      p.drawImage(this.stamper.result, 0, 0)
+      p.restore()
+      this.keepSelected(p)
+      ctx.save()
+      if (this.sel) {
+        ctx.globalCompositeOperation = 'destination-out'
+        ctx.drawImage(this.sel.canvas, 0, 0)
+        ctx.globalCompositeOperation = 'source-over'
+      } else ctx.clearRect(0, 0, this.width, this.height)
+      ctx.drawImage(p.canvas, 0, 0)
+      ctx.restore()
+      return
+    }
     let mask = this.stroke!.canvas
     if (live && this.predicted) {
       // The prediction joins the stroke mask the same way dabs do, so the preview has no seam.
@@ -236,13 +272,10 @@ export class SketchEngine {
       m.drawImage(this.predicted.canvas, 0, 0)
       mask = m.canvas
     }
-    colorStroke(mask, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)
+    const area = this.strokeArea(opts) ?? undefined
+    colorStroke(mask, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
     this.keepSelected(this.paint.ctx)
-    ctx.save()
-    ctx.globalAlpha = opts.brush.opacity
-    ctx.globalCompositeOperation = opts.erase ? 'destination-out' : opts.layer.alphaLock ? 'source-atop' : 'source-over'
-    ctx.drawImage(this.paint.canvas, 0, 0)
-    ctx.restore()
+    compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: null, area })
   }
 
   /** Finish the stroke: merge it into the layer and record undo. Returns the changed layer. */
@@ -252,9 +285,7 @@ export class SketchEngine {
     this.predicted = null
     this.stamper?.finish()
     const layer = this.ensure(opts.layer.id)
-    const b = this.strokeBounds
-    const reach = opts.brush.size * (1 + opts.brush.sizeJitter + opts.brush.scatter) + 4
-    const area = b ? { x: b.x0 - reach, y: b.y0 - reach, w: b.x1 - b.x0 + 2 * reach, h: b.y1 - b.y0 + 2 * reach } : null
+    const area = this.strokeArea(opts)
     this.withUndo(opts.layer.id, area, () => this.applyStroke(layer.ctx, opts))
     this.stroke = null
     this.stamper = null
