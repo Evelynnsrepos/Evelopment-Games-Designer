@@ -55,6 +55,8 @@ async function libraryPath() {
 }
 
 const MAX_RECENT = 8
+/** Bumped when stored brush images are cleaned up (2: scaled to 512 px, duplicates removed). */
+const IMAGES_VERSION = 2
 
 export const useBrushLibrary = create<LibraryState>()((set, get) => {
   // Sliders change brushes many times a second; write once things settle (one write at a time).
@@ -64,7 +66,7 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
     timer = setTimeout(() => {
       const { sets, brushes, recent, pinned, brushId, eraserId } = get()
       const seenBuiltIns = defaultLibrary().brushes.map((b) => b.id)
-      void libraryPath().then((p) => writeVersioned(p, { sets, brushes, recent, pinned, brushId, eraserId, seenBuiltIns }))
+      void libraryPath().then((p) => writeVersioned(p, { sets, brushes, recent, pinned, brushId, eraserId, seenBuiltIns, imagesVersion: IMAGES_VERSION }))
     }, 400)
   }
   const change = (fn: (s: LibraryState) => Partial<LibraryState>) => {
@@ -78,7 +80,7 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
     eraserId: DEFAULT_ERASER_ID,
     async load() {
       if (get().loaded) return
-      const saved = await readVersioned<Partial<BrushLibrary & { brushId: Id; eraserId: Id; seenBuiltIns: Id[] }> | null>(await libraryPath(), () => null).catch(() => null)
+      const saved = await readVersioned<Partial<BrushLibrary & { brushId: Id; eraserId: Id; seenBuiltIns: Id[]; imagesVersion: number }> | null>(await libraryPath(), () => null).catch(() => null)
       if (saved?.brushes && saved.sets) {
         const { sets, brushes } = mergeBuiltIns(saved.sets, saved.brushes.map(normalizeBrush), saved.seenBuiltIns ?? V05_BUILTIN_IDS)
         set({
@@ -92,11 +94,11 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
       }
       set({ loaded: true })
       // One-time clean-up of libraries made by the first importer: brushes added twice, and huge images.
-      const drop = duplicateIds(get().sets, get().brushes)
-      if (drop.size) change((s) => ({ sets: s.sets.map((x) => ({ ...x, brushIds: x.brushIds.filter((id) => !drop.has(id)) })), brushes: s.brushes.filter((b) => !drop.has(b.id)) }))
-      if (hasBigImages(get().brushes)) {
-        const brushes = await shrinkBrushImages(get().brushes)
-        change(() => ({ brushes }))
+      if (saved && saved.imagesVersion !== IMAGES_VERSION) {
+        const drop = duplicateIds(get().sets, get().brushes)
+        const brushes = hasBigImages(get().brushes) ? await shrinkBrushImages(get().brushes.filter((x) => !drop.has(x.id))) : get().brushes.filter((x) => !drop.has(x.id))
+        // Saving writes the new version number, so this runs once.
+        change((s) => ({ sets: s.sets.map((x) => ({ ...x, brushIds: x.brushIds.filter((id) => !drop.has(id)) })), brushes }))
       }
     },
     moveSet(id, beforeId) {
