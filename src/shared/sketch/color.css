@@ -1,0 +1,304 @@
+/* Sketch Pro: colour panel */
+.cp-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.cp-pair {
+  position: relative;
+  width: 44px;
+  height: 36px;
+  flex: none;
+}
+.cp-primary,
+.cp-secondary {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 2px solid var(--bg-elevated);
+  box-shadow: 0 0 0 1px var(--border);
+  cursor: pointer;
+  padding: 0;
+}
+.cp-primary {
+  left: 0;
+  top: 0;
+  cursor: grab;
+  touch-action: none;
+}
+.cp-secondary {
+  right: 0;
+  bottom: 0;
+}
+.cp-name {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cp-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.cp-tab {
+  flex: 1;
+  padding: 4px 2px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.cp-tab.is-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+.cp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 6px 0;
+}
+.cp-dot,
+.cp-ring-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: -6px 0 0 -6px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.cp-dot.is-partner {
+  width: 9px;
+  height: 9px;
+  margin: -4.5px 0 0 -4.5px;
+}
+.cp-disc {
+  display: flex;
+  justify-content: center;
+}
+.cp-ring {
+  position: relative;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  background: conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  touch-action: none;
+  cursor: crosshair;
+}
+.cp-disc-inner {
+  position: absolute;
+  inset: 22px;
+  border-radius: 50%;
+  background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, var(--hue));
+  box-shadow: 0 0 0 3px var(--bg);
+}
+.cp-classic {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cp-square {
+  position: relative;
+  height: 160px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(to top, #000, transparent), linear-gradient(to right, #fff, var(--hue));
+  touch-action: none;
+  cursor: crosshair;
+}
+.cp-hue,
+.cp-bright {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: linear-gradient(to right, #f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  touch-action: none;
+  cursor: pointer;
+}
+.cp-bright {
+  background: linear-gradient(to right, #000, var(--hue));
+  margin-top: 8px;
+}
+.cp-bar-dot {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 18px;
+  margin: -9px 0 0 -5px;
+  border-radius: 4px;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.cp-harmony select {
+  width: 100%;
+  margin-bottom: 8px;
+}
+.cp-wheel {
+  position: relative;
+  width: 170px;
+  height: 170px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, #fff, rgb(255 255 255 / 0)), conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00);
+  touch-action: none;
+  cursor: crosshair;
+}
+.cp-wheel::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #000;
+  opacity: var(--dim);
+  pointer-events: none;
+}
+.cp-wheel .cp-dot {
+  z-index: 1;
+}
+.cp-big-swatch {
+  flex: 1;
+  height: 26px;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.cp-big-swatch.is-active {
+  outline: 2px solid var(--accent);
+}
+.cp-values {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.cp-value {
+  display: grid;
+  grid-template-columns: 26px 1fr 52px;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+.cp-value input[type='number'],
+.cp-hex {
+  padding: 2px 4px;
+  font-size: 12px;
+}
+.cp-value .cp-hex {
+  grid-column: 2;
+}
+.cp-space {
+  font-size: 12px;
+}
+.cp-note {
+  font-size: 12px;
+  margin: 4px 0;
+}
+.cp-palettes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.cp-palette-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.cp-palette-tools .is-active {
+  color: var(--accent);
+}
+.cp-palette-head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+.cp-palette-name {
+  flex: 1;
+  font-weight: 600;
+}
+.cp-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+.cp-card {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-hover);
+  color: var(--text);
+  cursor: pointer;
+}
+.cp-card.is-active {
+  outline: 2px solid var(--accent);
+}
+.cp-card-color {
+  height: 32px;
+}
+.cp-card-name {
+  font-size: 10px;
+  padding: 2px 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cp-float {
+  position: fixed;
+  z-index: 300;
+  width: 250px;
+  padding: 0 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+.cp-float-bar {
+  height: 14px;
+  margin: 0 -10px 6px;
+  cursor: move;
+  background: var(--bg-hover);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+.cp-drag-chip {
+  position: fixed;
+  z-index: 700;
+  width: 26px;
+  height: 26px;
+  margin: -13px 0 0 -13px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+.cp-drag-threshold {
+  position: absolute;
+  top: -22px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.cp-bar-swatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  margin-right: 4px;
+}

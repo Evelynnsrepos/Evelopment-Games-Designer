@@ -16,7 +16,16 @@ export interface GlLayer {
   blend: BlendMode
   /** Key of the layer whose alpha clips this one, or null. */
   clipTo: string | null
+  /** A group: these layers are blended together first, then the result like one layer (`source` is ignored). */
+  children?: GlLayer[]
+  /** Layer mask: its brightness times its alpha scales this layer's alpha. */
+  mask?: GlSource | null
+  /** The clipping base's own mask, so clipped layers follow it too. */
+  clipMask?: GlSource | null
 }
+
+/** Pixels the compositor keeps as a texture. */
+export type GlSource = Pick<GlLayer, 'source' | 'version' | 'key'>
 
 const VERT = `#version 300 es
 in vec2 pos;
@@ -29,16 +38,23 @@ in vec2 uv;
 uniform sampler2D dst;
 uniform sampler2D src;
 uniform sampler2D clipTex;
+uniform sampler2D maskTex;
+uniform sampler2D clipMaskTex;
 uniform int mode;
 uniform float opacity;
 uniform bool useClip;
+uniform bool useMask;
+uniform bool useClipMask;
+// Mask brightness on premultiplied pixels = brightness x alpha.
+const vec3 LUMA = vec3(0.299, 0.587, 0.114);
 out vec4 outColor;
 ${GLSL_BLEND}
 void main() {
   vec4 b = texture(dst, uv);
   vec4 s = texture(src, uv);
   float as = s.a * opacity;
-  if (useClip) as *= texture(clipTex, uv).a;
+  if (useMask) as *= dot(texture(maskTex, uv).rgb, LUMA);
+  if (useClip) as *= texture(clipTex, uv).a * (useClipMask ? dot(texture(clipMaskTex, uv).rgb, LUMA) : 1.0);
   float ab = b.a;
   float ao = as + ab * (1.0 - as);
   vec3 bc = ab > 0.0 ? b.rgb / ab : vec3(0.0);
@@ -79,11 +95,12 @@ export class GlCompositor {
   private blendProg: WebGLProgram
   private copyProg: WebGLProgram
   private textures = new Map<string, { tex: WebGLTexture; version: number }>()
-  private targets: { tex: WebGLTexture; fb: WebGLFramebuffer }[]
+  /** Two render targets per group depth (0 = the picture), made when first needed. */
+  private levels: { tex: WebGLTexture; fb: WebGLFramebuffer }[][] = []
   private empty: WebGLTexture
   lost = false
 
-  static create(width: number, height: number): GlCompositor | null {
+  static create(width: number, height: number, colorSpace: PredefinedColorSpace = 'srgb'): GlCompositor | null {
     if (!glAllowed.value || typeof document === 'undefined') return null
     try {
       const canvas = document.createElement('canvas')
@@ -91,6 +108,11 @@ export class GlCompositor {
       canvas.height = height
       const gl = canvas.getContext('webgl2', { premultipliedAlpha: true, preserveDrawingBuffer: true, antialias: false })
       if (!gl) return null
+      // Display P3 canvases keep their wider colours through the GPU (where the browser supports it).
+      if (colorSpace !== 'srgb' && 'drawingBufferColorSpace' in gl) {
+        gl.drawingBufferColorSpace = colorSpace
+        gl.unpackColorSpace = colorSpace
+      }
       const max = gl.getParameter(gl.MAX_TEXTURE_SIZE) as number
       if (width > max || height > max) return null
       return new GlCompositor(canvas, gl)
@@ -113,14 +135,7 @@ export class GlCompositor {
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW)
     gl.enableVertexAttribArray(0)
     gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0)
-    this.targets = [0, 1].map(() => {
-      const tex = this.texture()
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, canvas.width, canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
-      const fb = gl.createFramebuffer()!
-      gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
-      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0)
-      return { tex, fb }
-    })
+    this.level(0)
     this.empty = this.texture()
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(4))
   }
@@ -136,7 +151,19 @@ export class GlCompositor {
     return tex
   }
 
-  private upload(layer: GlLayer): WebGLTexture {
+  private level(depth: number) {
+    const gl = this.gl
+    return (this.levels[depth] ??= [0, 1].map(() => {
+      const tex = this.texture()
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA8, this.canvas.width, this.canvas.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null)
+      const fb = gl.createFramebuffer()!
+      gl.bindFramebuffer(gl.FRAMEBUFFER, fb)
+      gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0)
+      return { tex, fb }
+    }))
+  }
+
+  private upload(layer: GlSource): WebGLTexture {
     const gl = this.gl
     let t = this.textures.get(layer.key)
     if (!t) {
@@ -165,44 +192,63 @@ export class GlCompositor {
   /** Blend the layers (bottom to top) over the background and show the result on `canvas`. */
   render(layers: GlLayer[], background: [number, number, number, number] | null): HTMLCanvasElement {
     const gl = this.gl
-    const [w, h] = [this.canvas.width, this.canvas.height]
-    gl.viewport(0, 0, w, h)
+    const byKey = new Map<string, GlLayer>()
+    const index = (ls: GlLayer[]) => ls.forEach((l) => (byKey.set(l.key, l), l.children && index(l.children)))
+    index(layers)
+    gl.viewport(0, 0, this.canvas.width, this.canvas.height)
     gl.disable(gl.BLEND)
-    let cur = 0
-    gl.bindFramebuffer(gl.FRAMEBUFFER, this.targets[cur].fb)
-    if (background) gl.clearColor(background[0] * background[3], background[1] * background[3], background[2] * background[3], background[3])
-    else gl.clearColor(0, 0, 0, 0)
-    gl.clear(gl.COLOR_BUFFER_BIT)
-    gl.useProgram(this.blendProg)
-    const loc = (n: string) => gl.getUniformLocation(this.blendProg, n)
-    gl.uniform1i(loc('dst'), 0)
-    gl.uniform1i(loc('src'), 1)
-    gl.uniform1i(loc('clipTex'), 2)
-    const byKey = new Map(layers.map((l) => [l.key, l]))
-    for (const layer of layers) {
-      const next = 1 - cur
-      gl.bindFramebuffer(gl.FRAMEBUFFER, this.targets[next].fb)
-      gl.activeTexture(gl.TEXTURE0)
-      gl.bindTexture(gl.TEXTURE_2D, this.targets[cur].tex)
-      gl.activeTexture(gl.TEXTURE1)
-      gl.bindTexture(gl.TEXTURE_2D, this.upload(layer))
-      const clip = layer.clipTo ? byKey.get(layer.clipTo) : undefined
-      gl.activeTexture(gl.TEXTURE2)
-      gl.bindTexture(gl.TEXTURE_2D, clip ? this.upload(clip) : this.empty)
-      gl.uniform1i(loc('mode'), blendIndex(layer.blend))
-      gl.uniform1f(loc('opacity'), layer.opacity)
-      gl.uniform1i(loc('useClip'), clip ? 1 : 0)
-      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
-      cur = next
-    }
+    const result = this.compose(layers, 0, background, byKey)
     // Draw the result to the visible canvas (textures were uploaded flipped, so it comes out upright).
     gl.bindFramebuffer(gl.FRAMEBUFFER, null)
     gl.useProgram(this.copyProg)
     gl.activeTexture(gl.TEXTURE0)
-    gl.bindTexture(gl.TEXTURE_2D, this.targets[cur].tex)
+    gl.bindTexture(gl.TEXTURE_2D, result)
     gl.uniform1i(gl.getUniformLocation(this.copyProg, 'src'), 0)
     gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
     return this.canvas
+  }
+
+  /** Blend layers into the targets of one group depth; groups are blended on the next depth first. */
+  private compose(layers: GlLayer[], depth: number, background: [number, number, number, number] | null, byKey: Map<string, GlLayer>): WebGLTexture {
+    const gl = this.gl
+    const targets = this.level(depth)
+    let cur = 0
+    gl.bindFramebuffer(gl.FRAMEBUFFER, targets[cur].fb)
+    if (background) gl.clearColor(background[0] * background[3], background[1] * background[3], background[2] * background[3], background[3])
+    else gl.clearColor(0, 0, 0, 0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    const loc = (n: string) => gl.getUniformLocation(this.blendProg, n)
+    for (const layer of layers) {
+      const src = layer.children ? this.compose(layer.children, depth + 1, null, byKey) : this.upload(layer)
+      gl.useProgram(this.blendProg)
+      gl.uniform1i(loc('dst'), 0)
+      gl.uniform1i(loc('src'), 1)
+      gl.uniform1i(loc('clipTex'), 2)
+      gl.uniform1i(loc('maskTex'), 3)
+      gl.uniform1i(loc('clipMaskTex'), 4)
+      const next = 1 - cur
+      gl.bindFramebuffer(gl.FRAMEBUFFER, targets[next].fb)
+      gl.activeTexture(gl.TEXTURE0)
+      gl.bindTexture(gl.TEXTURE_2D, targets[cur].tex)
+      gl.activeTexture(gl.TEXTURE1)
+      gl.bindTexture(gl.TEXTURE_2D, src)
+      const clip = layer.clipTo ? byKey.get(layer.clipTo) : undefined
+      gl.activeTexture(gl.TEXTURE2)
+      gl.bindTexture(gl.TEXTURE_2D, clip ? this.upload(clip) : this.empty)
+      gl.activeTexture(gl.TEXTURE3)
+      gl.bindTexture(gl.TEXTURE_2D, layer.mask ? this.upload(layer.mask) : this.empty)
+      const clipMask = clip && layer.clipMask
+      gl.activeTexture(gl.TEXTURE4)
+      gl.bindTexture(gl.TEXTURE_2D, clipMask ? this.upload(clipMask) : this.empty)
+      gl.uniform1i(loc('mode'), blendIndex(layer.blend))
+      gl.uniform1f(loc('opacity'), layer.opacity)
+      gl.uniform1i(loc('useClip'), clip ? 1 : 0)
+      gl.uniform1i(loc('useMask'), layer.mask ? 1 : 0)
+      gl.uniform1i(loc('useClipMask'), clipMask ? 1 : 0)
+      gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4)
+      cur = next
+    }
+    return targets[cur].tex
   }
 
   /** One pixel of the last render, straight RGBA 0..255 (y from the top). */

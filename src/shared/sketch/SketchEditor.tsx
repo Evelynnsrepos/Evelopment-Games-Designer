@@ -2,8 +2,6 @@ import {
   Brush as BrushIcon,
   Download,
   Eraser,
-  Eye,
-  EyeOff,
   FlipHorizontal2,
   FlipVertical2,
   FlipHorizontal,
@@ -11,12 +9,9 @@ import {
   Image as ImageIcon,
   ImagePlus,
   Lasso,
-  Lock,
-  Merge,
   Move,
   PaintBucket,
   Pipette,
-  Plus,
   Redo2,
   RotateCcw,
   RotateCw,
@@ -25,7 +20,6 @@ import {
   SquareDashed,
   Trash2,
   Undo2,
-  Unlock,
   X,
   type LucideIcon,
 } from 'lucide-react'
@@ -35,27 +29,31 @@ import { getFs } from '@/core/fs'
 import { newId, type Id } from '@/core/model'
 import { useProjectStore } from '@/core/state'
 import { saveBinaryFile, safeFileName } from '@/core/export'
-import { confirmDialog, promptDialog } from '../dialogs'
 import { SketchEngine } from './engine'
 import { drawPreview } from './brushes'
 import { BrushLibrary } from './BrushLibrary'
 import { useBrushLibrary } from './library'
 import {
-  BLEND_MODES,
-  moveLayer,
   newLayer,
   nextLayerName,
-  updateLayer,
-  type BlendMode,
   type InputPoint,
   type SketchDoc,
-  type SketchLayer,
   type SymmetryMode,
 } from './model'
 import { gentle, HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
 import { ReferencePicker } from './ReferencePicker'
 import { maxLayers } from './tiles'
 import './sketch.css'
+// Sketch Pro: layers, selections (feat/sketch-layers)
+import { exportLayers, insertAbove, isGroup, lockedInTree } from './layers'
+import { LayersPanel, type LayerHost } from './LayersPanel'
+import { SelectionBar, SelectionMaskView, SelectionOutline } from './SelectionTools'
+import { useSelector } from './selector'
+import { copyPixels } from './clipboard'
+import { TransformBar, TransformOverlay } from './TransformTools'
+import { useTransformer } from './transformer'
+import { ColorDropBar, ColorDropView, ColorPanel } from './ColorPanel'
+import { useColorDrop } from './colordrop'
 // Sketch Pro: pen input, view turning, guides, QuickMenu.
 import { matchShortcut, toolOf, type ActionId } from './actions'
 import { TouchGestures } from './gestures'
@@ -174,9 +172,10 @@ export interface SketchEditorHandle {
 export function SketchEditor({ doc, update, active, title, actions, swatches = SWATCHES, panel, editorRef }: SketchEditorProps) {
   const root = useProjectStore((s) => s.root)
   const engineRef = useRef<SketchEngine | null>(null)
-  if (!engineRef.current || engineRef.current.width !== doc.width || engineRef.current.height !== doc.height) {
+  const colorSpace = doc.colorSpace ?? 'srgb'
+  if (!engineRef.current || engineRef.current.width !== doc.width || engineRef.current.height !== doc.height || engineRef.current.colorSpace !== colorSpace) {
     // oxlint-disable-next-line react/refs -- the engine is a mutable drawing surface, created once per canvas size
-    engineRef.current = new SketchEngine(doc.width, doc.height)
+    engineRef.current = new SketchEngine(doc.width, doc.height, colorSpace)
   }
   // oxlint-disable-next-line react/refs
   const engine = engineRef.current
@@ -193,13 +192,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     viewRef.current = view
   })
   const [tool, setTool] = useState<Tool>('brush')
+  const sel = useSelector(engine, active, tool)
   const [libraryOpen, setLibraryOpen] = useState<'brush' | 'eraser' | null>(null)
   const [libraryAt, setLibraryAt] = useState({ x: 0, y: 0 })
   const [color, setColor] = useState('#111111')
   const [activeLayerId, setActiveLayerId] = useState<Id>(doc.layers[doc.layers.length - 1]?.id ?? '')
   const [, setVersion] = useState(0)
-  const [selectionPts, setSelectionPts] = useState<{ x: number; y: number }[] | null>(null)
-  const [draftSel, setDraftSel] = useState<{ x: number; y: number }[] | null>(null)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
   const [saving, setSaving] = useState(false)
   const [pickingRef, setPickingRef] = useState(false)
@@ -230,6 +228,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const refresh = useCallback(() => setVersion(engine.version), [engine])
 
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
+  const xf = useTransformer(engine, sel, { active, tool, layerId: activeLayer?.id, done: (id) => markDirty(id) })
   const lib = useBrushLibrary()
   useEffect(() => {
     void useBrushLibrary.getState().load()
@@ -251,6 +250,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     // No cancel on cleanup: a stale result is dropped by the path check below, and
     // cancelling would lose loads when effects run twice (React strict mode).
     for (const layer of doc.layers) {
+      if (isGroup(layer)) continue
       if (dirty.current.has(layer.id) || loaded.current.get(layer.id) === layer.image) continue
       if (loaded.current.has(layer.id) && engine.stroking) continue
       loaded.current.set(layer.id, layer.image)
@@ -300,7 +300,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       loaded.current.set(id, path)
     }
     // The sticker: the whole picture without background.
-    const sticker = await importAssetFromBlob(root, await engine.flattenedPng(docRef.current, false), 'image', 'sticker.png')
+    const sticker = await importAssetFromBlob(root, await engine.flattenedPng({ ...docRef.current, layers: exportLayers(docRef.current.layers) }, false), 'image', 'sticker.png')
     if (docRef.current.sticker) old.push(docRef.current.sticker)
     update((d) => ({ ...d, sticker: sticker?.path ?? null, layers: d.layers.map((l) => (saved.has(l.id) ? { ...l, image: saved.get(l.id)! } : l)) }))
     // Each save writes a new PNG (assets are write-once); remove the ones this editor replaced.
@@ -318,6 +318,30 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     },
     [engine, flush],
   )
+
+  // ColorDrop: drag the colour onto the canvas to fill (Sketch Pro).
+  const drop = useColorDrop(
+    engine,
+    {
+      doc,
+      layer: activeLayer,
+      toDoc: (cx, cy) => {
+        const r = viewCanvas.current?.getBoundingClientRect()
+        const v = viewRef.current
+        if (!r || !v || cx < r.left || cy < r.top || cx > r.right || cy > r.bottom) return null
+        const q = toDocPoint(v, { x: cx - r.left, y: cy - r.top })
+        return q.x < 0 || q.y < 0 || q.x >= doc.width || q.y >= doc.height ? null : q
+      },
+      markDirty,
+    },
+    tool,
+  )
+  /** Switching sRGB / Display P3 makes a new engine; pixels are saved first and loaded again. */
+  const setColorSpace = async (cs: 'srgb' | 'display-p3') => {
+    await flush()
+    loaded.current.clear()
+    update((d) => ({ ...d, colorSpace: cs }))
+  }
 
   // Save on unmount (closing the panel or the app).
   useEffect(
@@ -355,7 +379,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       canvas.style.width = `${w}px`
       canvas.style.height = `${h}px`
     }
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d', { colorSpace })!
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
     ctx.save()
@@ -422,13 +446,15 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (isEraserEnd(e) && t !== 'hand' && t !== 'eyedropper') t = 'eraser'
     e.currentTarget.setPointerCapture(e.pointerId)
     const p = toDoc(e)
+    // After a ColorDrop, clicks keep filling (or recolouring).
+    if (drop.continuing && t !== 'hand' && e.button === 0) return drop.fillAt(p, drop.recolor ? color : drop.continuing)
     if (t === 'hand') {
       gesture.current = { kind: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
     } else if (t === 'eyedropper') {
       const picked = engine.pickColor(doc, p.x, p.y)
       if (picked) setColor(picked)
     } else if (t === 'brush' || t === 'eraser') {
-      if (!activeLayer.visible) return
+      if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
       const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
       const pipeline = new PenPipeline({
         streamline: strokeBrush.streamline,
@@ -444,12 +470,14 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       setVersion(engine.version)
     } else if (t === 'lasso' || t === 'rect') {
       gesture.current = { kind: 'select', pts: [p], rect: t === 'rect' }
-      setDraftSel([p])
+      const ref = doc.layers.find((l) => l.reference && !isGroup(l))
+      sel.down(p, e, () => engine.pixels(doc, ref?.id ?? null))
     } else if (t === 'move') {
-      if (!activeLayer.visible) return
-      engine.beginMove(activeLayer.id)
+      if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
+      // Transform: the first press lifts the pixels; later presses move, scale, turn or bend them.
+      if (!xf.active && !xf.begin(activeLayer.id)) return
+      xf.down(p, view.scale)
       gesture.current = { kind: 'move', from: p, to: p }
-      setVersion(engine.version)
     }
   }
 
@@ -489,13 +517,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       }
       setVersion(engine.version)
     } else if (g.kind === 'select') {
-      g.pts = g.rect ? [g.pts[0], { x: p.x, y: g.pts[0].y }, p, { x: g.pts[0].x, y: p.y }] : [...g.pts, p]
-      setDraftSel(g.pts)
+      sel.move(p, e)
     } else if (g.kind === 'move') {
-      g.to = p
-      engine.moveTo(Math.round(p.x - g.from.x), Math.round(p.y - g.from.y))
-      setDraftSel(selectionPts ? selectionPts.map((q) => ({ x: q.x + p.x - g.from.x, y: q.y + p.y - g.from.y })) : null)
-      setVersion(engine.version)
+      xf.move(p, view.scale, e.shiftKey)
     }
   }
 
@@ -514,15 +538,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       }
     }
     else if (g.kind === 'select') {
-      setDraftSel(null)
-      if (g.pts.length < 3) return setSelection(null)
-      setSelection(g.pts)
+      sel.up(viewRef.current?.scale ?? 1)
     } else if (g.kind === 'move') {
-      setDraftSel(null)
-      const dx = Math.round(g.to.x - g.from.x)
-      const dy = Math.round(g.to.y - g.from.y)
-      markDirty(engine.endMove())
-      if (selectionPts && (dx || dy)) setSelection(selectionPts.map((q) => ({ x: q.x + dx, y: q.y + dy })))
+      xf.up()
     }
   }
 
@@ -551,17 +569,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     setVersion(engine.version)
   }
 
-  const setSelection = (pts: { x: number; y: number }[] | null) => {
-    setSelectionPts(pts)
-    if (!pts) engine.selection = null
-    else {
-      const path = new Path2D()
-      pts.forEach((q, i) => (i ? path.lineTo(q.x, q.y) : path.moveTo(q.x, q.y)))
-      path.closePath()
-      engine.selection = path
-    }
-  }
-
   const onWheel = (e: React.WheelEvent) => {
     if (!view) return
     const r = viewCanvas.current!.getBoundingClientRect()
@@ -574,49 +581,24 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const redo = () => markDirty(engine.redo())
 
   const layerLimit = maxLayers(doc.width, doc.height)
-  const addLayer = () => {
-    if (doc.layers.length >= layerLimit) return
-    const layer = newLayer(nextLayerName(doc))
-    const i = doc.layers.findIndex((l) => l.id === activeLayer?.id)
-    update((d) => ({ ...d, layers: [...d.layers.slice(0, i + 1), layer, ...d.layers.slice(i + 1)] }))
-    setActiveLayerId(layer.id)
-  }
-
-  const duplicateLayer = (l: SketchLayer) => {
-    if (doc.layers.length >= layerLimit) return
-    const copy = { ...l, id: newId(), name: `${l.name} copy`, image: null }
-    engine.copyLayer(l.id, copy.id)
-    loaded.current.set(copy.id, null)
-    const i = doc.layers.findIndex((x) => x.id === l.id)
-    update((d) => ({ ...d, layers: [...d.layers.slice(0, i + 1), copy, ...d.layers.slice(i + 1)] }))
-    setActiveLayerId(copy.id)
-    markDirty(copy.id)
-  }
-
-  const deleteLayer = async (l: SketchLayer) => {
-    if (doc.layers.length === 1) return
-    const ok = await confirmDialog({ title: `Delete ${l.name}?`, message: 'The layer and its drawing are removed.', confirmLabel: 'Delete', danger: true })
-    if (!ok) return
-    dirty.current.delete(l.id)
-    update((d) => ({ ...d, layers: d.layers.filter((x) => x.id !== l.id) }))
-    if (l.image && root) void resolveAssetPath(root, l.image).then((abs) => getFs().remove(abs).catch(() => {}))
-    setActiveLayerId(doc.layers.find((x) => x.id !== l.id)?.id ?? '')
-  }
-
-  const mergeDown = (l: SketchLayer) => {
-    const i = doc.layers.findIndex((x) => x.id === l.id)
-    const below = doc.layers[i - 1]
-    if (!below) return
-    markDirty(engine.mergeDown(l, below.id))
-    dirty.current.delete(l.id)
-    update((d) => ({ ...d, layers: d.layers.filter((x) => x.id !== l.id) }))
-    if (l.image && root) void resolveAssetPath(root, l.image).then((abs) => getFs().remove(abs).catch(() => {}))
-    setActiveLayerId(below.id)
-  }
-
-  const renameLayer = async (l: SketchLayer) => {
-    const name = (await promptDialog(UI.rename, l.name))?.trim()
-    if (name) update((d) => updateLayer(d, l.id, { name }))
+  const layerHost: LayerHost = {
+    doc,
+    update,
+    engine,
+    activeId: activeLayer?.id,
+    setActive: setActiveLayerId,
+    markDirty,
+    adopt: (id) => loaded.current.set(id, null),
+    discard: (gone) => {
+      for (const l of gone) {
+        dirty.current.delete(l.id)
+        if (l.image && root) void resolveAssetPath(root, l.image).then((abs) => getFs().remove(abs).catch(() => {}))
+      }
+    },
+    limit: layerLimit,
+    title,
+    color,
+    selectFrom: (canvas) => sel.fromCanvas(canvas),
   }
 
   const insertImage = async (path: string, name = 'Image') => {
@@ -648,7 +630,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     await saveBinaryFile({
       title: UI.export,
       defaultName: `${safeFileName(title)}.png`,
-      bytes: new Uint8Array(await (await engine.flattenedPng(doc)).arrayBuffer()),
+      bytes: new Uint8Array(await (await engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })).arrayBuffer()),
       filter: { name: 'PNG image', extensions: ['png'] },
     })
   }
@@ -675,10 +657,16 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     redo: () => redo(),
     sizeUp: () => resizeBrush(1.2),
     sizeDown: () => resizeBrush(1 / 1.2),
-    deselect: () => setSelection(null),
+    deselect: () => sel.clear(),
     clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)),
     fill: () => activeLayer && markDirty(engine.fill(activeLayer.id, color, activeLayer.alphaLock)),
-    newLayer: () => addLayer(),
+    newLayer: () => {
+      if (doc.layers.filter((l) => !isGroup(l)).length >= layerLimit) return
+      const layer = newLayer(nextLayerName(doc))
+      loaded.current.set(layer.id, null)
+      update((d) => ({ ...d, layers: insertAbove(d.layers, layer, activeLayer?.id) }))
+      setActiveLayerId(layer.id)
+    },
     flipLayerX: () => activeLayer && markDirty(engine.flip(activeLayer.id, 'x')),
     flipLayerY: () => activeLayer && markDirty(engine.flip(activeLayer.id, 'y')),
     fit: () => fit(),
@@ -718,9 +706,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (g?.kind === 'paint') {
       clearTimeout(g.timer)
       engine.cancelStroke()
-    } else if (g?.kind === 'move') markDirty(engine.endMove())
+    } else if (g?.kind === 'move') xf.up()
     gesture.current = null
-    setDraftSel(null)
+    sel.cancelDraft()
     e.currentTarget.setPointerCapture(e.pointerId)
     setVersion(engine.version)
     return true
@@ -818,7 +806,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   // ---- Render --------------------------------------------------------------
 
-  const outline = draftSel ?? selectionPts
   const showBrushCursor = tool === 'brush' || tool === 'eraser' || hoverEraser
   const cursorBrush = hoverEraser ? (lib.brushes.find((b) => b.id === lib.eraserId) ?? brush) : brush
 
@@ -837,12 +824,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={FlipHorizontal2} label={UI.flipX} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'x'))} />
         <ToolButton icon={FlipVertical2} label={UI.flipY} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'y'))} />
         <AdjustMenu open={adjustMenu} onOpen={setAdjustMenu} onPick={setAdjust} />
-        {selectionPts && (
+        {sel.active && (
           <>
             <button className={`btn sketch-move-sel${tool === 'move' ? ' is-active' : ''}`} title={UI.moveSelection} onClick={() => setTool('move')}>
               <Move size={14} /> {UI.moveSelection}
             </button>
-            <ToolButton icon={X} label={UI.deselect} onClick={() => setSelection(null)} />
+            <ToolButton icon={X} label={UI.deselect} onClick={() => sel.clear()} />
           </>
         )}
         <span className="sketch-sep" />
@@ -856,7 +843,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={Download} label={UI.export} onClick={() => void exportPng()} />
         {actions?.(async () => {
           await flush()
-          return engine.flattenedPng(doc)
+          return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
         })}
         <span className="sketch-spacer" />
         {saving && <span className="sketch-saving">{UI.saving}</span>}
@@ -870,6 +857,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' ? 'none' : 'crosshair' }}
         >
           <canvas
+            key={colorSpace}
             ref={viewCanvas}
             className="sketch-canvas"
             onPointerDown={onPointerDown}
@@ -878,23 +866,54 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onPointerCancel={() => {
               touch.reset()
               engine.cancelStroke()
-              if (engine.moving) markDirty(engine.endMove())
+              xf.up()
               gesture.current = null
             }}
             onPointerLeave={() => setCursor(null)}
             onContextMenu={(e) => e.preventDefault()}
           />
+          {view && <SelectionMaskView sel={sel} engine={engine} view={view} />}
+          <ColorDropView drop={drop} view={view} />
+          <div className="sketch-floatbars">
+            <ColorDropBar drop={drop} color={color} />
+            <TransformBar xf={xf} onDone={() => markDirty(xf.commit(sel))} onCancel={() => xf.cancel()} />
+            <SelectionBar
+              sel={sel}
+              tool={tool === 'lasso' || tool === 'rect'}
+              doc={doc}
+              root={root}
+              update={update}
+              usesReference={doc.layers.some((l) => l.reference)}
+              onFill={() => activeLayer && markDirty(engine.fill(activeLayer.id, color, activeLayer.alphaLock))}
+              onClear={() => activeLayer && markDirty(engine.clear(activeLayer.id))}
+              onCopyPaste={() => {
+                if (!activeLayer || isGroup(activeLayer)) return
+                const piece = engine.canvas()
+                piece.ctx.drawImage(engine.layerCanvas(activeLayer.id), 0, 0)
+                piece.ctx.globalCompositeOperation = 'destination-in'
+                if (engine.selectionMask) piece.ctx.drawImage(engine.selectionMask, 0, 0)
+                copyPixels(piece.canvas)
+                const layer = newLayer(nextLayerName(doc))
+                loaded.current.set(layer.id, null)
+                engine.setLayerImage(layer.id, piece.canvas)
+                update((d) => ({ ...d, layers: insertAbove(d.layers, layer, activeLayer.id) }))
+                setActiveLayerId(layer.id)
+                markDirty(layer.id)
+              }}
+            />
+          </div>
           {view && (
             <svg className="sketch-overlay">
               <g transform={`matrix(${viewMatrix(view).join(' ')})`}>
                 {liveGuide && <GuideOverlay guide={liveGuide} width={doc.width} height={doc.height} scale={view.scale} editing={editingGuide} toDoc={toDoc} onChange={setGuide} />}
-                {outline && <polygon points={outline.map((q) => `${q.x},${q.y}`).join(' ')} className="sketch-selection" />}
+                <SelectionOutline sel={sel} />
+                <TransformOverlay xf={xf} scale={view.scale} width={doc.width} height={doc.height} />
                 {shapeOffer?.editing && <ShapeNodes shape={shapeOffer.shape} scale={view.scale} toDoc={toDoc} onChange={changeShape} />}
                 {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
               </g>
             </svg>
           )}
-          {adjust && view && activeLayer && (
+          {adjust && view && activeLayer && activeLayer.kind !== 'group' && (
             <AdjustStudio
               key={`${adjust.kind}:${adjust.kind === 'filter' ? adjust.id : ''}:${activeLayer.id}`}
               mode={adjust}
@@ -946,15 +965,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
         <aside className="sketch-panel" onPointerDown={(e) => e.stopPropagation()}>
           {panel}
-          <section>
-            <h4>{UI.color}</h4>
-            <div className="sketch-colors">
-              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} aria-label={UI.color} />
-              {swatches.map((s) => (
-                <button key={s} className={`sketch-swatch${s === color ? ' is-active' : ''}`} style={{ background: s }} title={s} onClick={() => setColor(s)} />
-              ))}
-            </div>
-          </section>
+          <ColorPanel color={color} setColor={setColor} swatches={swatches === SWATCHES ? [] : swatches} drop={drop} colorSpace={colorSpace} onColorSpace={(cs) => void setColorSpace(cs)} />
 
           <section>
             <div className="sketch-current-brush">
@@ -976,79 +987,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
           <GuidePanel guide={guide} layerId={activeLayer?.id} editing={editingGuide} onEditing={setEditingGuide} onChange={setGuide} />
 
-          <section className="sketch-layers">
-            <div className="sketch-layers-head">
-              <h4>{UI.layers}</h4>
-              <ToolButton icon={Plus} label={doc.layers.length >= layerLimit ? UI.layerLimit(layerLimit) : `${UI.addLayer} (${doc.layers.length} / ${layerLimit})`} onClick={addLayer} />
-            </div>
-            {[...doc.layers].reverse().map((l, i, arr) => (
-              <div
-                key={l.id}
-                className={`sketch-layer${l.id === activeLayer?.id ? ' is-active' : ''}${l.clip ? ' is-clip' : ''}`}
-                onClick={() => setActiveLayerId(l.id)}
-                onDoubleClick={() => void renameLayer(l)}
-              >
-                <button
-                  className="icon-btn"
-                  title={l.visible ? 'Hide' : 'Show'}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    update((d) => updateLayer(d, l.id, { visible: !l.visible }))
-                  }}
-                >
-                  {l.visible ? <Eye size={13} /> : <EyeOff size={13} />}
-                </button>
-                <LayerThumb engine={engine} layerId={l.id} version={engine.version} />
-                <span className="sketch-layer-name">{l.name}</span>
-                {l.id === activeLayer?.id && (
-                  <div className="sketch-layer-props" onClick={(e) => e.stopPropagation()}>
-                    <Slider label={UI.opacity} min={0} max={1} step={0.05} value={l.opacity} onChange={(opacity) => update((d) => updateLayer(d, l.id, { opacity }))} percent />
-                    <select className="input" value={l.blend} onChange={(e) => update((d) => updateLayer(d, l.id, { blend: e.target.value as BlendMode }))}>
-                      {[...new Set(BLEND_MODES.map((m) => m.group))].map((g) => (
-                        <optgroup key={g} label={g}>
-                          {BLEND_MODES.filter((m) => m.group === g).map((m) => (
-                            <option key={m.id} value={m.id}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                    <div className="sketch-layer-actions">
-                      <ToolButton icon={l.alphaLock ? Lock : Unlock} label={UI.alphaLock} active={l.alphaLock} onClick={() => update((d) => updateLayer(d, l.id, { alphaLock: !l.alphaLock }))} />
-                      <button className={`btn btn-ghost sketch-small${l.clip ? ' is-active' : ''}`} title={UI.clip} onClick={() => update((d) => updateLayer(d, l.id, { clip: !l.clip }))}>
-                        Clip
-                      </button>
-                      <button className="btn btn-ghost sketch-small" title={UI.duplicate} onClick={() => duplicateLayer(l)}>
-                        Copy
-                      </button>
-                      <ToolButton icon={Merge} label={UI.mergeDown} disabled={i === arr.length - 1} onClick={() => mergeDown(l)} />
-                      <button className="btn btn-ghost sketch-small" title="Move up" disabled={i === 0} onClick={() => update((d) => moveLayer(d, l.id, 1))}>
-                        ↑
-                      </button>
-                      <button className="btn btn-ghost sketch-small" title="Move down" disabled={i === arr.length - 1} onClick={() => update((d) => moveLayer(d, l.id, -1))}>
-                        ↓
-                      </button>
-                      <ToolButton icon={Trash2} label={UI.deleteLayer} disabled={doc.layers.length === 1} onClick={() => void deleteLayer(l)} />
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-            <label className="sketch-row sketch-background">
-              <span>{UI.background}</span>
-              <input
-                type="color"
-                value={doc.backgroundColor ?? '#ffffff'}
-                onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.value }))}
-                disabled={!doc.backgroundColor}
-              />
-              <label className="sketch-check">
-                <input type="checkbox" checked={!doc.backgroundColor} onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.checked ? null : '#ffffff' }))} />
-                {UI.transparent}
-              </label>
-            </label>
-          </section>
+          <LayersPanel host={layerHost} />
         </aside>
       </div>
 
@@ -1092,20 +1031,6 @@ function Slider(p: { label: string; min: number; max: number; step?: number; val
       <span className="sketch-slider-value">{shown}</span>
     </label>
   )
-}
-
-function LayerThumb({ engine, layerId, version }: { engine: SketchEngine; layerId: Id; version: number }) {
-  const ref = useRef<HTMLCanvasElement>(null)
-  useEffect(() => {
-    const c = ref.current
-    if (!c) return
-    const ctx = c.getContext('2d')!
-    ctx.clearRect(0, 0, c.width, c.height)
-    const src = engine.layerCanvas(layerId)
-    const s = Math.min(c.width / src.width, c.height / src.height)
-    ctx.drawImage(src, (c.width - src.width * s) / 2, (c.height - src.height * s) / 2, src.width * s, src.height * s)
-  }, [engine, layerId, version])
-  return <canvas ref={ref} width={44} height={32} className="sketch-thumb" />
 }
 
 function ReferenceWindow(p: { image: string; x: number; y: number; width: number; onChange(patch: { x?: number; y?: number; width?: number }): void; onClose(): void }) {

@@ -15,16 +15,9 @@ import { AdjustGl } from './gpu'
 
 type C2 = { canvas: HTMLCanvasElement; ctx: CanvasRenderingContext2D }
 
-export function canvas2d(w: number, h: number): C2 {
-  const canvas = document.createElement('canvas')
-  canvas.width = w
-  canvas.height = h
-  return { canvas, ctx: canvas.getContext('2d')! }
-}
-
 /** Copy of a layer's pixels. */
-function copyOf(src: HTMLCanvasElement): C2 {
-  const c = canvas2d(src.width, src.height)
+function copyOf(engine: SketchEngine, src: HTMLCanvasElement): C2 {
+  const c = engine.canvas()
   c.ctx.drawImage(src, 0, 0)
   return c
 }
@@ -44,8 +37,8 @@ export class LayerSession {
     this.layerId = layerId
     this.w = engine.width
     this.h = engine.height
-    this.original = copyOf(engine.layerCanvas(layerId))
-    this.out = canvas2d(this.w, this.h)
+    this.original = copyOf(engine, engine.layerCanvas(layerId))
+    this.out = this.engine.canvas()
   }
 
   /** Show `out` on the layer (preview only, no undo, not saved). */
@@ -98,7 +91,7 @@ export class AdjustSession extends LayerSession {
     super(engine, layerId)
     this.gpu = AdjustGl.create(this.w, this.h)
     this.gpu?.setSource(this.original.canvas)
-    this.scratch = canvas2d(this.w, this.h)
+    this.scratch = this.engine.canvas()
   }
 
   get onGpu() {
@@ -111,7 +104,7 @@ export class AdjustSession extends LayerSession {
   }
 
   private cpuCanvas(img: ImageData) {
-    const c = (this.cpuOut ??= canvas2d(this.w, this.h))
+    const c = (this.cpuOut ??= this.engine.canvas())
     c.ctx.putImageData(img, 0, 0)
     return c.canvas
   }
@@ -128,7 +121,7 @@ export class AdjustSession extends LayerSession {
 
   /** Switch between whole layer (false) and paint-on (true). Painting starts empty. */
   setPaintOn(on: boolean) {
-    this.mask = on ? canvas2d(this.w, this.h) : null
+    this.mask = on ? this.engine.canvas() : null
     this.stroke = null
     this.compose()
   }
@@ -139,7 +132,7 @@ export class AdjustSession extends LayerSession {
 
   beginPaint(brush: BrushSettings, p: StrokePoint) {
     if (!this.mask) return
-    const c = canvas2d(this.w, this.h)
+    const c = this.engine.canvas()
     this.stroke = { c, stamper: new StrokeStamper(c.ctx, brush), opacity: brush.opacity }
     this.stroke.stamper.add(p)
     this.compose()
@@ -161,40 +154,43 @@ export class AdjustSession extends LayerSession {
     this.compose()
   }
 
-  /** out = original where nothing applies, the result where it does (selection, painted mask). */
+  /** out = original × (1 − w) + result × w, where w = painted mask (or everywhere) × selection. */
   private compose() {
     const { ctx } = this.out
-    const sel = this.engine.selection
+    const sel = this.engine.selectionMask
     ctx.save()
     ctx.clearRect(0, 0, this.w, this.h)
     if (!this.result) ctx.drawImage(this.original.canvas, 0, 0)
     else if (!this.mask && !sel) ctx.drawImage(this.result, 0, 0)
     else {
-      ctx.drawImage(this.original.canvas, 0, 0)
-      if (sel) ctx.clip(sel)
-      if (!this.mask) {
-        ctx.clearRect(0, 0, this.w, this.h)
-        ctx.drawImage(this.result, 0, 0)
-      } else {
-        // Mix by the mask m: original × (1 − m) + result × m.
-        const m = this.scratch.ctx
-        m.save()
-        m.clearRect(0, 0, this.w, this.h)
+      const m = this.scratch.ctx
+      m.save()
+      m.clearRect(0, 0, this.w, this.h)
+      if (this.mask) {
         m.drawImage(this.mask.canvas, 0, 0)
         if (this.stroke) {
           m.globalAlpha = this.stroke.opacity
           m.drawImage(this.stroke.c.canvas, 0, 0)
         }
-        m.restore()
-        ctx.globalCompositeOperation = 'destination-out'
-        ctx.drawImage(this.scratch.canvas, 0, 0)
-        m.save()
-        m.globalCompositeOperation = 'source-in'
-        m.drawImage(this.result, 0, 0)
-        m.restore()
-        ctx.globalCompositeOperation = 'lighter'
-        ctx.drawImage(this.scratch.canvas, 0, 0)
+      } else {
+        m.fillStyle = '#fff'
+        m.fillRect(0, 0, this.w, this.h)
       }
+      m.globalAlpha = 1
+      if (sel) {
+        m.globalCompositeOperation = 'destination-in'
+        m.drawImage(sel, 0, 0)
+      }
+      m.restore()
+      ctx.drawImage(this.original.canvas, 0, 0)
+      ctx.globalCompositeOperation = 'destination-out'
+      ctx.drawImage(this.scratch.canvas, 0, 0)
+      m.save()
+      m.globalCompositeOperation = 'source-in'
+      m.drawImage(this.result, 0, 0)
+      m.restore()
+      ctx.globalCompositeOperation = 'lighter'
+      ctx.drawImage(this.scratch.canvas, 0, 0)
     }
     ctx.restore()
     this.show()
@@ -224,8 +220,8 @@ export class CloneSession {
 
   constructor(engine: SketchEngine) {
     this.engine = engine
-    this.out = canvas2d(engine.width, engine.height)
-    this.tmp = canvas2d(engine.width, engine.height)
+    this.out = engine.canvas()
+    this.tmp = engine.canvas()
   }
 
   setLocked(locked: boolean) {
@@ -254,8 +250,8 @@ export class CloneSession {
     if (!this.source) return false
     const off = !this.locked && this.offset ? this.offset : { x: this.source.x - p.x, y: this.source.y - p.y }
     if (!this.locked) this.offset = off
-    const before = copyOf(this.engine.layerCanvas(layerId))
-    const mask = canvas2d(this.engine.width, this.engine.height)
+    const before = copyOf(this.engine, this.engine.layerCanvas(layerId))
+    const mask = this.engine.canvas()
     this.stroke = { layerId, before, mask, stamper: new StrokeStamper(mask.ctx, brush), opacity: brush.opacity, off }
     this.stroke.stamper.add(p)
     this.preview()
@@ -298,12 +294,13 @@ export class CloneSession {
     t.drawImage(s.before.canvas, -s.off.x, -s.off.y)
     t.globalCompositeOperation = 'destination-in'
     t.drawImage(s.mask.canvas, 0, 0)
+    const sel = this.engine.selectionMask
+    if (sel) t.drawImage(sel, 0, 0)
     t.restore()
     const o = this.out.ctx
     o.save()
     o.clearRect(0, 0, o.canvas.width, o.canvas.height)
     o.drawImage(s.before.canvas, 0, 0)
-    if (this.engine.selection) o.clip(this.engine.selection)
     o.globalAlpha = s.opacity
     o.drawImage(this.tmp.canvas, 0, 0)
     o.restore()
