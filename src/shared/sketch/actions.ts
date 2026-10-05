@@ -34,6 +34,9 @@ export const ACTIONS = [
   { id: 'assist', label: 'Drawing Assist on / off', keys: [] },
   { id: 'export', label: 'Export as PNG', keys: [] },
   { id: 'inputSettings', label: 'Pen and keys settings', keys: [] },
+  { id: 'adjustments', label: 'Adjustments menu', keys: [] },
+  { id: 'liquify', label: 'Liquify', keys: [] },
+  { id: 'clone', label: 'Clone', keys: [] },
 ] as const satisfies readonly { id: string; label: string; keys: readonly string[] }[]
 
 export type ActionId = (typeof ACTIONS)[number]['id']

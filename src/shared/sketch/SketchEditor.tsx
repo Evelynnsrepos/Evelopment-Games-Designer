@@ -28,7 +28,7 @@ import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Rea
 import { importAssetFromBlob, pickAndImportAssets, resolveAssetPath } from '@/core/assets'
 import { getFs } from '@/core/fs'
 import { newId, type Id } from '@/core/model'
-import { useProjectStore } from '@/core/state'
+import { flush as flushSave, scheduleSave, useProjectStore } from '@/core/state'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { SketchEngine } from './engine'
 import { drawPreview } from './brushes'
@@ -75,6 +75,8 @@ import { useTextLayers, useTextTool } from './textLayers'
 // Sketch Pro: Animation Assist and Page Assist (feat/sketch-text)
 import { AssistBar, AssistButtons } from './AssistBar'
 import { useAssist } from './assistView'
+// Sketch Pro: Adjustments, Liquify and Clone.
+import { AdjustMenu, AdjustStudio, type AdjustMode } from './adjust/AdjustStudio'
 
 const UI_PRO = {
   rotateLeft: 'Turn view left (,)',
@@ -233,6 +235,11 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   /** Last pointer position in stage pixels (where the QuickMenu opens from a key). */
   const lastPointer = useRef<{ x: number; y: number } | null>(null)
 
+  // Sketch Pro: Adjustments, Liquify and Clone.
+  const [adjust, setAdjust] = useState<AdjustMode | null>(null)
+  const [adjustMenu, setAdjustMenu] = useState(false)
+  const refresh = useCallback(() => setVersion(engine.version), [engine])
+
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
   const xf = useTransformer(engine, sel, { active, tool, layerId: activeLayer?.id, done: (id) => markDirty(id) })
   const lib = useBrushLibrary()
@@ -249,7 +256,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   /** Layer id -> the asset path its pixels came from or were last saved to. */
   const loaded = useRef(new Map<Id, string | null>())
   const dirty = useRef(new Set<Id>())
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Pixel saves go through the app's auto-save, so closing the app or project writes them too. */
+  const saveKey = useRef(`${root}|sketch-pixels/${newId()}`).current
 
   useEffect(() => {
     if (!root) return
@@ -322,10 +330,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if (!id) return
       dirty.current.add(id)
       setVersion(engine.version)
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => void flush(), 1200)
+      scheduleSave(saveKey, flush, 1200)
     },
-    [engine, flush],
+    [engine, flush, saveKey],
   )
 
   // ColorDrop: drag the colour onto the canvas to fill (Sketch Pro).
@@ -353,17 +360,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   }
 
   // Save on unmount (closing the panel or the app).
-  // Sketch Pro: keyed on the engine, not on `flush` (a new function every render), so the save delay above holds.
-  const flushLatest = useRef(flush)
-  useEffect(() => {
-    flushLatest.current = flush
-  })
   useEffect(
-    () => () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      void flushLatest.current()
-    },
-    [root, engine],
+    () => () => void flushSave(saveKey),
+    [saveKey],
   )
 
   // Sketch Pro: Animation Assist and Page Assist (the view below draws through it).
@@ -708,6 +707,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       activeLayer && setGuide({ ...guide, assist: guide.assist.includes(activeLayer.id) ? guide.assist.filter((x) => x !== activeLayer.id) : [...guide.assist, activeLayer.id] }),
     export: () => void exportPng(),
     inputSettings: () => setInputOpen(true),
+    adjustments: () => setAdjustMenu((o) => !o),
+    liquify: () => setAdjust({ kind: 'liquify' }),
+    clone: () => setAdjust({ kind: 'clone' }),
   }
   /** Run an action; from a pen button the QuickMenu opens where the pen is. */
   const runAction = (id: ActionId, at?: { clientX: number; clientY: number }) => {
@@ -849,6 +851,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={Trash2} label={UI.clear} onClick={() => activeLayer && markDirty(engine.clear(activeLayer.id))} />
         <ToolButton icon={FlipHorizontal2} label={UI.flipX} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'x'))} />
         <ToolButton icon={FlipVertical2} label={UI.flipY} onClick={() => activeLayer && markDirty(engine.flip(activeLayer.id, 'y'))} />
+        <AdjustMenu open={adjustMenu} onOpen={setAdjustMenu} onPick={setAdjust} />
         {sel.active && (
           <>
             <button className={`btn sketch-move-sel${tool === 'move' ? ' is-active' : ''}`} title={UI.moveSelection} onClick={() => setTool('move')}>
@@ -939,6 +942,21 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
                 {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
               </g>
             </svg>
+          )}
+          {adjust && view && activeLayer && activeLayer.kind !== 'group' && (
+            <AdjustStudio
+              key={`${adjust.kind}:${adjust.kind === 'filter' ? adjust.id : ''}:${activeLayer.id}`}
+              mode={adjust}
+              // oxlint-disable-next-line react/refs -- the engine is a mutable drawing surface
+              engine={engine}
+              layerId={activeLayer.id}
+              brush={brush}
+              view={view}
+              toDoc={toDoc}
+              refresh={refresh}
+              commit={markDirty}
+              onClose={() => setAdjust(null)}
+            />
           )}
           {shapeOffer && (
             <div className="shape-edit-bar" style={{ left: shapeOffer.at.x, top: shapeOffer.at.y }} onPointerDown={(e) => e.stopPropagation()}>
