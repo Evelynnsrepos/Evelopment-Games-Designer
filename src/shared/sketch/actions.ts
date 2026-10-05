@@ -40,6 +40,9 @@ export const ACTIONS = [
   { id: 'importFile', label: 'Import a file', keys: [] },
   { id: 'timelapse', label: 'Time-lapse replay', keys: [] },
   { id: 'companion', label: 'Reference Companion', keys: [] },
+  { id: 'adjustments', label: 'Adjustments menu', keys: [] },
+  { id: 'liquify', label: 'Liquify', keys: [] },
+  { id: 'clone', label: 'Clone', keys: [] },
 ] as const satisfies readonly { id: string; label: string; keys: readonly string[] }[]
 
 export type ActionId = (typeof ACTIONS)[number]['id']

@@ -34,9 +34,14 @@ export async function flush(key: string): Promise<void> {
   }
 }
 
-/** Flush every key that starts with `prefix` (or all keys). */
+/** Flush every key that starts with `prefix` (or all keys), including saves those saves schedule. */
 export async function flushAll(prefix = ''): Promise<void> {
-  await Promise.all([...pending.keys()].filter((k) => k.startsWith(prefix)).map(flush))
+  // A save can schedule another (a drawing's pixels, then its document); a few rounds catch those.
+  for (let round = 0; round < 4; round++) {
+    const keys = [...pending.keys()].filter((k) => k.startsWith(prefix))
+    if (!keys.length) return
+    await Promise.all(keys.map(flush))
+  }
 }
 
 export function hasPendingSaves() {

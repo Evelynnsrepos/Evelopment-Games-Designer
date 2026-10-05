@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, type ReactNode } from 'react'
 import { applyCurve, MAX_CURVE_POINTS, type CurvePoint } from './pen'
 
 const UI = {
@@ -13,7 +13,25 @@ const PAD = 8
  * A small curve with up to six handles, for pressure (and later tilt) curves.
  * x = what the pen reports, y = what the brush gets; both 0..1.
  */
-export function CurveEditor({ points, onChange, size = 180, marker }: { points: CurvePoint[]; onChange(points: CurvePoint[]): void; size?: number; marker?: number | null }) {
+export function CurveEditor({
+  points,
+  onChange,
+  size = 180,
+  marker,
+  max = MAX_CURVE_POINTS,
+  under,
+  axes = `↑ ${UI.output} · → ${UI.input}`,
+}: {
+  points: CurvePoint[]
+  onChange(points: CurvePoint[]): void
+  size?: number
+  marker?: number | null
+  /** Most handles (Adjustments curves allow 11). */
+  max?: number
+  /** Drawn behind the curve, in the box from (pad, pad) with side size − 2 × pad (e.g. a histogram). */
+  under?: ReactNode
+  axes?: string
+}) {
   const svg = useRef<SVGSVGElement>(null)
   const sorted = [...points].sort((a, b) => a.x - b.x)
   const inner = size - PAD * 2
@@ -48,7 +66,7 @@ export function CurveEditor({ points, onChange, size = 180, marker }: { points: 
   }
 
   const add = (e: React.PointerEvent) => {
-    if (sorted.length >= MAX_CURVE_POINTS) return
+    if (sorted.length >= max) return
     const p = toCurve(e)
     if (sorted.some((q) => Math.abs(q.x - p.x) < 0.02)) return
     const next = [...sorted, p].sort((a, b) => a.x - b.x)
@@ -70,6 +88,7 @@ export function CurveEditor({ points, onChange, size = 180, marker }: { points: 
     <div className="curve-editor">
       <svg ref={svg} viewBox={`0 0 ${size} ${size}`} width={size} height={size} onPointerDown={add} role="img" aria-label={UI.help}>
         <rect x={PAD} y={PAD} width={inner} height={inner} className="curve-bg" />
+        {under}
         {[0.25, 0.5, 0.75].map((t) => (
           <g key={t} className="curve-grid">
             <line x1={sx(t)} y1={sy(0)} x2={sx(t)} y2={sy(1)} />
@@ -84,9 +103,7 @@ export function CurveEditor({ points, onChange, size = 180, marker }: { points: 
         ))}
       </svg>
       <div className="curve-axes">
-        <span>
-          ↑ {UI.output} · → {UI.input}
-        </span>
+        <span>{axes}</span>
       </div>
       <p className="curve-help">{UI.help}</p>
     </div>
