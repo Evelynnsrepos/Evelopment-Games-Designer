@@ -1,0 +1,279 @@
+/* Sketch Pro: pen and keys settings, QuickMenu, guides and overlay pieces. */
+
+.input-settings .studio-settings {
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+.studio-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.input-help {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.input-row {
+  grid-template-columns: 110px 1fr auto;
+}
+.input-curve-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+.input-presets {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Curve editor */
+.curve-editor svg {
+  touch-action: none;
+  cursor: crosshair;
+  display: block;
+}
+.curve-bg {
+  fill: var(--bg-hover);
+  stroke: var(--border);
+}
+.curve-grid line,
+.curve-diagonal {
+  stroke: var(--border);
+  stroke-width: 1;
+}
+.curve-diagonal {
+  stroke-dasharray: 3 3;
+}
+.curve-marker {
+  stroke: #e5484d;
+  stroke-width: 1.5;
+}
+.curve-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.curve-handle {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 2;
+  cursor: grab;
+}
+.curve-axes,
+.curve-help {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin: 4px 0 0;
+  max-width: 220px;
+}
+
+/* Tablet test */
+.tablet-test {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.tablet-test-body {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.tablet-pad {
+  width: 420px;
+  max-width: 100%;
+  height: 260px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  touch-action: none;
+  cursor: crosshair;
+}
+.tablet-readout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 10px;
+  margin: 0;
+  font-size: 12px;
+  min-width: 220px;
+  align-items: center;
+}
+.tablet-readout dt {
+  color: var(--text-muted);
+}
+.tablet-readout dd {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.tablet-bar {
+  display: inline-block;
+  width: 110px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+.tablet-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+.tablet-tilt circle {
+  fill: none;
+  stroke: var(--border);
+}
+.tablet-tilt line {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+.tablet-buttons {
+  flex-wrap: wrap;
+}
+.tablet-chip {
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.tablet-chip.is-on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+/* Shortcuts */
+.shortcut-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.shortcut-row {
+  display: grid;
+  grid-template-columns: 1fr 150px auto auto;
+  gap: 6px;
+  align-items: center;
+  font-size: 13px;
+}
+.shortcut-key {
+  font-family: var(--font-mono, monospace);
+  font-size: 12px;
+  justify-content: center;
+}
+.shortcut-key.is-listening {
+  outline: 2px solid var(--accent);
+}
+.shortcut-note {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* QuickMenu */
+.quick-menu-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+}
+.quick-menu {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+.quick-slot,
+.quick-center {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated, var(--bg));
+  color: var(--text);
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.25);
+  cursor: pointer;
+  font-size: 12px;
+}
+.quick-slot {
+  width: 74px;
+  min-height: 40px;
+  padding: 4px 6px;
+  border-radius: 12px;
+  line-height: 1.2;
+}
+.quick-slot.is-hover,
+.quick-slot:focus-visible {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.quick-slot.is-empty {
+  opacity: 0.45;
+  cursor: default;
+}
+.quick-center {
+  left: 0;
+  top: 0;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  font-size: 11px;
+  overflow: hidden;
+}
+
+/* Overlay: guides, brush cursor, Edit Shape */
+.guide-line {
+  stroke: currentColor;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.guide-line.is-strong {
+  stroke-width: 1.5;
+  stroke-dasharray: 6 5;
+}
+.guide-handle {
+  fill: var(--bg);
+  stroke: var(--accent);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+  pointer-events: all;
+  cursor: grab;
+  touch-action: none;
+}
+.brush-cursor ellipse,
+.brush-cursor rect,
+.brush-cursor line {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 0 1px #000);
+}
+.brush-cursor.is-eraser ellipse,
+.brush-cursor.is-eraser rect {
+  stroke-dasharray: 3 2;
+}
+.shape-outline {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1;
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.shape-edit-bar {
+  position: absolute;
+  z-index: 15;
+  display: flex;
+  gap: 4px;
+  transform: translate(-50%, 12px);
+}
+.guide-seg {
+  display: flex;
+  gap: 4px;
+}
+.guide-seg .is-active {
+  outline: 2px solid var(--accent);
+}
