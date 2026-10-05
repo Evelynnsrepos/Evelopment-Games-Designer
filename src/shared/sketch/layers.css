@@ -156,3 +156,59 @@
   pointer-events: none;
   image-rendering: auto;
 }
+
+/* Transform */
+.sketch-xf-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-xf-handle {
+  fill: #fff;
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-xf-rot {
+  fill: var(--accent);
+  stroke: #fff;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-xf-guide {
+  stroke: #ff3db4;
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-xf-interp {
+  width: auto;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+.sketch-xf-hint {
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+/* Selection and transform bars float over the top of the canvas. */
+.sketch-floatbars {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  max-width: calc(100% - 16px);
+  pointer-events: none;
+}
+.sketch-floatbars > * {
+  pointer-events: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}

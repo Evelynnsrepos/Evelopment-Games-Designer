@@ -47,6 +47,8 @@ import { LayersPanel, type LayerHost } from './LayersPanel'
 import { SelectionBar, SelectionMaskView, SelectionOutline } from './SelectionTools'
 import { useSelector } from './selector'
 import { copyPixels } from './clipboard'
+import { TransformBar, TransformOverlay } from './TransformTools'
+import { useTransformer } from './transformer'
 
 const UI = {
   brush: 'Brush (B)',
@@ -171,6 +173,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const altDown = useRef(false)
 
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
+  const xf = useTransformer(engine, sel, { active, tool, layerId: activeLayer?.id, done: (id) => markDirty(id) })
   const lib = useBrushLibrary()
   useEffect(() => {
     void useBrushLibrary.getState().load()
@@ -367,9 +370,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       sel.down(p, e, () => engine.pixels(doc, ref?.id ?? null))
     } else if (t === 'move') {
       if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
-      engine.beginMove(activeLayer.id)
+      // Transform: the first press lifts the pixels; later presses move, scale, turn or bend them.
+      if (!xf.active && !xf.begin(activeLayer.id)) return
+      xf.down(p, view.scale)
       gesture.current = { kind: 'move', from: p, to: p }
-      setVersion(engine.version)
     }
   }
 
@@ -403,10 +407,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (g.kind === 'select') {
       sel.move(p, e)
     } else if (g.kind === 'move') {
-      g.to = p
-      engine.moveTo(Math.round(p.x - g.from.x), Math.round(p.y - g.from.y))
-      sel.patch({ offset: { x: Math.round(p.x - g.from.x), y: Math.round(p.y - g.from.y) } })
-      setVersion(engine.version)
+      xf.move(p, view.scale, e.shiftKey)
     }
   }
 
@@ -421,10 +422,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     else if (g.kind === 'select') {
       sel.up(viewRef.current?.scale ?? 1)
     } else if (g.kind === 'move') {
-      const dx = Math.round(g.to.x - g.from.x)
-      const dy = Math.round(g.to.y - g.from.y)
-      markDirty(engine.endMove())
-      sel.translate(dx, dy)
+      xf.up()
     }
   }
 
@@ -618,30 +616,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <span className="sketch-spacer" />
         {saving && <span className="sketch-saving">{UI.saving}</span>}
       </div>
-      <SelectionBar
-        sel={sel}
-        tool={tool === 'lasso' || tool === 'rect'}
-        doc={doc}
-        root={root}
-        update={update}
-        usesReference={doc.layers.some((l) => l.reference)}
-        onFill={() => activeLayer && markDirty(engine.fill(activeLayer.id, color, activeLayer.alphaLock))}
-        onClear={() => activeLayer && markDirty(engine.clear(activeLayer.id))}
-        onCopyPaste={() => {
-          if (!activeLayer || isGroup(activeLayer)) return
-          const piece = engine.canvas()
-          piece.ctx.drawImage(engine.layerCanvas(activeLayer.id), 0, 0)
-          piece.ctx.globalCompositeOperation = 'destination-in'
-          if (engine.selectionMask) piece.ctx.drawImage(engine.selectionMask, 0, 0)
-          copyPixels(piece.canvas)
-          const layer = newLayer(nextLayerName(doc))
-          loaded.current.set(layer.id, null)
-          engine.setLayerImage(layer.id, piece.canvas)
-          update((d) => ({ ...d, layers: insertAbove(d.layers, layer, activeLayer.id) }))
-          setActiveLayerId(layer.id)
-          markDirty(layer.id)
-        }}
-      />
 
       <div className="sketch-body">
         <div
@@ -658,19 +632,47 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onPointerUp={onPointerUp}
             onPointerCancel={() => {
               engine.cancelStroke()
-              if (engine.moving) markDirty(engine.endMove())
+              xf.up()
               gesture.current = null
             }}
             onPointerLeave={() => setCursor(null)}
             onContextMenu={(e) => e.preventDefault()}
           />
           {view && <SelectionMaskView sel={sel} engine={engine} view={view} />}
+          <div className="sketch-floatbars">
+            <TransformBar xf={xf} onDone={() => markDirty(xf.commit(sel))} onCancel={() => xf.cancel()} />
+            <SelectionBar
+              sel={sel}
+              tool={tool === 'lasso' || tool === 'rect'}
+              doc={doc}
+              root={root}
+              update={update}
+              usesReference={doc.layers.some((l) => l.reference)}
+              onFill={() => activeLayer && markDirty(engine.fill(activeLayer.id, color, activeLayer.alphaLock))}
+              onClear={() => activeLayer && markDirty(engine.clear(activeLayer.id))}
+              onCopyPaste={() => {
+                if (!activeLayer || isGroup(activeLayer)) return
+                const piece = engine.canvas()
+                piece.ctx.drawImage(engine.layerCanvas(activeLayer.id), 0, 0)
+                piece.ctx.globalCompositeOperation = 'destination-in'
+                if (engine.selectionMask) piece.ctx.drawImage(engine.selectionMask, 0, 0)
+                copyPixels(piece.canvas)
+                const layer = newLayer(nextLayerName(doc))
+                loaded.current.set(layer.id, null)
+                engine.setLayerImage(layer.id, piece.canvas)
+                update((d) => ({ ...d, layers: insertAbove(d.layers, layer, activeLayer.id) }))
+                setActiveLayerId(layer.id)
+                markDirty(layer.id)
+              }}
+            />
+          </div>
           {view && (
             <svg className="sketch-overlay">
               <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
                 {(symmetry === 'vertical' || symmetry === 'quad') && <line x1={doc.width / 2} y1={0} x2={doc.width / 2} y2={doc.height} className="sketch-guide" />}
                 {(symmetry === 'horizontal' || symmetry === 'quad') && <line x1={0} y1={doc.height / 2} x2={doc.width} y2={doc.height / 2} className="sketch-guide" />}
                 <SelectionOutline sel={sel} />
+                <TransformOverlay xf={xf} scale={view.scale} width={doc.width} height={doc.height} />
               </g>
               {cursorSize > 0 && cursor && (
                 <circle cx={view.x + cursor.x * view.scale} cy={view.y + cursor.y * view.scale} r={Math.max(1.5, cursorSize / 2)} className="sketch-cursor" />
