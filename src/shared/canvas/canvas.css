@@ -122,12 +122,6 @@
 .canvas-toolbar-slider input {
   width: 80px;
 }
-.canvas-toolbar-brush {
-  width: 130px;
-  height: 26px;
-  padding: 0 4px;
-  font-size: 12px;
-}
 .canvas-toolbar-value {
   min-width: 2ch;
   text-align: right;

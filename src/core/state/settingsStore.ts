@@ -25,8 +25,6 @@ export interface AppSettings {
   penSmoothing: number
   /** 0.1..1 */
   penOpacity: number
-  /** Sketch brush id the pen draws with; null/missing = a plain smooth line. */
-  penBrush?: string | null
 }
 
 const defaults = (): AppSettings => ({ spellCheck: true, spellLanguages: ['en', 'de'], personalWords: [], aiHelper: true, aiModel: 'small', askProject: false, penSize: 3, penSmoothing: 0.5, penOpacity: 1 })
@@ -58,8 +56,8 @@ export const useSettings = create<SettingsState>()((set, get) => ({
     // Sliders call this many times a second; write once they settle.
     clearTimeout(saveTimer)
     saveTimer = setTimeout(() => {
-      const { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, askProject, penSize, penSmoothing, penOpacity, penBrush } = get()
-      void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, askProject, penSize, penSmoothing, penOpacity, penBrush }))
+      const { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, askProject, penSize, penSmoothing, penOpacity } = get()
+      void settingsPath().then((p) => writeVersioned(p, { spellCheck, spellLanguages, personalWords, aiHelper, aiModel, askProject, penSize, penSmoothing, penOpacity }))
     }, 400)
   },
   addWord(word) {

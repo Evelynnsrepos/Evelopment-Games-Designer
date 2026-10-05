@@ -15,7 +15,7 @@ export interface FileSystem {
   appDataDir(): Promise<string>
   exists(path: string): Promise<boolean>
   readText(path: string): Promise<string>
-  /** Writes to `<path>.tmp` and renames over the target, so a crash never leaves half a file (spec 11). */
+  /** Writes to a `<path>.<random>.tmp` file and renames over the target, so a crash never leaves half a file (spec 11). */
   writeTextAtomic(path: string, text: string): Promise<void>
   /** Raw bytes, for images and audio in `assets/`. */
   readBinary(path: string): Promise<Uint8Array>

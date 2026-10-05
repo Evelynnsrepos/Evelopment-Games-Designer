@@ -23,6 +23,23 @@ describe('autosave', () => {
     expect(run).toHaveBeenCalledTimes(1)
     expect(hasPendingSaves()).toBe(false)
   })
+
+  it('never writes the same key twice at once, and flushAll waits for writes already running', async () => {
+    const order: string[] = []
+    let active = 0
+    const slow = (name: string) => async () => {
+      active++
+      expect(active).toBe(1)
+      await new Promise((r) => setTimeout(r, 20))
+      order.push(name)
+      active--
+    }
+    scheduleSave('root|meta', slow('old'), 0)
+    await new Promise((r) => setTimeout(r, 5)) // the timer has started the old write
+    scheduleSave('root|meta', slow('new'))
+    await flushAll('root|')
+    expect(order).toEqual(['old', 'new'])
+  })
 })
 
 describe('History', () => {

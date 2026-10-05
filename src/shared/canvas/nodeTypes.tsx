@@ -1,7 +1,6 @@
 import Konva from 'konva'
 import { useEffect, useState } from 'react'
 import { Arrow, Circle, Ellipse, Group, Image as KonvaImage, Line, Rect, Text } from 'react-konva'
-import { BrushLine } from './BrushLine'
 import { expandRect, pointsBounds, rectCenter, rectEdgePoint } from './geometry'
 import type {
   CommentPinNode,
@@ -155,9 +154,11 @@ const lineType: NodeType<LineNode> = {
       lineJoin: 'round' as const,
       hitStrokeWidth: Math.max(14, (n.strokeWidth ?? 2) + 10),
     }
-    const line = <Line {...common} tension={n.smooth ? 0.4 : 0} opacity={n.opacity ?? 1} />
-    if (n.brush && !n.arrow) return <BrushLine n={n} color={common.stroke} fallback={line} />
-    return n.arrow ? <Arrow {...common} fill={common.stroke} pointerLength={10 + common.strokeWidth} pointerWidth={10 + common.strokeWidth} /> : line
+    return n.arrow ? (
+      <Arrow {...common} fill={common.stroke} pointerLength={10 + common.strokeWidth} pointerWidth={10 + common.strokeWidth} />
+    ) : (
+      <Line {...common} tension={n.smooth ? 0.4 : 0} opacity={n.opacity ?? 1} />
+    )
   },
   bounds: (n) => expandRect(pointsBounds(n.points), (n.strokeWidth ?? 2) / 2 + (n.arrow ? 8 : 0)),
 }

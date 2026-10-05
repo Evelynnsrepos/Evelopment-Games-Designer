@@ -25,7 +25,8 @@ export class TauriFs implements FileSystem {
   }
   async writeTextAtomic(path: string, text: string) {
     await fs.mkdir(await dirname(path), { recursive: true })
-    const tmp = `${path}.tmp`
+    // A unique name per write: two saves of the same file at once must not share (and steal) one temp file.
+    const tmp = `${path}.${Math.random().toString(36).slice(2, 10)}.tmp`
     await fs.writeTextFile(tmp, text)
     await fs.rename(tmp, path)
   }
@@ -34,7 +35,8 @@ export class TauriFs implements FileSystem {
   }
   async writeBinaryAtomic(path: string, bytes: Uint8Array) {
     await fs.mkdir(await dirname(path), { recursive: true })
-    const tmp = `${path}.tmp`
+    // A unique name per write: two saves of the same file at once must not share (and steal) one temp file.
+    const tmp = `${path}.${Math.random().toString(36).slice(2, 10)}.tmp`
     await fs.writeFile(tmp, bytes)
     await fs.rename(tmp, path)
   }

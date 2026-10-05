@@ -19,18 +19,29 @@ export function scheduleSave(key: string, run: () => Promise<void>, delay = AUTO
   notify(true, null)
 }
 
+/** Saves of the same key that are being written right now; the next one waits, so an older write never lands last. */
+const running = new Map<string, Promise<void>>()
+
 export async function flush(key: string): Promise<void> {
   const job = pending.get(key)
   if (!job) return
   clearTimeout(job.timer)
   pending.delete(key)
-  try {
+  const before = running.get(key)
+  const run = (async () => {
+    await before?.catch(() => {})
     await job.run()
+  })()
+  running.set(key, run)
+  try {
+    await run
     notify(pending.size > 0, null)
     for (const fn of savedListeners) fn(key)
   } catch (error) {
     console.error(`Auto-save failed for ${key}`, error)
     notify(pending.size > 0, error)
+  } finally {
+    if (running.get(key) === run) running.delete(key)
   }
 }
 
@@ -39,8 +50,10 @@ export async function flushAll(prefix = ''): Promise<void> {
   // A save can schedule another (a drawing's pixels, then its document); a few rounds catch those.
   for (let round = 0; round < 4; round++) {
     const keys = [...pending.keys()].filter((k) => k.startsWith(prefix))
-    if (!keys.length) return
-    await Promise.all(keys.map(flush))
+    // Writes a timer already started must finish too before the project or app closes.
+    const busy = [...running].filter(([k]) => k.startsWith(prefix)).map(([, p]) => p.catch(() => {}))
+    if (!keys.length && !busy.length) return
+    await Promise.all([...keys.map(flush), ...busy])
   }
 }
 

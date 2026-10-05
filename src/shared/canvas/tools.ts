@@ -253,16 +253,13 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
     if (e.button !== 0) return
     const origin = e.world
     const points = [0, 0]
-    const { penSize, penSmoothing, penOpacity, penBrush } = useSettings.getState()
-    // With a Sketch brush the stroke keeps every point and its pen pressure.
-    const pressures = [e.pressure ?? 1]
-    const round = (v: number) => Math.round(v * 10) / 10
+    const { penSize, penSmoothing, penOpacity } = useSettings.getState()
     // Stabilizer: each drawn point only moves part of the way to the pointer, which irons out shaky hands.
     const follow = 1 - Math.min(0.9, penSmoothing * 0.9)
     let sx = 0
     let sy = 0
     let raw = { x: 0, y: 0 }
-    const make = (pts: number[], pr?: number[]): LineNode => ({
+    const make = (pts: number[]): LineNode => ({
       id: newId(),
       kind: 'line',
       layerId: api.activeLayerId,
@@ -272,7 +269,6 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
       ...options.defaults?.(),
       strokeWidth: penSize,
       ...(penOpacity < 1 ? { opacity: penOpacity } : {}),
-      ...(penBrush ? { brush: penBrush, pressures: pr ?? pts.filter((_, i) => i % 2 === 0).map(() => 1) } : {}),
       points: pts,
     })
     // QuickShape: rest at the end of the stroke to snap it to a clean shape; keep holding to resize, Shift for perfect.
@@ -306,8 +302,7 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
         sx += (raw.x - sx) * follow
         sy += (raw.y - sy) * follow
         points.push(sx, sy)
-        pressures.push(m.pressure ?? 1)
-        api.setDraft([make(points, pressures)])
+        api.setDraft([make(points)])
         if (Math.hypot(raw.x - rest.x, raw.y - rest.y) * api.viewport.scale > 4) {
           rest = raw
           arm()
@@ -323,10 +318,7 @@ export const penTool = (options: ToolOptions<LineNode> = {}): CanvasTool<any> =>
         }
         if (points.length < 4) points.push(0.5, 0.5) // a dot
         else points.push(raw.x, raw.y) // the stroke still ends where the pointer was let go
-        pressures.push(pressures[pressures.length - 1])
-        const node = penBrush
-          ? make(points.map(round), pressures.map((v) => Math.round(v * 100) / 100))
-          : make(simplifyPoints(points, 1.5 / api.viewport.scale))
+        const node = make(simplifyPoints(points, 1.5 / api.viewport.scale))
         api.update((s) => addNodes(s, [node]))
       },
       cancel() {
