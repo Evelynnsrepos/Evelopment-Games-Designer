@@ -1,4 +1,4 @@
-import { stabilize, type InputPoint } from './model'
+import type { InputPoint } from './model'
 
 /**
  * Pen input (Sketch Pro): pressure curve, tilt, eraser end, motion filtering
@@ -203,6 +203,19 @@ export interface PipelineOptions {
 }
 
 /**
+ * How far the smoothed point moves toward the pen in `dt` ms (0..1). It depends on
+ * time, not on how many points arrive, so a pen sending 200 points a second is
+ * smoothed as much as a mouse sending 60.
+ */
+export function followFor(streamline: number, dt: number): number {
+  const s = Math.max(0, Math.min(1, streamline))
+  if (s <= 0) return 1
+  // Time constant from 0 (off) to 180 ms (very smooth); the curve gives finer control at the low end.
+  const tau = 180 * s * s
+  return 1 - Math.exp(-Math.max(1, Math.min(50, dt)) / tau)
+}
+
+/**
  * One stroke's input path: motion filter → stabilization → StreamLine → Drawing Assist.
  * `push` returns the points to draw; `peek` does the same for predicted points
  * without changing anything, so they can be shown and then thrown away.
@@ -212,6 +225,7 @@ export class PenPipeline {
   private window: PenPoint[] = []
   private size: number
   private smooth: PenPoint | null = null
+  private lastT: number | null = null
   private lastRaw: { p: PenPoint; t: number } | null = null
   private opts: PipelineOptions
 
@@ -227,7 +241,10 @@ export class PenPipeline {
     this.window = [...this.window, { ...raw, ...f }].slice(-this.size)
     const win = this.window
     const avg = { ...raw, x: win.reduce((s, q) => s + q.x, 0) / win.length, y: win.reduce((s, q) => s + q.y, 0) / win.length }
-    this.smooth = this.smooth ? { ...avg, ...stabilize(this.smooth, avg, this.opts.streamline) } : avg
+    const prev = this.smooth
+    const k = followFor(this.opts.streamline, t - (this.lastT ?? t))
+    this.smooth = prev ? { ...avg, x: prev.x + (avg.x - prev.x) * k, y: prev.y + (avg.y - prev.y) * k, pressure: prev.pressure + (avg.pressure - prev.pressure) * k } : avg
+    if (commit) this.lastT = t
     return this.opts.constraint ? this.opts.constraint.apply(this.smooth, commit) : this.smooth
   }
 
@@ -240,7 +257,7 @@ export class PenPipeline {
 
   /** Predicted points to preview; nothing is remembered. */
   peek(raws: { p: PenPoint; t: number }[]): PenPoint[] {
-    const saved = { filter: this.filter, window: this.window, smooth: this.smooth }
+    const saved = { filter: this.filter, window: this.window, smooth: this.smooth, lastT: this.lastT }
     this.filter = this.filter.clone()
     const out: PenPoint[] = []
     for (const r of raws) {
@@ -250,16 +267,19 @@ export class PenPipeline {
     this.filter = saved.filter
     this.window = saved.window
     this.smooth = saved.smooth
+    this.lastT = saved.lastT
     return out
   }
 
-  /** At pen up: let the stabilization window catch up with the last real point. */
+  /** At pen up: let the smoothing catch up, so the stroke still ends where the pen was lifted. */
   flush(): PenPoint[] {
-    if (!this.lastRaw || this.size <= 1) return []
+    if (!this.lastRaw || (this.size <= 1 && this.opts.streamline <= 0)) return []
     const out: PenPoint[] = []
-    for (let i = 1; i < this.size; i++) {
-      const q = this.step(this.lastRaw.p, this.lastRaw.t + i, true)
+    const end = this.lastRaw.p
+    for (let i = 1; i <= 60; i++) {
+      const q = this.step(end, this.lastRaw.t + i * 16, true)
       if (q) out.push(q)
+      if (i >= this.size && this.smooth && Math.hypot(this.smooth.x - end.x, this.smooth.y - end.y) < 0.5) break
     }
     return out
   }

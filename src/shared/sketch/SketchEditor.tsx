@@ -258,6 +258,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   /** Layer id -> the asset path its pixels came from or were last saved to. */
   const loaded = useRef(new Map<Id, string | null>())
   const dirty = useRef(new Set<Id>())
+  /** Layers whose saved pixels are still being read; they are not saved until then, or the saved picture would be lost. */
+  const loading = useRef(new Set<Id>())
+  /** Schedules a pixel save; set once `flush` exists. */
+  const resave = useRef(() => {})
   /** Pixel saves go through the app's auto-save, so closing the app or project writes them too. */
   const saveKey = useRef(`${root}|sketch-pixels/${newId()}`).current
 
@@ -276,16 +280,24 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         continue
       }
       const path = layer.image
+      loading.current.add(layer.id)
       // Read through the file system (same-origin blob) so the canvas is never tainted and can be saved again.
       void resolveAssetPath(root, path)
         .then((abs) => getFs().readBinary(abs))
         .then((bytes) => createImageBitmap(new Blob([bytes as BlobPart])))
         .then((bmp) => {
           if (loaded.current.get(layer.id) !== path) return
-          engine.setLayerImage(layer.id, bmp)
+          // Painted on while it was loading: keep the new paint on top of the saved picture.
+          if (dirty.current.has(layer.id)) engine.underlay(layer.id, bmp)
+          else engine.setLayerImage(layer.id, bmp)
           setVersion(engine.version)
         })
         .catch(() => {})
+        .finally(() => {
+          loading.current.delete(layer.id)
+          // Paint that waited for the picture can be saved now.
+          if (dirty.current.has(layer.id)) resave.current()
+        })
     }
     for (const id of [...loaded.current.keys()]) {
       if (!doc.layers.some((l) => l.id === id)) {
@@ -297,8 +309,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   const flushNow = useCallback(async () => {
     if (!root || !dirty.current.size) return
-    const ids = [...dirty.current]
-    dirty.current.clear()
+    const ids = [...dirty.current].filter((id) => !loading.current.has(id))
+    for (const id of ids) dirty.current.delete(id)
+    if (!ids.length) {
+      if (dirty.current.size) resave.current()
+      return
+    }
     setSaving(true)
     const saved = new Map<Id, string | null>()
     for (const id of ids) {
@@ -326,6 +342,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   // Sketch Pro: one save at a time, so an older save never lands after a newer one (and reloads old pixels).
   const flushQueue = useRef<Promise<void>>(Promise.resolve())
   const flush = useCallback(() => (flushQueue.current = flushQueue.current.then(flushNow, flushNow)), [flushNow])
+  useEffect(() => {
+    resave.current = () => scheduleSave(saveKey, flush, 500)
+  }, [saveKey, flush])
 
   const markDirty = useCallback(
     (id: Id | null) => {

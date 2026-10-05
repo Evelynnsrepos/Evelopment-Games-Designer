@@ -147,6 +147,16 @@ export class SketchEngine {
     this.touched(id)
   }
 
+  /** Put an image underneath a layer's current pixels (a saved picture that arrived after painting started). */
+  underlay(id: Id, img: CanvasImageSource) {
+    const { ctx } = this.ensure(id)
+    ctx.save()
+    ctx.globalCompositeOperation = 'destination-over'
+    ctx.drawImage(img, 0, 0)
+    ctx.restore()
+    this.touched(id)
+  }
+
   dropLayer(id: Id) {
     this.layers.delete(id)
     this.layerVersions.delete(id)

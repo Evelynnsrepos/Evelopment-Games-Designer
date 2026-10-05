@@ -79,6 +79,27 @@ describe('reading the pen', () => {
 })
 
 describe('smoothing', () => {
+  it('smooths the same no matter how many points the pen sends', () => {
+    const run = (hz: number) => {
+      const pipe = new PenPipeline({ streamline: 0.6, stabilization: 0, motionFilter: 0 })
+      const dt = 1000 / hz
+      let last = { x: 0, y: 0 }
+      for (let t = 0; t <= 100; t += dt) for (const q of pipe.push({ x: t >= dt ? 100 : 0, y: 0, pressure: 1 }, t)) last = q
+      return last.x
+    }
+    // After the same 100 ms, a 240 Hz pen and a 60 Hz mouse are about equally far along.
+    expect(Math.abs(run(240) - run(60))).toBeLessThan(8)
+    expect(run(60)).toBeLessThan(80)
+  })
+
+  it('a smoothed stroke still ends where the pen was lifted', () => {
+    const pipe = new PenPipeline({ streamline: 1, stabilization: 0, motionFilter: 0 })
+    pipe.push({ x: 0, y: 0, pressure: 1 }, 0)
+    pipe.push({ x: 200, y: 0, pressure: 1 }, 16)
+    const tail = pipe.flush()
+    expect(tail[tail.length - 1].x).toBeGreaterThan(199)
+  })
+
   it('motion filter calms slow jitter but follows fast moves', () => {
     const f = new MotionFilter(0.8)
     let out = { x: 0, y: 0 }
