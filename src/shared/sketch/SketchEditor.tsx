@@ -1004,6 +1004,15 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         </div>
 
         <aside className="sketch-panel" onPointerDown={(e) => e.stopPropagation()}>
+          {/* Background colour at the top of the panel, where it is easy to find. */}
+          <div className="sketch-row sketch-background">
+            <span>{UI.background}</span>
+            <input type="color" value={doc.backgroundColor ?? '#ffffff'} onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.value }))} disabled={!doc.backgroundColor} />
+            <label className="sketch-check">
+              <input type="checkbox" checked={!doc.backgroundColor} onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.checked ? null : '#ffffff' }))} />
+              {UI.transparent}
+            </label>
+          </div>
           {panel}
           {activeLayer?.text && <TextPanel host={layerHost} layer={activeLayer} />}
           <ColorPanel color={color} setColor={setColor} swatches={swatches === SWATCHES ? [] : swatches} drop={drop} colorSpace={colorSpace} onColorSpace={(cs) => void setColorSpace(cs)} />

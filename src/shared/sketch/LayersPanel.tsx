@@ -67,8 +67,6 @@ const UI = {
   isReference: 'Reference layer',
   isPrivate: 'Hidden from export',
   dragHint: 'Drag to reorder. Drop outside the list to export as PNG.',
-  background: 'Background',
-  transparent: 'Transparent',
   groupName: 'Group',
   deleteTitle: (n: string) => `Delete ${n}?`,
   deleteMsg: 'The layer and its drawing are removed.',
@@ -459,14 +457,6 @@ export function LayersPanel({ host }: { host: LayerHost }) {
           )
         })}
       </div>
-      <label className="sketch-row sketch-background">
-        <span>{UI.background}</span>
-        <input type="color" value={doc.backgroundColor ?? '#ffffff'} onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.value }))} disabled={!doc.backgroundColor} />
-        <label className="sketch-check">
-          <input type="checkbox" checked={!doc.backgroundColor} onChange={(e) => update((d) => ({ ...d, backgroundColor: e.target.checked ? null : '#ffffff' }))} />
-          {UI.transparent}
-        </label>
-      </label>
       {shownMenu && (
         <>
           <div className="menu-backdrop" onClick={() => setMenu(null)} />
