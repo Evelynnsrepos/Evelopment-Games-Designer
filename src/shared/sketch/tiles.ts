@@ -72,11 +72,13 @@ export class TileHistory {
   private undoStack: UndoStep[] = []
   private redoStack: UndoStep[] = []
   private bytes = 0
+  private maxSteps: number
+  private budget: number
 
-  constructor(
-    private maxSteps = MAX_UNDO,
-    private budget = UNDO_BUDGET,
-  ) {}
+  constructor(maxSteps = MAX_UNDO, budget = UNDO_BUDGET) {
+    this.maxSteps = maxSteps
+    this.budget = budget
+  }
 
   /** Keep the tiles that differ; nothing is recorded when the edit changed nothing. */
   push(layerId: string, rects: Rect[], before: ImageData[], after: ImageData[]): boolean {
