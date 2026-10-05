@@ -210,7 +210,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const [libraryOpen, setLibraryOpen] = useState<'brush' | 'eraser' | null>(null)
   const [libraryAt, setLibraryAt] = useState({ x: 0, y: 0 })
   const [color, setColor] = useState('#111111')
-  const [activeLayerId, setActiveLayerId] = useState<Id>(doc.layers[doc.layers.length - 1]?.id ?? '')
+  // Start on the top layer you can paint on (not a group or a mask).
+  const [activeLayerId, setActiveLayerId] = useState<Id>([...doc.layers].reverse().find((l) => !l.kind)?.id ?? doc.layers[doc.layers.length - 1]?.id ?? '')
   const [, setVersion] = useState(0)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
   const [saving, setSaving] = useState(false)
