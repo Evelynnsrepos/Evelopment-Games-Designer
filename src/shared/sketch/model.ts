@@ -65,6 +65,13 @@ export interface SketchDoc {
   selections?: { id: Id; name: string; image: AssetPath }[]
   /** Drawing guide and the layers with Drawing Assist (Sketch Pro); missing = no guide. */
   guide?: DrawingGuide
+  // Sketch Pro canvas, time-lapse and files (feat/sketch-files); all optional.
+  /** Strokes and drawing time, shown in Canvas info; missing = nothing counted yet. */
+  stats?: { strokes: number; timeMs: number }
+  /** Time-lapse: small frames in the project's assets, one every few strokes. Missing = recording on, nothing yet. */
+  timelapse?: { enabled?: boolean; frames: AssetPath[] }
+  /** Reference Companion: a floating window with the whole canvas or an image; missing = closed. */
+  companion?: { mode: 'canvas' | 'image'; image?: AssetPath | null; x: number; y: number; width: number }
 }
 
 export const newLayer = (name: string): SketchLayer => ({

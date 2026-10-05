@@ -114,13 +114,22 @@ export function lzw(indices: Uint8Array, minCode: number): Uint8Array {
   return out.done()
 }
 
-export function encodeGif(frames: GifFrame[], loop = true): Uint8Array {
-  const { width, height } = frames[0].pixels
-  const out = new ByteWriter(true)
-  out.ascii('GIF89a').u16(width).u16(height).u8(0).u8(0).u8(0)
-  if (loop) out.u8(0x21).u8(0xff).u8(11).ascii('NETSCAPE2.0').u8(3).u8(1).u16(0).u8(0)
-  for (const f of frames) {
-    const { data } = f.pixels
+/** Adds frames one at a time, so long animations never need every frame in memory. */
+export class GifEncoder {
+  private out = new ByteWriter(true)
+  private width: number
+  private height: number
+  constructor(width: number, height: number, loop = true) {
+    this.width = width
+    this.height = height
+    this.out.ascii('GIF89a').u16(width).u16(height).u8(0).u8(0).u8(0)
+    if (loop) this.out.u8(0x21).u8(0xff).u8(11).ascii('NETSCAPE2.0').u8(3).u8(1).u16(0).u8(0)
+  }
+
+  /** `delay` in ms (GIF keeps 1/100 s). */
+  add(pixels: Pixels, delay: number) {
+    const { out, width, height } = this
+    const { data } = pixels
     const pal = palette(data)
     // Index 0 is transparent; the palette follows.
     const cache = new Int16Array(32768).fill(-1)
@@ -148,7 +157,7 @@ export function encodeGif(frames: GifFrame[], loop = true): Uint8Array {
       idx[p] = c
     }
     // Graphic control: delay, and clear to transparent before the next frame.
-    out.u8(0x21).u8(0xf9).u8(4).u8((2 << 2) | (transparent ? 1 : 0)).u16(Math.max(2, Math.round(f.delay / 10))).u8(0).u8(0)
+    out.u8(0x21).u8(0xf9).u8(4).u8((2 << 2) | (transparent ? 1 : 0)).u16(Math.max(2, Math.min(65535, Math.round(delay / 10)))).u8(0).u8(0)
     out.u8(0x2c).u16(0).u16(0).u16(width).u16(height).u8(0x80 | 7) // local table of 256
     for (let i = 0; i < 256; i++) {
       const c = pal[i - 1] ?? [0, 0, 0]
@@ -156,6 +165,14 @@ export function encodeGif(frames: GifFrame[], loop = true): Uint8Array {
     }
     out.u8(8).bytes(lzw(idx, 8))
   }
-  out.u8(0x3b)
-  return out.done()
+
+  done(): Uint8Array {
+    return this.out.u8(0x3b).done()
+  }
+}
+
+export function encodeGif(frames: GifFrame[], loop = true): Uint8Array {
+  const g = new GifEncoder(frames[0].pixels.width, frames[0].pixels.height, loop)
+  for (const f of frames) g.add(f.pixels, f.delay)
+  return g.done()
 }

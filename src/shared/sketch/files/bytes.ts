@@ -6,7 +6,10 @@
 export class ByteWriter {
   private buf = new Uint8Array(1024)
   length = 0
-  constructor(private le = false) {}
+  private le: boolean
+  constructor(le = false) {
+    this.le = le
+  }
 
   private room(n: number) {
     if (this.length + n <= this.buf.length) return
@@ -57,10 +60,11 @@ export class ByteWriter {
 export class ByteReader {
   pos = 0
   private view: DataView
-  constructor(
-    readonly data: Uint8Array,
-    private le = false,
-  ) {
+  readonly data: Uint8Array
+  private le: boolean
+  constructor(data: Uint8Array, le = false) {
+    this.data = data
+    this.le = le
     this.view = new DataView(data.buffer, data.byteOffset, data.byteLength)
   }
   need(n: number) {

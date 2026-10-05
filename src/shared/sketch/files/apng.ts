@@ -24,21 +24,40 @@ function idat(p: Pixels): Uint8Array {
   return zlibSync(raw, { level: 6 })
 }
 
-/** `delays` in ms per frame. Loops forever. */
+/** Adds frames one at a time (only the compressed data is kept). Loops forever. */
+export class ApngEncoder {
+  private body = new ByteWriter()
+  private seq = 0
+  private frames = 0
+  private width: number
+  private height: number
+  constructor(width: number, height: number) {
+    this.width = width
+    this.height = height
+  }
+
+  /** `delay` in ms. */
+  add(p: Pixels, delay: number) {
+    const ms = Math.max(1, Math.min(65535, Math.round(delay)))
+    chunk(this.body, 'fcTL', new ByteWriter().u32(this.seq++).u32(this.width).u32(this.height).u32(0).u32(0).u16(ms).u16(1000).u8(0).u8(0).done())
+    const data = idat(p)
+    if (this.frames++ === 0) chunk(this.body, 'IDAT', data)
+    else chunk(this.body, 'fdAT', new ByteWriter().u32(this.seq++).bytes(data).done())
+  }
+
+  done(): Uint8Array {
+    const out = new ByteWriter()
+    out.bytes([137, 80, 78, 71, 13, 10, 26, 10])
+    chunk(out, 'IHDR', new ByteWriter().u32(this.width).u32(this.height).u8(8).u8(6).u8(0).u8(0).u8(0).done())
+    chunk(out, 'acTL', new ByteWriter().u32(this.frames).u32(0).done())
+    out.bytes(this.body.done())
+    chunk(out, 'IEND', new Uint8Array())
+    return out.done()
+  }
+}
+
 export function encodeApng(frames: Pixels[], delays: number[]): Uint8Array {
-  const { width, height } = frames[0]
-  const out = new ByteWriter()
-  out.bytes([137, 80, 78, 71, 13, 10, 26, 10])
-  chunk(out, 'IHDR', new ByteWriter().u32(width).u32(height).u8(8).u8(6).u8(0).u8(0).u8(0).done())
-  chunk(out, 'acTL', new ByteWriter().u32(frames.length).u32(0).done())
-  let seq = 0
-  frames.forEach((f, i) => {
-    const delay = Math.max(1, Math.min(65535, Math.round(delays[i] ?? 100)))
-    chunk(out, 'fcTL', new ByteWriter().u32(seq++).u32(width).u32(height).u32(0).u32(0).u16(delay).u16(1000).u8(0).u8(0).done())
-    const data = idat(f)
-    if (i === 0) chunk(out, 'IDAT', data)
-    else chunk(out, 'fdAT', new ByteWriter().u32(seq++).bytes(data).done())
-  })
-  chunk(out, 'IEND', new Uint8Array())
-  return out.done()
+  const a = new ApngEncoder(frames[0].width, frames[0].height)
+  frames.forEach((f, i) => a.add(f, delays[i] ?? 100))
+  return a.done()
 }
