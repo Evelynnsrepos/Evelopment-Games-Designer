@@ -68,6 +68,14 @@ import { QuickMenu } from './QuickMenu'
 import { flipAbout, pinch, rotateAbout, toDocPoint, viewMatrix, zoomAbout, type View } from './view'
 // Sketch Pro: canvas, time-lapse and files.
 import { useSketchFiles } from './files/SketchFiles'
+// Sketch Pro: text layers (feat/sketch-text)
+import { Type } from 'lucide-react'
+import { useImportedFonts } from './fonts'
+import { TextBoxes, TextPanel } from './TextPanel'
+import { useTextLayers, useTextTool } from './textLayers'
+// Sketch Pro: Animation Assist and Page Assist (feat/sketch-text)
+import { AssistBar, AssistButtons } from './AssistBar'
+import { useAssist } from './assistView'
 // Sketch Pro: Adjustments, Liquify and Clone.
 import { AdjustMenu, AdjustStudio, type AdjustMode } from './adjust/AdjustStudio'
 
@@ -133,7 +141,7 @@ const UI = {
   saving: 'Saving…',
 }
 
-type Tool = 'brush' | 'eraser' | 'smudge' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand'
+type Tool = 'brush' | 'eraser' | 'smudge' | 'lasso' | 'rect' | 'move' | 'eyedropper' | 'hand' | 'text'
 
 const TOOLS: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
   { id: 'brush', icon: BrushIcon, label: UI.brush, key: 'b' },
@@ -144,6 +152,7 @@ const TOOLS: { id: Tool; icon: LucideIcon; label: string; key: string }[] = [
   { id: 'move', icon: Move, label: UI.move, key: 'v' },
   { id: 'eyedropper', icon: Pipette, label: UI.eyedropper, key: 'i' },
   { id: 'hand', icon: Hand, label: UI.hand, key: 'h' },
+  { id: 'text', icon: Type, label: 'Text (T): click to add text, drag a text box to move it', key: 't' },
 ]
 
 const SWATCHES = ['#111111', '#ffffff', '#e5484d', '#f08c2e', '#f5d90a', '#30a46c', '#3e8ef7', '#8e6cf0', '#d6409f', '#8d6e63']
@@ -285,7 +294,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     }
   }, [doc.layers, root, engine])
 
-  const flush = useCallback(async () => {
+  const flushNow = useCallback(async () => {
     if (!root || !dirty.current.size) return
     const ids = [...dirty.current]
     dirty.current.clear()
@@ -313,6 +322,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     for (const p of old) void resolveAssetPath(root, p).then((abs) => getFs().remove(abs).catch(() => {}))
     setSaving(false)
   }, [root, engine, update])
+  // Sketch Pro: one save at a time, so an older save never lands after a newer one (and reloads old pixels).
+  const flushQueue = useRef<Promise<void>>(Promise.resolve())
+  const flush = useCallback(() => (flushQueue.current = flushQueue.current.then(flushNow, flushNow)), [flushNow])
 
   const markDirty = useCallback(
     (id: Id | null) => {
@@ -354,6 +366,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     [saveKey],
   )
 
+  // Sketch Pro: Animation Assist and Page Assist (the view below draws through it).
+  const adoptLayer = useCallback((id: Id) => void loaded.current.set(id, null), [])
+  const assist = useAssist({ doc, update, engine, activeId: activeLayer?.id, setActive: setActiveLayerId, markDirty, adopt: adoptLayer, limit: maxLayers(doc.width, doc.height) })
+
   // ---- View ---------------------------------------------------------------
 
   const fit = useCallback(() => {
@@ -391,7 +407,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.transform(...viewMatrix(view))
     // Transparent: nothing is drawn behind the picture, so the app's own background and wallpaper show through.
     ctx.imageSmoothingEnabled = view.scale < 1 || !!view.rot
-    ctx.drawImage(engine.render(doc), 0, 0)
+    assist.paint(ctx)
     // Transparent pages are just a white outline over the app's wallpaper.
     const px = 1 / view.scale
     ctx.strokeStyle = doc.backgroundColor ? 'rgba(128,128,128,0.6)' : '#ffffff'
@@ -458,8 +474,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (t === 'eyedropper') {
       const picked = engine.pickColor(doc, p.x, p.y)
       if (picked) setColor(picked)
+    } else if (t === 'text') {
+      textTool.down(p)
     } else if (t === 'brush' || t === 'eraser' || t === 'smudge') {
-      if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
+      if (!activeLayer.visible || isGroup(activeLayer) || activeLayer.text || lockedInTree(doc.layers, activeLayer.id)) return
       const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
       const pipeline = new PenPipeline({
         streamline: strokeBrush.streamline,
@@ -479,6 +497,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       sel.down(p, e, () => engine.pixels(doc, ref?.id ?? null))
     } else if (t === 'move') {
       if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
+      if (activeLayer.text) return textTool.down(p, true)
       // Transform: the first press lifts the pixels; later presses move, scale, turn or bend them.
       if (!xf.active && !xf.begin(activeLayer.id)) return
       xf.down(p, view.scale)
@@ -494,6 +513,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     lastPointer.current = { x: e.clientX - box.left, y: e.clientY - box.top }
     if (isEraserEnd(e) !== hoverEraser) setHoverEraser(!hoverEraser)
     if (e.pointerType === 'touch' && touchMove(e)) return
+    if (textTool.move(p)) return
     const g = gesture.current
     if (!g) return
     if (g.kind === 'pan') {
@@ -530,6 +550,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (e.pointerType === 'touch' && touchUp(e)) return
+    textTool.up()
     const g = gesture.current
     gesture.current = null
     if (!g) return
@@ -606,6 +627,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     color,
     selectFrom: (canvas) => sel.fromCanvas(canvas),
   }
+  // Sketch Pro: text layers are drawn again when their settings or fonts change.
+  const fontsReady = useImportedFonts(root, doc.fonts)
+  useTextLayers(layerHost, fontsReady)
+  const textTool = useTextTool(layerHost)
 
   const insertImage = async (path: string, name = 'Image') => {
     if (!root) return
@@ -659,6 +684,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     'tool.move': () => setTool('move'),
     'tool.eyedropper': () => setTool('eyedropper'),
     'tool.hand': () => setTool('hand'),
+    'tool.text': () => setTool('text'),
     swapEraser: () => setTool(tool === 'eraser' ? 'brush' : 'eraser'),
     undo: () => undo(),
     redo: () => redo(),
@@ -849,6 +875,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
         {files.buttons}
+        <AssistButtons assist={assist} />
         {actions?.(async () => {
           await flush()
           return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
@@ -915,6 +942,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               <g transform={`matrix(${viewMatrix(view).join(' ')})`}>
                 {liveGuide && <GuideOverlay guide={liveGuide} width={doc.width} height={doc.height} scale={view.scale} editing={editingGuide} toDoc={toDoc} onChange={setGuide} />}
                 <SelectionOutline sel={sel} />
+                <TextBoxes layers={doc.layers} activeId={activeLayer?.id} scale={view.scale} all={tool === 'text'} />
                 <TransformOverlay xf={xf} scale={view.scale} width={doc.width} height={doc.height} />
                 {shapeOffer?.editing && <ShapeNodes shape={shapeOffer.shape} scale={view.scale} toDoc={toDoc} onChange={changeShape} />}
                 {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
@@ -959,6 +987,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             />
           )}
           {files.stage}
+          {/* oxlint-disable-next-line react/refs -- the assist cache is only read while drawing */}
+          <AssistBar assist={assist} engine={engine} title={title} />
           {doc.references.map((r) => (
             <ReferenceWindow
               key={r.id}
@@ -974,6 +1004,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
         <aside className="sketch-panel" onPointerDown={(e) => e.stopPropagation()}>
           {panel}
+          {activeLayer?.text && <TextPanel host={layerHost} layer={activeLayer} />}
           <ColorPanel color={color} setColor={setColor} swatches={swatches === SWATCHES ? [] : swatches} drop={drop} colorSpace={colorSpace} onColorSpace={(cs) => void setColorSpace(cs)} />
 
           <section>

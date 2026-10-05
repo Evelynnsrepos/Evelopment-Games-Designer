@@ -2,6 +2,7 @@ import { zipSync } from 'fflate'
 import { resolveAssetPath } from '@/core/assets'
 import { getFs, isTauri } from '@/core/fs'
 import type { AssetPath } from '@/core/model'
+import { frameIds, normalizeAnimation, playable, sequence, showFrames } from '../assist'
 import type { SketchEngine } from '../engine'
 import { exportLayers, isGroup, isMask, layerTree, subtreeStack } from '../layers'
 import type { SketchDoc } from '../model'
@@ -116,16 +117,29 @@ function flat(engine: SketchEngine, doc: SketchDoc, background: string | null): 
   return canvas
 }
 
-/** Each visible top-level layer or group is one frame (until drawings have real animation frames). */
+/**
+ * Animation frames, one per tick. With Animation Assist on, its frames, holds,
+ * ping-pong and background / foreground frames are used; otherwise each visible
+ * top-level layer or group is one frame.
+ */
 export function layerFrames(engine: SketchEngine, doc: SketchDoc): (() => HTMLCanvasElement)[] {
   const layers = exportLayers(doc.layers)
+  const draw = (stack: SketchDoc['layers']) => () => {
+    const { canvas, ctx } = makeCanvas(doc.width, doc.height)
+    ctx.drawImage(engine.render({ layers: stack, backgroundColor: doc.backgroundColor }, true), 0, 0)
+    return canvas
+  }
+  if (doc.animation?.on) {
+    const a = normalizeAnimation(doc.animation)
+    const ids = frameIds(layers)
+    const frames = playable(ids.length, a)
+    // Background and foreground frames show under / over every frame.
+    const fixed = ids.map((_, i) => i).filter((i) => !frames.includes(i))
+    return sequence(ids, frames, a.holds, a.mode).map((f) => draw(showFrames(layers, ids, [...fixed, f])))
+  }
   return layerTree(layers)
     .filter((n) => n.layer.visible)
-    .map((n) => () => {
-      const { canvas, ctx } = makeCanvas(doc.width, doc.height)
-      ctx.drawImage(engine.render({ layers: subtreeStack(layers, n.layer.id), backgroundColor: doc.backgroundColor }, true), 0, 0)
-      return canvas
-    })
+    .map((n) => draw(subtreeStack(layers, n.layer.id)))
 }
 
 export async function exportDrawing(format: ExportFormat, engine: SketchEngine, doc: SketchDoc, fps = 8): Promise<Exported> {
@@ -159,6 +173,7 @@ export async function exportDrawing(format: ExportFormat, engine: SketchEngine, 
     }
     default: {
       const frames = layerFrames(engine, doc)
+      if (doc.animation?.on) fps = normalizeAnimation(doc.animation).fps
       return encodeAnimation(
         format,
         width,

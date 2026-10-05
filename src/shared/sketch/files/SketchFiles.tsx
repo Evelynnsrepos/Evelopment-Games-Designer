@@ -31,6 +31,7 @@ const UI = {
     { id: 'layers', label: 'Each layer as a PNG (zip)' },
   ] as { id: ExportFormat; label: string }[],
   animTitle: 'Animation: each visible top-level layer or group is one frame',
+  animAssist: 'Animation: the Animation Assist frames, at its speed',
   animFormats: [
     { id: 'gif', label: 'Animated GIF' },
     { id: 'apng', label: 'Animated PNG' },
@@ -265,14 +266,14 @@ export function useSketchFiles(host: FilesHost) {
                 {f.label}
               </button>
             ))}
-            <div className="sketch-files-menu-head">{UI.animTitle}</div>
+            <div className="sketch-files-menu-head">{doc.animation?.on ? UI.animAssist : UI.animTitle}</div>
             {UI.animFormats.map((f) => (
               <button key={f.id} onClick={() => void exportAs(f.id)}>
                 {f.label}
                 {f.id === 'webm' && !canEncodeVideo() ? ' (GIF here)' : ''}
               </button>
             ))}
-            <label className="sketch-files-fps">
+            <label className="sketch-files-fps" hidden={!!doc.animation?.on}>
               {UI.fps}
               <select className="input" value={fps} onChange={(e) => setFps(Number(e.target.value))}>
                 {[2, 4, 6, 8, 12, 15, 24, 30].map((n) => (
