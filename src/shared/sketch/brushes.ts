@@ -19,7 +19,7 @@ export { GRAINS, seeded, SHAPES, tipImage, type BrushGrain, type BrushShape, typ
 
 export const RENDER_MODES = [
   { id: 'light-glaze', label: 'Light glaze', hint: 'Stamps build up gently, never past the brush opacity.' },
-  { id: 'uniform-glaze', label: 'Uniform glaze', hint: 'Even colour: overlapping stamps don’t build up.' },
+  { id: 'uniform-glaze', label: 'Uniform glaze', hint: 'Even color: overlapping stamps don’t build up.' },
   { id: 'intense-glaze', label: 'Intense glaze', hint: 'Stamps build up quickly, never past the brush opacity.' },
   { id: 'heavy-glaze', label: 'Heavy glaze', hint: 'Thick paint that covers almost at once.' },
   { id: 'uniform-blending', label: 'Uniform blending', hint: 'Each stamp lands on the layer, so overlaps get stronger.' },
