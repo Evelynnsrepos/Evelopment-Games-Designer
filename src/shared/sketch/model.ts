@@ -7,6 +7,7 @@ import { newId, type AssetPath, type Id } from '@/core/model'
  */
 
 import type { BlendMode } from './blend'
+import type { DrawingGuide } from './guides'
 
 export { BLEND_MODES, type BlendMode } from './blend'
 
@@ -45,6 +46,8 @@ export interface SketchDoc {
   references: SketchReference[]
   /** The picture without background as a transparent PNG, for placing it elsewhere (Moodboard stickers). */
   sticker?: AssetPath | null
+  /** Drawing guide and the layers with Drawing Assist (Sketch Pro); missing = no guide. */
+  guide?: DrawingGuide
 }
 
 export const newLayer = (name: string): SketchLayer => ({

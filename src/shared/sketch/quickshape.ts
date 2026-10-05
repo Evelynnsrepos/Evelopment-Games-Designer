@@ -215,6 +215,40 @@ export function perfect(shape: Shape): Shape {
   }
 }
 
+/** Lines within `tolDeg` of a 15° step snap to it even without Shift (level, upright, 45°...). */
+export function gentle(shape: Shape, tolDeg = 3): Shape {
+  if (shape.kind !== 'line') return shape
+  const [a, b] = shape.points
+  const snapped = snapAngle(a, b)
+  const off = Math.abs(Math.atan2(b.y - a.y, b.x - a.x) - Math.atan2(snapped.y - a.y, snapped.x - a.x)) % (Math.PI * 2)
+  return Math.min(off, Math.PI * 2 - off) <= (tolDeg * Math.PI) / 180 ? { ...shape, points: [a, snapped] } : shape
+}
+
+// ---- Edit Shape: draggable nodes after a shape snapped -------------------------------
+
+/** The points that can be dragged: corners, or center + radius handles for round shapes. */
+export function shapeNodes(shape: Shape): Pt[] {
+  const p = shape.points
+  if (shape.kind === 'circle') return [p[0], { x: p[0].x + p[1].x, y: p[0].y }]
+  if (shape.kind === 'ellipse') return [p[0], { x: p[0].x + p[1].x, y: p[0].y }, { x: p[0].x, y: p[0].y + p[1].y }]
+  return p
+}
+
+/** The shape with node `i` dragged to `to`. Rectangles become free four-cornered shapes. */
+export function moveNode(shape: Shape, i: number, to: Pt): Shape {
+  const p = shape.points
+  if (shape.kind === 'circle' || shape.kind === 'ellipse') {
+    const c = p[0]
+    if (i === 0) return { ...shape, points: [to, p[1]] }
+    if (shape.kind === 'circle') {
+      const r = Math.max(1, dist(c, to))
+      return { ...shape, points: [c, { x: r, y: r }] }
+    }
+    return { ...shape, points: [c, i === 1 ? { x: Math.max(1, Math.abs(to.x - c.x)), y: p[1].y } : { x: p[1].x, y: Math.max(1, Math.abs(to.y - c.y)) }] }
+  }
+  return { kind: shape.kind === 'rectangle' ? 'quad' : shape.kind, points: p.map((q, j) => (j === i ? to : q)) }
+}
+
 /** Shift is tracked app-wide so tools can ask for the perfect shape without a key event of their own. */
 export const keys = { shift: false }
 if (typeof window !== 'undefined') {
