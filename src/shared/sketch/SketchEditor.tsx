@@ -28,7 +28,7 @@ import { useCallback, useEffect, useImperativeHandle, useRef, useState, type Rea
 import { importAssetFromBlob, pickAndImportAssets, resolveAssetPath } from '@/core/assets'
 import { getFs } from '@/core/fs'
 import { newId, type Id } from '@/core/model'
-import { useProjectStore } from '@/core/state'
+import { flush as flushSave, scheduleSave, useProjectStore } from '@/core/state'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { SketchEngine } from './engine'
 import { drawPreview } from './brushes'
@@ -247,7 +247,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   /** Layer id -> the asset path its pixels came from or were last saved to. */
   const loaded = useRef(new Map<Id, string | null>())
   const dirty = useRef(new Set<Id>())
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  /** Pixel saves go through the app's auto-save, so closing the app or project writes them too. */
+  const saveKey = useRef(`${root}|sketch-pixels/${newId()}`).current
 
   useEffect(() => {
     if (!root) return
@@ -317,10 +318,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if (!id) return
       dirty.current.add(id)
       setVersion(engine.version)
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      saveTimer.current = setTimeout(() => void flush(), 1200)
+      scheduleSave(saveKey, flush, 1200)
     },
-    [engine, flush],
+    [engine, flush, saveKey],
   )
 
   // ColorDrop: drag the colour onto the canvas to fill (Sketch Pro).
@@ -349,11 +349,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   // Save on unmount (closing the panel or the app).
   useEffect(
-    () => () => {
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      void flush()
-    },
-    [flush],
+    () => () => void flushSave(saveKey),
+    [saveKey],
   )
 
   // ---- View ---------------------------------------------------------------
