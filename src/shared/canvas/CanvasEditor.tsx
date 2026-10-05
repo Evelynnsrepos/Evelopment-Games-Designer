@@ -15,6 +15,8 @@ import { Group, Layer as KonvaLayer, Rect, Stage, Transformer } from 'react-konv
 import { isPresenceActive, setPresence } from '@/core/collab'
 import type { Id } from '@/core/model'
 import { panelKey, usePanelContext } from '@/core/state'
+import { useInputSettings } from '../sketch/inputSettings'
+import { pressureOf } from '../sketch/pen'
 import { RemoteCursors } from './RemoteCursors'
 import { CanvasToolbar } from './CanvasToolbar'
 import { fitRect, screenToWorld, transformBounds, unionRects, zoomAt } from './geometry'
@@ -384,6 +386,7 @@ export function CanvasEditor<N extends NodeBase>(props: CanvasEditorProps<N>) {
       alt: ev.altKey,
       mod: ev.ctrlKey || ev.metaKey,
       clickCount,
+      pressure: 'pressure' in ev ? pressureOf(ev, useInputSettings.getState().pressureCurve) : 1,
     }
   }
 

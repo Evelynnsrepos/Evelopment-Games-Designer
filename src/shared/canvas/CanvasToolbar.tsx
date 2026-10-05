@@ -1,6 +1,7 @@
 import { Redo2, Scan, Undo2, ZoomIn, ZoomOut } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useSettings } from '@/core/state'
+import { useBrushLibrary } from '../sketch/library'
 import type { CanvasTool } from './types'
 
 export const TOOLBAR_LABELS = {
@@ -14,6 +15,8 @@ export const TOOLBAR_LABELS = {
   penSize: 'Size',
   smoothing: 'Smoothing',
   opacity: 'Opacity',
+  brush: 'Brush: the same brushes as the Sketch tool',
+  plainLine: 'Plain line',
 }
 
 export interface CanvasToolbarProps {
@@ -99,8 +102,29 @@ function PenOptions() {
   const smoothing = useSettings((s) => s.penSmoothing)
   const opacity = useSettings((s) => s.penOpacity)
   const update = useSettings((s) => s.update)
+  const penBrush = useSettings((s) => s.penBrush ?? '')
+  const sets = useBrushLibrary((s) => s.sets)
+  const brushes = useBrushLibrary((s) => s.brushes)
+  useEffect(() => {
+    void useBrushLibrary.getState().load()
+  }, [])
   return (
     <>
+      <select className="input canvas-toolbar-brush" title={TOOLBAR_LABELS.brush} aria-label={TOOLBAR_LABELS.brush} value={penBrush} onChange={(e) => update({ penBrush: e.target.value || null })}>
+        <option value="">{TOOLBAR_LABELS.plainLine}</option>
+        {sets.map((set) => (
+          <optgroup key={set.id} label={set.name}>
+            {set.brushIds.map((id) => {
+              const b = brushes.find((x) => x.id === id)
+              return b ? (
+                <option key={id} value={id}>
+                  {b.name}
+                </option>
+              ) : null
+            })}
+          </optgroup>
+        ))}
+      </select>
       <label className="canvas-toolbar-slider" title={`${TOOLBAR_LABELS.penSize}: ${size}px`}>
         <span>{TOOLBAR_LABELS.penSize}</span>
         <input type="range" min={1} max={40} step={1} value={size} onChange={(e) => update({ penSize: Number(e.target.value) })} />

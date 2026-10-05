@@ -77,6 +77,10 @@ export interface LineNode extends NodeBase {
   smooth?: boolean
   /** 0..1, pen strokes only. */
   opacity?: number
+  /** Drawn with this Sketch brush (pen strokes); missing = a plain line. */
+  brush?: string
+  /** Pen pressure 0..1, one per point (brush strokes). */
+  pressures?: number[]
 }
 
 export interface TextNode extends NodeBase {
@@ -220,6 +224,8 @@ export interface ToolPointerEvent {
   mod: boolean
   /** 2 for the second click of a double-click. */
   clickCount: number
+  /** Pen pressure 0..1 through the user's pressure curve; 1 for mice and fingers. */
+  pressure?: number
 }
 
 /** Returned by `pointerDown` to follow a drag until release. */
