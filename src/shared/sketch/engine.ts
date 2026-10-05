@@ -1,6 +1,6 @@
 import type { Id } from '@/core/model'
 import { blendPixel, CANVAS_BLENDS, type BlendMode } from './blend'
-import { colorStroke, StrokeStamper, type BrushSettings } from './brushes'
+import { brushReach, colorStroke, compositeStroke, StrokeStamper, type BrushSettings } from './brushes'
 import { GlCompositor, parseHex, type GlLayer } from './gl'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
 import { TileHistory, tilesIn, type Rect } from './tiles'
@@ -136,7 +136,7 @@ export class SketchEngine {
     this.stroke = makeCanvas(this.width, this.height)
     this.strokeOpts = opts
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, this.mirrorFor(opts))
+    this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, this.mirrorFor(opts), undefined, opts.color)
     this.stamper.add(p)
     this.version++
   }
@@ -152,20 +152,23 @@ export class SketchEngine {
     if (!this.stroke || !this.strokeOpts) return
     this.stroke.ctx.clearRect(0, 0, this.width, this.height)
     this.strokeBounds = null
-    this.stamper = new StrokeStamper(this.stroke.ctx, this.strokeOpts.brush, this.mirrorFor(this.strokeOpts), 1)
+    this.stamper = new StrokeStamper(this.stroke.ctx, this.strokeOpts.brush, this.mirrorFor(this.strokeOpts), 1, this.strokeOpts.color)
     for (const p of points) this.stamper.add(p)
     this.version++
   }
 
   /** Draw the stroke into `ctx` the way it will land on the layer. */
   private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
-    colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)
-    ctx.save()
-    if (this.selection) ctx.clip(this.selection)
-    ctx.globalAlpha = opts.brush.opacity
-    ctx.globalCompositeOperation = opts.erase ? 'destination-out' : opts.layer.alphaLock ? 'source-atop' : 'source-over'
-    ctx.drawImage(this.paint.canvas, 0, 0)
-    ctx.restore()
+    const area = this.strokeArea(opts) ?? undefined
+    colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
+    compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: this.selection, area })
+  }
+
+  /** Where the stroke being drawn can have paint. */
+  private strokeArea(opts: StrokeOptions): Rect | null {
+    const b = this.strokeBounds
+    const reach = brushReach(opts.brush)
+    return b ? { x: b.x0 - reach, y: b.y0 - reach, w: b.x1 - b.x0 + 2 * reach, h: b.y1 - b.y0 + 2 * reach } : null
   }
 
   /** Finish the stroke: merge it into the layer and record undo. Returns the changed layer. */
@@ -174,9 +177,7 @@ export class SketchEngine {
     if (!this.stroke || !opts) return null
     this.stamper?.finish()
     const layer = this.ensure(opts.layer.id)
-    const b = this.strokeBounds
-    const reach = opts.brush.size * (1 + opts.brush.sizeJitter + opts.brush.scatter) + 4
-    const area = b ? { x: b.x0 - reach, y: b.y0 - reach, w: b.x1 - b.x0 + 2 * reach, h: b.y1 - b.y0 + 2 * reach } : null
+    const area = this.strokeArea(opts)
     this.withUndo(opts.layer.id, area, () => this.applyStroke(layer.ctx, opts))
     this.stroke = null
     this.stamper = null
