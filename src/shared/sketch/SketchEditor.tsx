@@ -49,6 +49,8 @@ import { useSelector } from './selector'
 import { copyPixels } from './clipboard'
 import { TransformBar, TransformOverlay } from './TransformTools'
 import { useTransformer } from './transformer'
+import { ColorDropBar, ColorDropView, ColorPanel } from './ColorPanel'
+import { useColorDrop } from './colordrop'
 
 const UI = {
   brush: 'Brush (B)',
@@ -140,9 +142,10 @@ interface View {
 export function SketchEditor({ doc, update, active, title, actions, swatches = SWATCHES, panel, editorRef }: SketchEditorProps) {
   const root = useProjectStore((s) => s.root)
   const engineRef = useRef<SketchEngine | null>(null)
-  if (!engineRef.current || engineRef.current.width !== doc.width || engineRef.current.height !== doc.height) {
+  const colorSpace = doc.colorSpace ?? 'srgb'
+  if (!engineRef.current || engineRef.current.width !== doc.width || engineRef.current.height !== doc.height || engineRef.current.colorSpace !== colorSpace) {
     // oxlint-disable-next-line react/refs -- the engine is a mutable drawing surface, created once per canvas size
-    engineRef.current = new SketchEngine(doc.width, doc.height)
+    engineRef.current = new SketchEngine(doc.width, doc.height, colorSpace)
   }
   // oxlint-disable-next-line react/refs
   const engine = engineRef.current
@@ -264,6 +267,30 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     [engine, flush],
   )
 
+  // ColorDrop: drag the colour onto the canvas to fill (Sketch Pro).
+  const drop = useColorDrop(
+    engine,
+    {
+      doc,
+      layer: activeLayer,
+      toDoc: (cx, cy) => {
+        const r = viewCanvas.current?.getBoundingClientRect()
+        const v = viewRef.current
+        if (!r || !v || cx < r.left || cy < r.top || cx > r.right || cy > r.bottom) return null
+        const q = { x: (cx - r.left - v.x) / v.scale, y: (cy - r.top - v.y) / v.scale }
+        return q.x < 0 || q.y < 0 || q.x >= doc.width || q.y >= doc.height ? null : q
+      },
+      markDirty,
+    },
+    tool,
+  )
+  /** Switching sRGB / Display P3 makes a new engine; pixels are saved first and loaded again. */
+  const setColorSpace = async (cs: 'srgb' | 'display-p3') => {
+    await flush()
+    loaded.current.clear()
+    update((d) => ({ ...d, colorSpace: cs }))
+  }
+
   // Save on unmount (closing the panel or the app).
   useEffect(
     () => () => {
@@ -300,7 +327,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       canvas.style.width = `${w}px`
       canvas.style.height = `${h}px`
     }
-    const ctx = canvas.getContext('2d')!
+    const ctx = canvas.getContext('2d', { colorSpace })!
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
     ctx.save()
@@ -352,6 +379,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (e.button !== 0 && e.button !== 1) return
     e.currentTarget.setPointerCapture(e.pointerId)
     const p = toDoc(e)
+    // After a ColorDrop, clicks keep filling (or recolouring).
+    if (drop.continuing && t !== 'hand' && e.button === 0) return drop.fillAt(p, drop.recolor ? color : drop.continuing)
     if (t === 'hand') {
       gesture.current = { kind: 'pan', sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
     } else if (t === 'eyedropper') {
@@ -625,6 +654,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           style={{ cursor: tool === 'hand' ? 'grab' : tool === 'brush' || tool === 'eraser' ? 'none' : 'crosshair' }}
         >
           <canvas
+            key={colorSpace}
             ref={viewCanvas}
             className="sketch-canvas"
             onPointerDown={onPointerDown}
@@ -639,7 +669,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onContextMenu={(e) => e.preventDefault()}
           />
           {view && <SelectionMaskView sel={sel} engine={engine} view={view} />}
+          <ColorDropView drop={drop} view={view} />
           <div className="sketch-floatbars">
+            <ColorDropBar drop={drop} color={color} />
             <TransformBar xf={xf} onDone={() => markDirty(xf.commit(sel))} onCancel={() => xf.cancel()} />
             <SelectionBar
               sel={sel}
@@ -694,15 +726,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
         <aside className="sketch-panel" onPointerDown={(e) => e.stopPropagation()}>
           {panel}
-          <section>
-            <h4>{UI.color}</h4>
-            <div className="sketch-colors">
-              <input type="color" value={color} onChange={(e) => setColor(e.target.value)} aria-label={UI.color} />
-              {swatches.map((s) => (
-                <button key={s} className={`sketch-swatch${s === color ? ' is-active' : ''}`} style={{ background: s }} title={s} onClick={() => setColor(s)} />
-              ))}
-            </div>
-          </section>
+          <ColorPanel color={color} setColor={setColor} swatches={swatches === SWATCHES ? [] : swatches} drop={drop} colorSpace={colorSpace} onColorSpace={(cs) => void setColorSpace(cs)} />
 
           <section>
             <div className="sketch-current-brush">
