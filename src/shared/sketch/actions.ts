@@ -13,6 +13,7 @@ export const ACTIONS = [
   { id: 'tool.move', label: 'Move', keys: ['v'] },
   { id: 'tool.eyedropper', label: 'Eyedropper', keys: ['i'] },
   { id: 'tool.hand', label: 'Pan', keys: ['h'] },
+  { id: 'tool.text', label: 'Text', keys: ['t'] },
   { id: 'swapEraser', label: 'Switch brush / eraser', keys: ['x'] },
   { id: 'undo', label: 'Undo', keys: ['ctrl+z'] },
   { id: 'redo', label: 'Redo', keys: ['ctrl+y', 'ctrl+shift+z'] },

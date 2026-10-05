@@ -8,6 +8,8 @@ import { newId, type AssetPath, type Id } from '@/core/model'
 
 import type { BlendMode } from './blend'
 import type { DrawingGuide } from './guides'
+import type { AnimationSettings, PageSettings } from './assist'
+import type { SketchText } from './text'
 
 export { BLEND_MODES, type BlendMode } from './blend'
 
@@ -37,6 +39,8 @@ export interface SketchLayer {
   reference?: boolean
   /** Shown while drawing, left out of exports. */
   private?: boolean
+  /** Text layer: the text is drawn into the layer again whenever this changes (Sketch Pro). */
+  text?: SketchText
 }
 
 /** An image floating over the canvas to draw from; not part of the picture. */
@@ -65,6 +69,12 @@ export interface SketchDoc {
   selections?: { id: Id; name: string; image: AssetPath }[]
   /** Drawing guide and the layers with Drawing Assist (Sketch Pro); missing = no guide. */
   guide?: DrawingGuide
+  /** Font files imported into this drawing, for text layers (Sketch Pro). */
+  fonts?: { id: Id; family: string; file: AssetPath }[]
+  /** Animation Assist: every top-level layer or group is a frame (Sketch Pro). */
+  animation?: AnimationSettings
+  /** Page Assist: every top-level layer or group is a page (Sketch Pro). */
+  pages?: PageSettings
 }
 
 export const newLayer = (name: string): SketchLayer => ({

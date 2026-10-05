@@ -1,0 +1,62 @@
+/* Sketch Pro: text layers */
+.sketch-text-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sketch-text-input {
+  width: 100%;
+  resize: vertical;
+  font: inherit;
+}
+.sketch-text-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sketch-text-row > span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.sketch-text-row > span:first-child {
+  width: 62px;
+  flex: none;
+  color: inherit;
+  font-size: inherit;
+}
+.sketch-text-row .input {
+  flex: 1;
+  min-width: 0;
+}
+.sketch-text-row input[type='color'] {
+  width: 28px;
+  height: 22px;
+  padding: 0;
+  border: none;
+  background: none;
+}
+.sketch-text-num {
+  max-width: 76px;
+}
+.sketch-text-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+}
+.sketch-text-glyph {
+  font-size: 11px;
+  font-weight: 600;
+}
+.sketch-text-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.sketch-textbox {
+  fill: none;
+  stroke: var(--text-muted);
+}
+.sketch-textbox.is-active {
+  stroke: var(--accent);
+}
