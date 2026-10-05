@@ -24,6 +24,7 @@ import {
 } from './color'
 import { usePalettes } from './palettes'
 import './color.css'
+import { viewMatrix, type View } from './view'
 
 const UI = {
   color: 'Colour',
@@ -508,7 +509,7 @@ function Palettes({ color, setColor }: PickerProps) {
 }
 
 /** The chip under the pointer while dragging a colour, and the live fill preview. */
-export function ColorDropView({ drop, view }: { drop: ColorDrop; view: { x: number; y: number; scale: number } | null }) {
+export function ColorDropView({ drop, view }: { drop: ColorDrop; view: View | null }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const pv = drop.preview
   useEffect(() => {
@@ -524,7 +525,7 @@ export function ColorDropView({ drop, view }: { drop: ColorDrop; view: { x: numb
   return (
     <>
       {pv && view && (
-        <canvas ref={ref} className="sketch-sel-mask" style={{ left: view.x, top: view.y, width: pv.width * view.scale, height: pv.height * view.scale }} />
+        <canvas ref={ref} className="sketch-sel-mask" style={{ left: 0, top: 0, width: pv.width, height: pv.height, transformOrigin: '0 0', transform: `matrix(${viewMatrix(view).join(',')})` }} />
       )}
       {drop.dragging && (
         <span className="cp-drag-chip" style={{ left: drop.dragging.x, top: drop.dragging.y, background: drop.dragging.color }}>

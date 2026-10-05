@@ -31,6 +31,8 @@ export interface StrokeOptions {
   color: string
   symmetry: SymmetryMode
   erase: boolean
+  /** Copies of each dab for a symmetry guide; replaces `symmetry` when set (Sketch Pro guides). */
+  mirror?: ((p: { x: number; y: number }) => { x: number; y: number }[]) | null
 }
 
 type LayerStack = Pick<SketchDoc, 'layers' | 'backgroundColor'>
@@ -47,6 +49,9 @@ export class SketchEngine {
   private strokeOpts: StrokeOptions | null = null
   /** How far the stroke being drawn reaches (dab centers), so undo only keeps those tiles. */
   private strokeBounds: { x0: number; y0: number; x1: number; y1: number } | null = null
+  /** Predicted points ahead of the pen, shown for one frame only and never saved (Sketch Pro). */
+  private predicted: Canvas2D | null = null
+  private joined: Canvas2D | null = null
   /** The stroke colored, ready to composite. */
   private paint: Canvas2D
   /** Pixels being moved with the Move tool, lifted off their layer. */
@@ -159,7 +164,7 @@ export class SketchEngine {
   /** Mirror copies of a dab, remembering how far the stroke reaches. */
   private mirrorFor(opts: StrokeOptions) {
     return (q: { x: number; y: number }) => {
-      const pts = mirrored(q, this.width, this.height, opts.symmetry)
+      const pts = opts.mirror ? opts.mirror(q) : mirrored(q, this.width, this.height, opts.symmetry)
       const b = (this.strokeBounds ??= { x0: Infinity, y0: Infinity, x1: -Infinity, y1: -Infinity })
       for (const m of pts) {
         b.x0 = Math.min(b.x0, m.x)
@@ -173,6 +178,7 @@ export class SketchEngine {
 
   beginStroke(opts: StrokeOptions, p: InputPoint) {
     this.stroke = this.canvas()
+    this.predicted = null
     this.strokeOpts = opts
     this.strokeBounds = null
     this.stamper = new StrokeStamper(this.stroke.ctx, opts.brush, this.mirrorFor(opts))
@@ -186,19 +192,51 @@ export class SketchEngine {
     this.version++
   }
 
+  /**
+   * Show predicted points ahead of the stroke (pointer prediction). They are
+   * drawn for the live view only: the next call, the end of the stroke or a
+   * restroke throws them away, so they never reach the layer or undo.
+   */
+  predict(points: InputPoint[], from: InputPoint | null) {
+    if (!this.stroke || !this.strokeOpts) return
+    if (!points.length) {
+      if (this.predicted) this.version++
+      this.predicted = null
+      return
+    }
+    const pred = (this.predicted ??= this.canvas())
+    pred.ctx.clearRect(0, 0, this.width, this.height)
+    const opts = this.strokeOpts
+    const mirror = (q: { x: number; y: number }) => (opts.mirror ? opts.mirror(q) : mirrored(q, this.width, this.height, opts.symmetry))
+    const s = new StrokeStamper(pred.ctx, opts.brush, mirror, 3)
+    if (from) s.add(from)
+    for (const p of points) s.add(p)
+    this.version++
+  }
+
   /** Replace the stroke being drawn with new points (QuickShape). */
   restroke(points: InputPoint[]) {
     if (!this.stroke || !this.strokeOpts) return
     this.stroke.ctx.clearRect(0, 0, this.width, this.height)
+    this.predicted = null
     this.strokeBounds = null
     this.stamper = new StrokeStamper(this.stroke.ctx, this.strokeOpts.brush, this.mirrorFor(this.strokeOpts), 1)
     for (const p of points) this.stamper.add(p)
     this.version++
   }
 
-  /** Draw the stroke into `ctx` the way it will land on the layer. */
-  private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions) {
-    colorStroke(this.stroke!.canvas, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)
+  /** Draw the stroke into `ctx` the way it will land on the layer (with predicted points for the live view only). */
+  private applyStroke(ctx: CanvasRenderingContext2D, opts: StrokeOptions, live = false) {
+    let mask = this.stroke!.canvas
+    if (live && this.predicted) {
+      // The prediction joins the stroke mask the same way dabs do, so the preview has no seam.
+      const m = (this.joined ??= this.canvas()).ctx
+      m.clearRect(0, 0, this.width, this.height)
+      m.drawImage(mask, 0, 0)
+      m.drawImage(this.predicted.canvas, 0, 0)
+      mask = m.canvas
+    }
+    colorStroke(mask, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush)
     this.keepSelected(this.paint.ctx)
     ctx.save()
     ctx.globalAlpha = opts.brush.opacity
@@ -211,6 +249,7 @@ export class SketchEngine {
   endStroke(): Id | null {
     const opts = this.strokeOpts
     if (!this.stroke || !opts) return null
+    this.predicted = null
     this.stamper?.finish()
     const layer = this.ensure(opts.layer.id)
     const b = this.strokeBounds
@@ -225,6 +264,7 @@ export class SketchEngine {
   }
 
   cancelStroke() {
+    this.predicted = null
     this.stroke = null
     this.stamper = null
     this.strokeOpts = null
@@ -476,7 +516,7 @@ export class SketchEngine {
     s.globalAlpha = 1
     s.clearRect(0, 0, this.width, this.height)
     s.drawImage(src, 0, 0)
-    if (stroking) this.applyStroke(s, this.strokeOpts!)
+    if (stroking) this.applyStroke(s, this.strokeOpts!, true)
     else if (this.floating!.view) s.drawImage(this.floating!.view, 0, 0)
     else s.drawImage(this.floating!.piece.canvas, this.floating!.dx, this.floating!.dy)
     return { canvas: this.scratch.canvas, live: true }

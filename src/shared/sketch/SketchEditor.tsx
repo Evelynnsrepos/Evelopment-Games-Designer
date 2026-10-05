@@ -4,6 +4,7 @@ import {
   Eraser,
   FlipHorizontal2,
   FlipVertical2,
+  FlipHorizontal,
   Hand,
   Image as ImageIcon,
   ImagePlus,
@@ -12,7 +13,10 @@ import {
   PaintBucket,
   Pipette,
   Redo2,
+  RotateCcw,
+  RotateCw,
   Scan,
+  Settings2,
   SquareDashed,
   Trash2,
   Undo2,
@@ -32,12 +36,11 @@ import { useBrushLibrary } from './library'
 import {
   newLayer,
   nextLayerName,
-  stabilize,
   type InputPoint,
   type SketchDoc,
   type SymmetryMode,
 } from './model'
-import { HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
+import { gentle, HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
 import { ReferencePicker } from './ReferencePicker'
 import { maxLayers } from './tiles'
 import './sketch.css'
@@ -51,6 +54,37 @@ import { TransformBar, TransformOverlay } from './TransformTools'
 import { useTransformer } from './transformer'
 import { ColorDropBar, ColorDropView, ColorPanel } from './ColorPanel'
 import { useColorDrop } from './colordrop'
+// Sketch Pro: pen input, view turning, guides, QuickMenu.
+import { matchShortcut, toolOf, type ActionId } from './actions'
+import { TouchGestures } from './gestures'
+import { activeGuide, assistFor, normalizeGuide, symmetryMirror, type DrawingGuide } from './guides'
+import { BrushCursor, GuideOverlay, ShapeNodes } from './GuideOverlay'
+import { GuidePanel } from './GuidePanel'
+import { InputSettingsDialog } from './InputSettingsDialog'
+import { useInputSettings } from './inputSettings'
+import { isEraserEnd, penButton, penData, PenPipeline, type PenPoint } from './pen'
+import { QuickMenu } from './QuickMenu'
+import { flipAbout, pinch, rotateAbout, toDocPoint, viewMatrix, zoomAbout, type View } from './view'
+
+const UI_PRO = {
+  rotateLeft: 'Turn view left (,)',
+  rotateRight: 'Turn view right (.)',
+  flipView: 'Mirror view (Shift+H): only the view, the picture stays as it is',
+  input: 'Pen and keys: pressure curve, smoothing, shortcuts, QuickMenu, tablet test',
+  editShape: 'Edit shape',
+  done: 'Done',
+}
+
+/** A QuickShape that just snapped, offered for Edit Shape. */
+interface ShapeOffer {
+  shape: Shape
+  opts: Parameters<SketchEngine['beginStroke']>[0]
+  pressure: number
+  start: { x: number; y: number }
+  /** Where the button shows, in stage pixels. */
+  at: { x: number; y: number }
+  editing: boolean
+}
 
 const UI = {
   brush: 'Brush (B)',
@@ -132,12 +166,6 @@ export interface SketchEditorHandle {
   color: string
 }
 
-interface View {
-  x: number
-  y: number
-  scale: number
-}
-
 /** A raster editor: pressure brushes, layers with blend modes, selection, mirror and references (v0.5). */
 export function SketchEditor({ doc, update, active, title, actions, swatches = SWATCHES, panel, editorRef }: SketchEditorProps) {
   const root = useProjectStore((s) => s.root)
@@ -166,7 +194,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const [libraryOpen, setLibraryOpen] = useState<'brush' | 'eraser' | null>(null)
   const [libraryAt, setLibraryAt] = useState({ x: 0, y: 0 })
   const [color, setColor] = useState('#111111')
-  const [symmetry, setSymmetry] = useState<SymmetryMode>('off')
   const [activeLayerId, setActiveLayerId] = useState<Id>(doc.layers[doc.layers.length - 1]?.id ?? '')
   const [, setVersion] = useState(0)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
@@ -174,6 +201,24 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const [pickingRef, setPickingRef] = useState(false)
   const spaceDown = useRef(false)
   const altDown = useRef(false)
+
+  // Sketch Pro: pen and keys settings, drawing guide, QuickMenu, Edit Shape, touch.
+  const input = useInputSettings()
+  useEffect(() => {
+    void useInputSettings.getState().load()
+  }, [])
+  const guide = normalizeGuide(doc.guide, doc.width, doc.height)
+  const liveGuide = activeGuide(guide)
+  const setGuide = (g: DrawingGuide) => update((d) => ({ ...d, guide: g }))
+  const [editingGuide, setEditingGuide] = useState(false)
+  const [inputOpen, setInputOpen] = useState(false)
+  const [quickMenu, setQuickMenu] = useState<{ x: number; y: number; holdKey?: string } | null>(null)
+  const [shapeOffer, setShapeOffer] = useState<ShapeOffer | null>(null)
+  const [hoverEraser, setHoverEraser] = useState(false)
+  const [touch] = useState(() => new TouchGestures())
+  const pinchStart = useRef<{ epoch: number; view: View } | null>(null)
+  /** Last pointer position in stage pixels (where the QuickMenu opens from a key). */
+  const lastPointer = useRef<{ x: number; y: number } | null>(null)
 
   const activeLayer = doc.layers.find((l) => l.id === activeLayerId) ?? doc.layers[doc.layers.length - 1]
   const xf = useTransformer(engine, sel, { active, tool, layerId: activeLayer?.id, done: (id) => markDirty(id) })
@@ -277,7 +322,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         const r = viewCanvas.current?.getBoundingClientRect()
         const v = viewRef.current
         if (!r || !v || cx < r.left || cy < r.top || cx > r.right || cy > r.bottom) return null
-        const q = { x: (cx - r.left - v.x) / v.scale, y: (cy - r.top - v.y) / v.scale }
+        const q = toDocPoint(v, { x: cx - r.left, y: cy - r.top })
         return q.x < 0 || q.y < 0 || q.x >= doc.width || q.y >= doc.height ? null : q
       },
       markDirty,
@@ -331,22 +376,21 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
     ctx.clearRect(0, 0, w, h)
     ctx.save()
-    ctx.translate(view.x, view.y)
-    ctx.scale(view.scale, view.scale)
+    ctx.transform(...viewMatrix(view))
     // Transparent: nothing is drawn behind the picture, so the app's own background and wallpaper show through.
-    ctx.imageSmoothingEnabled = view.scale < 1
+    ctx.imageSmoothingEnabled = view.scale < 1 || !!view.rot
     ctx.drawImage(engine.render(doc), 0, 0)
-    ctx.restore()
     // Transparent pages are just a white outline over the app's wallpaper.
+    const px = 1 / view.scale
     ctx.strokeStyle = doc.backgroundColor ? 'rgba(128,128,128,0.6)' : '#ffffff'
-    ctx.lineWidth = doc.backgroundColor ? 1 : 1.5
-    ctx.strokeRect(view.x - 0.5, view.y - 0.5, doc.width * view.scale + 1, doc.height * view.scale + 1)
+    ctx.lineWidth = (doc.backgroundColor ? 1 : 1.5) * px
+    ctx.strokeRect(-0.5 * px, -0.5 * px, doc.width + px, doc.height + px)
+    ctx.restore()
   })
 
   const toDoc = (e: { clientX: number; clientY: number }) => {
     const r = viewCanvas.current!.getBoundingClientRect()
-    const v = viewRef.current!
-    return { x: (e.clientX - r.left - v.x) / v.scale, y: (e.clientY - r.top - v.y) / v.scale }
+    return toDocPoint(viewRef.current!, { x: e.clientX - r.left, y: e.clientY - r.top })
   }
 
   // ---- Pointer input ------------------------------------------------------
@@ -354,14 +398,17 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const gesture = useRef<
     | {
         kind: 'paint'
-        smooth: InputPoint
+        /** Motion filter, stabilization, StreamLine and Drawing Assist for this stroke. */
+        pipeline: PenPipeline
+        last: PenPoint
+        opts: Parameters<SketchEngine['beginStroke']>[0]
         /** Every point so far, for QuickShape. */
         pts: InputPoint[]
         /** Where the pointer rests; the hold timer restarts when it moves. */
         rest: { x: number; y: number }
         timer?: ReturnType<typeof setTimeout>
         /** Set once the stroke snapped to a shape; further moves resize it. */
-        snapped?: { shape: Shape; at: { x: number; y: number }; pressure: number }
+        snapped?: { shape: Shape; at: { x: number; y: number }; pressure: number; drawn?: Shape }
       }
     | { kind: 'pan'; sx: number; sy: number; vx: number; vy: number }
     | { kind: 'select'; pts: { x: number; y: number }[]; rect: boolean }
@@ -369,14 +416,27 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     | null
   >(null)
 
-  const pressureOf = (e: PointerEvent | React.PointerEvent) => (e.pointerType === 'pen' ? Math.max(0.05, e.pressure) : 1)
-
   const effectiveTool = (): Tool => (spaceDown.current ? 'hand' : altDown.current && (tool === 'brush' || tool === 'eraser') ? 'eyedropper' : tool)
 
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     if (!view || !activeLayer) return
-    const t = e.button === 1 ? 'hand' : effectiveTool()
-    if (e.button !== 0 && e.button !== 1) return
+    if (shapeOffer) {
+      // Any tap on the canvas ends Edit Shape (or drops the offer).
+      finishShapeEdit()
+      if (shapeOffer.editing) return
+    }
+    if (e.pointerType === 'touch' && touchDown(e)) return
+    let t: Tool = e.button === 1 && e.pointerType !== 'pen' ? 'hand' : e.pointerType === 'touch' && !input.fingerDraws ? 'hand' : effectiveTool()
+    const side = penButton(e)
+    if (side) {
+      // Pen side buttons: tools are used while held, other actions run once.
+      const act = input.penButtons[side]
+      if (act === 'none') return
+      const asTool = toolOf(act) as Tool | null
+      if (!asTool) return runAction(act, e)
+      t = asTool
+    } else if (e.button !== 0 && e.button !== 1 && e.button !== 5) return
+    if (isEraserEnd(e) && t !== 'hand' && t !== 'eyedropper') t = 'eraser'
     e.currentTarget.setPointerCapture(e.pointerId)
     const p = toDoc(e)
     // After a ColorDrop, clicks keep filling (or recolouring).
@@ -388,9 +448,17 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       if (picked) setColor(picked)
     } else if (t === 'brush' || t === 'eraser') {
       if (!activeLayer.visible || isGroup(activeLayer) || lockedInTree(doc.layers, activeLayer.id)) return
-      const pt = { ...p, pressure: pressureOf(e) }
-      engine.beginStroke({ layer: activeLayer, brush, color, symmetry, erase: t === 'eraser' }, pt)
-      gesture.current = { kind: 'paint', smooth: pt, pts: [pt], rest: pt }
+      const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
+      const pipeline = new PenPipeline({
+        streamline: strokeBrush.streamline,
+        stabilization: input.stabilization,
+        motionFilter: input.motionFilter,
+        constraint: assistFor(liveGuide, activeLayer.id, 8 / view.scale),
+      })
+      const pt = pipeline.push({ ...p, ...penData(e.nativeEvent, input.pressureCurve) }, e.timeStamp)[0] ?? { ...p, pressure: 1 }
+      const opts = { layer: activeLayer, brush: strokeBrush, color, symmetry: 'off' as const, erase: t === 'eraser', mirror: symmetryMirror(liveGuide, activeLayer.id) }
+      engine.beginStroke(opts, pt)
+      gesture.current = { kind: 'paint', pipeline, last: pt, opts, pts: [pt], rest: pt }
       armHold()
       setVersion(engine.version)
     } else if (t === 'lasso' || t === 'rect') {
@@ -410,6 +478,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (!view) return
     const p = toDoc(e)
     setCursor(p)
+    const box = viewCanvas.current!.getBoundingClientRect()
+    lastPointer.current = { x: e.clientX - box.left, y: e.clientY - box.top }
+    if (isEraserEnd(e) !== hoverEraser) setHoverEraser(!hoverEraser)
+    if (e.pointerType === 'touch' && touchMove(e)) return
     const g = gesture.current
     if (!g) return
     if (g.kind === 'pan') {
@@ -422,11 +494,15 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       }
       const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent]
       for (const ev of events.length ? events : [e.nativeEvent]) {
-        const raw = { ...toDoc(ev), pressure: pressureOf(ev) }
-        g.smooth = stabilize(g.smooth, raw, brush.streamline)
-        engine.strokeTo(g.smooth)
-        g.pts.push(g.smooth)
+        for (const q of g.pipeline.push({ ...toDoc(ev), ...penData(ev, input.pressureCurve) }, ev.timeStamp)) {
+          engine.strokeTo(q)
+          g.pts.push(q)
+          g.last = q
+        }
       }
+      // Predicted points ahead of the pen: shown in the live stroke only, replaced on the next move, never saved.
+      const predicted = e.nativeEvent.getPredictedEvents?.() ?? []
+      engine.predict(g.pipeline.peek(predicted.map((ev) => ({ p: { ...toDoc(ev), ...penData(ev, input.pressureCurve) }, t: ev.timeStamp }))), g.last)
       // QuickShape: the hold timer restarts whenever the pointer really moves.
       if (Math.hypot(p.x - g.rest.x, p.y - g.rest.y) * (view?.scale ?? 1) > 4) {
         g.rest = p
@@ -440,13 +516,19 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     }
   }
 
-  const onPointerUp = () => {
+  const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.pointerType === 'touch' && touchUp(e)) return
     const g = gesture.current
     gesture.current = null
     if (!g) return
     if (g.kind === 'paint') {
       clearTimeout(g.timer)
+      // Let stabilization catch up with the pen (not for a snapped shape, which is redrawn whole).
+      if (!g.snapped) for (const q of g.pipeline.flush()) engine.strokeTo(q)
       markDirty(engine.endStroke())
+      if (g.snapped?.drawn && lastPointer.current) {
+        setShapeOffer({ shape: g.snapped.drawn, opts: g.opts, pressure: g.snapped.pressure, start: g.pts[0], at: lastPointer.current, editing: false })
+      }
     }
     else if (g.kind === 'select') {
       sel.up(viewRef.current?.scale ?? 1)
@@ -474,7 +556,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const drawShape = (g: Extract<NonNullable<typeof gesture.current>, { kind: 'paint' }>, to: { x: number; y: number }) => {
     if (!g.snapped) return
     let shape = resize(g.snapped.shape, g.snapped.at, to)
-    if (keys.shift) shape = perfect(shape)
+    shape = keys.shift ? perfect(shape) : gentle(shape)
+    g.snapped.drawn = shape
     engine.restroke(shapeOutline(shape, 2, g.pts[0]).map((q) => ({ ...q, pressure: g.snapped!.pressure })))
     setVersion(engine.version)
   }
@@ -482,10 +565,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const onWheel = (e: React.WheelEvent) => {
     if (!view) return
     const r = viewCanvas.current!.getBoundingClientRect()
-    const mx = e.clientX - r.left
-    const my = e.clientY - r.top
-    const scale = Math.min(32, Math.max(0.05, view.scale * Math.exp(-e.deltaY * 0.0015)))
-    setView({ scale, x: mx - ((mx - view.x) * scale) / view.scale, y: my - ((my - view.y) * scale) / view.scale })
+    setView(zoomAbout(view, Math.exp(-e.deltaY * 0.0015), { x: e.clientX - r.left, y: e.clientY - r.top }))
   }
 
   // ---- Commands ------------------------------------------------------------
@@ -548,24 +628,136 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     })
   }
 
+  // ---- Sketch Pro: actions, touch gestures, Edit Shape ------------------------
+
+  const stageCenter = () => ({ x: (boxRef.current?.clientWidth ?? 0) / 2, y: (boxRef.current?.clientHeight ?? 0) / 2 })
+  const turnView = (angle: number) => view && setView(rotateAbout(view, angle, stageCenter()))
+  const resizeBrush = (k: number) => {
+    const st = useBrushLibrary.getState()
+    const b = st.brushes.find((x) => x.id === (tool === 'eraser' ? st.eraserId : st.brushId))
+    if (b) st.updateBrush(b.id, { size: Math.max(1, Math.min(500, Math.round(b.size * k))) })
+  }
+  const sketchActions: Record<ActionId, () => void> = {
+    'tool.brush': () => setTool('brush'),
+    'tool.eraser': () => setTool('eraser'),
+    'tool.lasso': () => setTool('lasso'),
+    'tool.rect': () => setTool('rect'),
+    'tool.move': () => setTool('move'),
+    'tool.eyedropper': () => setTool('eyedropper'),
+    'tool.hand': () => setTool('hand'),
+    swapEraser: () => setTool(tool === 'eraser' ? 'brush' : 'eraser'),
+    undo: () => undo(),
+    redo: () => redo(),
+    sizeUp: () => resizeBrush(1.2),
+    sizeDown: () => resizeBrush(1 / 1.2),
+    deselect: () => sel.clear(),
+    clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)),
+    fill: () => activeLayer && markDirty(engine.fill(activeLayer.id, color, activeLayer.alphaLock)),
+    newLayer: () => {
+      if (doc.layers.filter((l) => !isGroup(l)).length >= layerLimit) return
+      const layer = newLayer(nextLayerName(doc))
+      loaded.current.set(layer.id, null)
+      update((d) => ({ ...d, layers: insertAbove(d.layers, layer, activeLayer?.id) }))
+      setActiveLayerId(layer.id)
+    },
+    flipLayerX: () => activeLayer && markDirty(engine.flip(activeLayer.id, 'x')),
+    flipLayerY: () => activeLayer && markDirty(engine.flip(activeLayer.id, 'y')),
+    fit: () => fit(),
+    rotateLeft: () => turnView(-Math.PI / 12),
+    rotateRight: () => turnView(Math.PI / 12),
+    flipView: () => view && setView(flipAbout(view, stageCenter())),
+    quickMenu: () => setQuickMenu((q) => (q ? null : (lastPointer.current ?? stageCenter()))),
+    guides: () => setGuide({ ...guide, visible: !guide.visible }),
+    assist: () =>
+      activeLayer && setGuide({ ...guide, assist: guide.assist.includes(activeLayer.id) ? guide.assist.filter((x) => x !== activeLayer.id) : [...guide.assist, activeLayer.id] }),
+    export: () => void exportPng(),
+    inputSettings: () => setInputOpen(true),
+  }
+  /** Run an action; from a pen button the QuickMenu opens where the pen is. */
+  const runAction = (id: ActionId, at?: { clientX: number; clientY: number }) => {
+    finishShapeEdit()
+    if (id === 'quickMenu' && at && viewCanvas.current) {
+      const r = viewCanvas.current.getBoundingClientRect()
+      return setQuickMenu({ x: at.clientX - r.left, y: at.clientY - r.top })
+    }
+    sketchActions[id]()
+  }
+
+  const stagePoint = (e: { clientX: number; clientY: number }) => {
+    const r = viewCanvas.current!.getBoundingClientRect()
+    return { x: e.clientX - r.left, y: e.clientY - r.top }
+  }
+  /** A finger touched: true when it belongs to a gesture rather than a stroke. */
+  const touchDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!input.touchGestures) return false
+    if (touch.down(e.pointerId, stagePoint(e), e.timeStamp)?.kind !== 'multi' && !touch.multi) return false
+    // A second finger: this is a gesture, so the first finger's stroke is dropped.
+    const g = gesture.current
+    if (g?.kind === 'paint') {
+      clearTimeout(g.timer)
+      engine.cancelStroke()
+    } else if (g?.kind === 'move') xf.up()
+    gesture.current = null
+    sel.cancelDraft()
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setVersion(engine.version)
+    return true
+  }
+  const touchMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!input.touchGestures) return false
+    const r = touch.move(e.pointerId, stagePoint(e))
+    if (r?.kind === 'pinch' && viewRef.current) {
+      if (pinchStart.current?.epoch !== r.epoch) pinchStart.current = { epoch: r.epoch, view: viewRef.current }
+      setView(pinch(pinchStart.current.view, r.a0, r.b0, r.a1, r.b1))
+    }
+    return touch.multi
+  }
+  const touchUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (!input.touchGestures) return false
+    const wasMulti = touch.multi
+    const r = touch.up(e.pointerId, e.timeStamp)
+    if (r?.kind === 'tap') runAction(r.fingers === 2 ? 'undo' : 'redo')
+    return wasMulti
+  }
+
+  /** Edit Shape: take the snapped shape back off the layer and redraw it while its nodes are dragged. */
+  const startShapeEdit = () => {
+    const o = shapeOffer
+    if (!o || o.editing) return
+    markDirty(engine.undo())
+    const pts = shapeOutline(o.shape, 2, o.start).map((q) => ({ ...q, pressure: o.pressure }))
+    engine.beginStroke(o.opts, pts[0])
+    engine.restroke(pts)
+    setShapeOffer({ ...o, editing: true })
+    setVersion(engine.version)
+  }
+  const changeShape = (shape: Shape) => {
+    if (!shapeOffer?.editing) return
+    engine.restroke(shapeOutline(shape, 2, shapeOffer.start).map((q) => ({ ...q, pressure: shapeOffer.pressure })))
+    setShapeOffer({ ...shapeOffer, shape })
+    setVersion(engine.version)
+  }
+  function finishShapeEdit() {
+    if (!shapeOffer) return
+    if (shapeOffer.editing) markDirty(engine.endStroke())
+    setShapeOffer(null)
+  }
+
   // ---- Keyboard -------------------------------------------------------------
 
   const drawShapeRef = useRef(drawShape)
   const cursorRef = useRef<{ x: number; y: number } | null>(null)
+  const actionsRef = useRef(runAction)
   useEffect(() => {
     drawShapeRef.current = drawShape
     cursorRef.current = cursor
-  })
-  const commands = useRef({ undo, redo, fit, deselect: () => sel.clear(), clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)) })
-  useEffect(() => {
-    commands.current = { undo, redo, fit, deselect: () => sel.clear(), clear: () => activeLayer && markDirty(engine.clear(activeLayer.id)) }
+    actionsRef.current = runAction
   })
 
   useEffect(() => {
     if (!active) return
     const down = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest?.('input, textarea, select, [contenteditable]')) return
-      const ctrl = e.ctrlKey || e.metaKey
       const k = e.key.toLowerCase()
       if (k === 'shift' && gesture.current?.kind === 'paint' && gesture.current.snapped) {
         keys.shift = true
@@ -575,20 +767,15 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         spaceDown.current = true
         e.preventDefault()
       } else if (k === 'alt') altDown.current = true
-      else if (ctrl && k === 'z' && !e.shiftKey) commands.current.undo()
-      else if (ctrl && (k === 'y' || (k === 'z' && e.shiftKey))) commands.current.redo()
-      else if (ctrl && k === 'd') commands.current.deselect()
-      else if (k === 'delete' || k === 'backspace') commands.current.clear()
-      else if (k === '0') commands.current.fit()
-      else if (k === '[' || k === ']') {
-        const st = useBrushLibrary.getState()
-        const b = st.brushes.find((x) => x.id === (tool === 'eraser' ? st.eraserId : st.brushId))
-        if (b) st.updateBrush(b.id, { size: Math.max(1, Math.min(500, Math.round(b.size * (k === ']' ? 1.2 : 1 / 1.2)))) })
-      } else if (!ctrl && !e.altKey) {
-        const t = TOOLS.find((x) => x.key === k)
-        if (!t) return
-        setTool(t.id)
-      } else return
+      else {
+        // Every other key goes through the shortcut list (Pen and keys settings).
+        const id = matchShortcut(e, useInputSettings.getState().shortcuts)
+        if (!id) return
+        // Holding the QuickMenu key must not open and close it over and over.
+        if (id === 'quickMenu') {
+          if (!e.repeat) setQuickMenu((q) => (q ? null : { ...(lastPointer.current ?? { x: 200, y: 200 }), holdKey: k }))
+        } else actionsRef.current(id)
+      }
       e.preventDefault()
     }
     const up = (e: KeyboardEvent) => {
@@ -609,7 +796,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
 
   // ---- Render --------------------------------------------------------------
 
-  const cursorSize = (tool === 'brush' || tool === 'eraser') && cursor && view ? brush.size * view.scale : 0
+  const showBrushCursor = tool === 'brush' || tool === 'eraser' || hoverEraser
+  const cursorBrush = hoverEraser ? (lib.brushes.find((b) => b.id === lib.eraserId) ?? brush) : brush
 
   return (
     <div className="sketch">
@@ -635,6 +823,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         )}
         <span className="sketch-sep" />
         <ToolButton icon={Scan} label={UI.fit} onClick={fit} />
+        <ToolButton icon={RotateCcw} label={UI_PRO.rotateLeft} onClick={() => runAction('rotateLeft')} />
+        <ToolButton icon={RotateCw} label={UI_PRO.rotateRight} onClick={() => runAction('rotateRight')} />
+        <ToolButton icon={FlipHorizontal} label={UI_PRO.flipView} active={!!view?.flip} onClick={() => runAction('flipView')} />
+        <ToolButton icon={Settings2} label={UI_PRO.input} onClick={() => setInputOpen(true)} />
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
         <ToolButton icon={Download} label={UI.export} onClick={() => void exportPng()} />
@@ -661,6 +853,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             onPointerCancel={() => {
+              touch.reset()
               engine.cancelStroke()
               xf.up()
               gesture.current = null
@@ -700,16 +893,36 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           </div>
           {view && (
             <svg className="sketch-overlay">
-              <g transform={`translate(${view.x} ${view.y}) scale(${view.scale})`}>
-                {(symmetry === 'vertical' || symmetry === 'quad') && <line x1={doc.width / 2} y1={0} x2={doc.width / 2} y2={doc.height} className="sketch-guide" />}
-                {(symmetry === 'horizontal' || symmetry === 'quad') && <line x1={0} y1={doc.height / 2} x2={doc.width} y2={doc.height / 2} className="sketch-guide" />}
+              <g transform={`matrix(${viewMatrix(view).join(' ')})`}>
+                {liveGuide && <GuideOverlay guide={liveGuide} width={doc.width} height={doc.height} scale={view.scale} editing={editingGuide} toDoc={toDoc} onChange={setGuide} />}
                 <SelectionOutline sel={sel} />
                 <TransformOverlay xf={xf} scale={view.scale} width={doc.width} height={doc.height} />
+                {shapeOffer?.editing && <ShapeNodes shape={shapeOffer.shape} scale={view.scale} toDoc={toDoc} onChange={changeShape} />}
+                {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
               </g>
-              {cursorSize > 0 && cursor && (
-                <circle cx={view.x + cursor.x * view.scale} cy={view.y + cursor.y * view.scale} r={Math.max(1.5, cursorSize / 2)} className="sketch-cursor" />
-              )}
             </svg>
+          )}
+          {shapeOffer && (
+            <div className="shape-edit-bar" style={{ left: shapeOffer.at.x, top: shapeOffer.at.y }} onPointerDown={(e) => e.stopPropagation()}>
+              {shapeOffer.editing ? (
+                <button className="btn btn-primary sketch-small" onClick={finishShapeEdit}>
+                  {UI_PRO.done}
+                </button>
+              ) : (
+                <button className="btn sketch-small" onClick={startShapeEdit}>
+                  {UI_PRO.editShape}
+                </button>
+              )}
+            </div>
+          )}
+          {quickMenu && (
+            <QuickMenu
+              at={quickMenu}
+              holdKey={quickMenu.holdKey}
+              profile={input.quickMenus.find((q) => q.id === input.quickMenuId) ?? input.quickMenus[0]}
+              onPick={(id) => runAction(id)}
+              onClose={() => setQuickMenu(null)}
+            />
           )}
           {doc.references.map((r) => (
             <ReferenceWindow
@@ -744,22 +957,15 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             <Slider label={UI.size} min={1} max={500} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
             <Slider label={UI.opacity} min={0.05} max={1} step={0.05} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
             <Slider label={UI.smoothing} min={0} max={1} step={0.05} value={brush.streamline} onChange={(streamline) => setBrush({ streamline })} percent />
-            <label className="sketch-row">
-              <span>{UI.symmetry}</span>
-              <select className="input" value={symmetry} onChange={(e) => setSymmetry(e.target.value as SymmetryMode)}>
-                {(Object.keys(UI.symmetryModes) as SymmetryMode[]).map((m) => (
-                  <option key={m} value={m}>
-                    {UI.symmetryModes[m]}
-                  </option>
-                ))}
-              </select>
-            </label>
           </section>
+
+          <GuidePanel guide={guide} layerId={activeLayer?.id} editing={editingGuide} onEditing={setEditingGuide} onChange={setGuide} />
 
           <LayersPanel host={layerHost} />
         </aside>
       </div>
 
+      {inputOpen && <InputSettingsDialog onClose={() => setInputOpen(false)} />}
       {pickingRef && (
         <ReferencePicker
           onPick={(image) => {

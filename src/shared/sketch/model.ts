@@ -7,6 +7,7 @@ import { newId, type AssetPath, type Id } from '@/core/model'
  */
 
 import type { BlendMode } from './blend'
+import type { DrawingGuide } from './guides'
 
 export { BLEND_MODES, type BlendMode } from './blend'
 
@@ -62,6 +63,8 @@ export interface SketchDoc {
   colorSpace?: 'srgb' | 'display-p3'
   /** Saved selections, each a PNG mask in the project's assets. */
   selections?: { id: Id; name: string; image: AssetPath }[]
+  /** Drawing guide and the layers with Drawing Assist (Sketch Pro); missing = no guide. */
+  guide?: DrawingGuide
 }
 
 export const newLayer = (name: string): SketchLayer => ({

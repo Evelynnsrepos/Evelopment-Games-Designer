@@ -7,6 +7,7 @@ import type { SketchEngine } from './engine'
 import type { SketchDoc } from './model'
 import type { SelShape, Selector } from './selector'
 import './layers.css'
+import { viewMatrix, type View } from './view'
 
 const UI = {
   freehand: 'Freehand: drag to draw, click to place corners',
@@ -67,7 +68,7 @@ export function SelectionOutline({ sel }: { sel: Selector }) {
 }
 
 /** Dims everything outside the selection ("mask visibility"); a screen-space layer over the canvas. */
-export function SelectionMaskView({ sel, engine, view }: { sel: Selector; engine: SketchEngine; view: { x: number; y: number; scale: number } }) {
+export function SelectionMaskView({ sel, engine, view }: { sel: Selector; engine: SketchEngine; view: View }) {
   const ref = useRef<HTMLCanvasElement>(null)
   const mask = engine.selectionMask
   const on = sel.showMask && !!mask
@@ -88,7 +89,7 @@ export function SelectionMaskView({ sel, engine, view }: { sel: Selector; engine
     <canvas
       ref={ref}
       className="sketch-sel-mask"
-      style={{ left: view.x + sel.offset.x * view.scale, top: view.y + sel.offset.y * view.scale, width: mask.width * view.scale, height: mask.height * view.scale }}
+      style={{ left: 0, top: 0, width: mask.width, height: mask.height, transformOrigin: '0 0', transform: `matrix(${viewMatrix(view).join(',')}) translate(${sel.offset.x}px, ${sel.offset.y}px)` }}
     />
   )
 }
