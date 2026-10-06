@@ -184,10 +184,12 @@ const KEYS: Record<string, Num> = {
   texturescale: (v, o) => (o.grainScale = Math.min(5, Math.max(0.1, v <= 1 ? 0.25 + v * 2 : v))),
   texturezoom: (v, o) => (o.grainZoom = v),
   texturedepth: (v, o) => (o.grainDepth = v),
+  graindepth: (v, o) => (o.grainDepth = v),
   texturemovement: (v, o) => (o.grainMovement = v),
   texturerotation: (v, o) => (o.grainRotation = v * 360),
-  texturecontrast: (v, o) => (o.grainContrast = v * 2 - 1),
-  texturebrightness: (v, o) => (o.grainBrightness = v * 2 - 1),
+  // Stored as -1 … 1 with 0 = unchanged, like ours.
+  texturecontrast: (v, o) => (o.grainContrast = Math.max(-1, Math.min(1, v))),
+  texturebrightness: (v, o) => (o.grainBrightness = Math.max(-1, Math.min(1, v))),
   dilution: (v, o) => (o.dilution = v),
   wetmixdilution: (v, o) => (o.dilution = v),
   charge: (v, o) => (o.charge = v),
@@ -236,7 +238,10 @@ const LATE_BOOL_KEYS: Record<string, (v: boolean, o: Partial<BrushSettings>) => 
  * inside the file (and are not ours to ship), so the closest shape we draw ourselves is used.
  */
 const BUNDLED_SHAPES: [RegExp, BrushSettings['shape']][] = [
-  [/hair|fur|artery|strand/i, 'fur'],
+  [/blank|default|round/i, 'round'],
+  [/hair|beard|strand/i, 'hair'],
+  [/hex/i, 'hex'],
+  [/fur/i, 'fur'],
   [/bristle|brush|paint|oil|acrylic|gouache/i, 'bristle'],
   [/rake|comb/i, 'rake'],
   [/charcoal|graphite/i, 'charcoal'],
@@ -254,6 +259,8 @@ const BUNDLED_SHAPES: [RegExp, BrushSettings['shape']][] = [
 ]
 const BUNDLED_GRAINS: [RegExp, BrushSettings['grain']][] = [
   [/blank|none|flat|default/i, 'none'],
+  [/hexagon|honeycomb/i, 'hexagons'],
+  [/flake|snow/i, 'flakes'],
   [/canvas|linen/i, 'canvas'],
   [/water/i, 'watercolor'],
   [/charcoal/i, 'charcoal'],
@@ -265,7 +272,7 @@ const BUNDLED_GRAINS: [RegExp, BrushSettings['grain']][] = [
   [/sponge/i, 'sponge'],
   [/cloud/i, 'clouds'],
 ]
-const SHAPE_LABELS: Record<string, string> = { fur: 'Fur', bristle: 'Bristle', rake: 'Rake', charcoal: 'Charcoal', chalk: 'Chalk', pencil: 'Pencil', splatter: 'Splatter', sponge: 'Sponge', watercolor: 'Watercolor blot', cloud: 'Cloud', leaf: 'Leaf', grass: 'Grass', star: 'Star', dry: 'Dry brush', square: 'Square', round: 'Round' }
+const SHAPE_LABELS: Record<string, string> = { hair: 'Hair strands', hex: 'Hexagon', fur: 'Fur', bristle: 'Bristle', rake: 'Rake', charcoal: 'Charcoal', chalk: 'Chalk', pencil: 'Pencil', splatter: 'Splatter', sponge: 'Sponge', watercolor: 'Watercolor blot', cloud: 'Cloud', leaf: 'Leaf', grass: 'Grass', star: 'Star', dry: 'Dry brush', square: 'Square', round: 'Round' }
 
 /** Bookkeeping in the archive that is not a brush setting. */
 const IGNORED = new Set(['name', 'version', 'creationdate', 'uuid', 'identifier', 'author', 'authorname', 'signature', 'signatureimage', 'oriented', 'bundledshapepath', 'bundledgrainpath'])
@@ -320,7 +327,7 @@ function settingsFromFolder(
   else if (bundled('bundledShapePath')) {
     const found = BUNDLED_SHAPES.find(([re]) => re.test(bundled('bundledShapePath')!))?.[1] ?? 'round'
     settings.shape = found
-    notes.push(`Its shape comes from the original app's own library and is not in the file, so it uses our ${SHAPE_LABELS[found] ?? found} shape instead. You can draw or import a better one in the Brush Studio.`)
+    if (found !== 'round' || !/blank|default|round/i.test(bundled('bundledShapePath')!)) notes.push(`Its shape comes from the original app's own library and is not in the file, so it uses our ${SHAPE_LABELS[found] ?? found} shape instead. You can draw or import a better one in the Brush Studio.`)
   }
   if (grain) {
     settings.grainImage = pngDataUrl(grain)

@@ -30,6 +30,8 @@ export const SHAPES = [
   { id: 'ring', label: 'Ring' },
   { id: 'hatch', label: 'Hatching' },
   { id: 'heart', label: 'Heart' },
+  { id: 'hair', label: 'Hair strands' },
+  { id: 'hex', label: 'Hexagon' },
 ] as const
 export type BrushShape = (typeof SHAPES)[number]['id']
 
@@ -50,6 +52,8 @@ export const GRAINS = [
   { id: 'halftone', label: 'Halftone dots' },
   { id: 'lines', label: 'Screen lines' },
   { id: 'crosshatch', label: 'Crosshatch' },
+  { id: 'flakes', label: 'Flakes' },
+  { id: 'hexagons', label: 'Honeycomb' },
 ] as const
 export type BrushGrain = (typeof GRAINS)[number]['id']
 
@@ -179,6 +183,24 @@ export function grainValues(id: BrushGrain, size = 256): Float32Array {
         case 'crosshatch':
           g = (x + y) % 8 < 2 || (x - y + size) % 8 < 2 ? 1 : 0
           break
+        case 'flakes': {
+          // Scattered flakes of different sizes, like drifting snow.
+          const d = cells(u, v, 14, 31)
+          const size = 0.08 + 0.22 * hash2(Math.floor(u * 14), Math.floor(v * 14), 32)
+          g = 1 - step(size * 0.6, size, d)
+          break
+        }
+        case 'hexagons': {
+          // A honeycomb: cells with soft walls.
+          const q = (u * 16 * 2) / Math.sqrt(3)
+          const rr = v * 16 - q / 2
+          const cube = [q, rr, -q - rr]
+          const rnd = cube.map(Math.round)
+          const diff = cube.map((c, i) => Math.abs(c - rnd[i]))
+          const edge = Math.max(...diff)
+          g = 0.7 + 0.3 * (1 - step(0.32, 0.5, edge))
+          break
+        }
       }
       out[y * size + x] = clamp01(g)
     }
@@ -402,6 +424,26 @@ export function tipImage(shape: BrushShape, hardness: number): HTMLCanvasElement
     soft(r, r, r * 0.72)
   } else if (shape === 'hatch') {
     for (let i = 0; i < 7; i++) g.fillRect((8 + i * 17) * k, 8 * k, 5 * k, 112 * k)
+  } else if (shape === 'hair') {
+    // Many fine, hard dots: stamped close together they draw a bundle of parallel strands.
+    for (let i = 0; i < 36; i++) {
+      const a = rnd() * Math.PI * 2
+      const d = Math.sqrt(rnd()) * r * 0.92
+      g.globalAlpha = 0.55 + rnd() * 0.45
+      g.beginPath()
+      g.arc(r + Math.cos(a) * d, r + Math.sin(a) * d, (0.6 + rnd() * 0.8) * k, 0, Math.PI * 2)
+      g.fill()
+    }
+    g.globalAlpha = 1
+  } else if (shape === 'hex') {
+    g.beginPath()
+    for (let i = 0; i < 6; i++) {
+      const a = (i * Math.PI) / 3
+      g.lineTo(r + Math.cos(a) * r * 0.95, r + Math.sin(a) * r * 0.95)
+    }
+    g.filter = h < 0.9 ? `blur(${(1 - h) * 8 * k}px)` : 'none'
+    g.fill()
+    g.filter = 'none'
   } else if (shape === 'heart') {
     g.beginPath()
     g.moveTo(r, 116 * k)

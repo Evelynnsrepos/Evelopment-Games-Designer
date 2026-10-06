@@ -141,7 +141,7 @@ describe('brush files', () => {
     const [set] = importBrushFile('pack.brushset', z)
     expect(set.brushes.map((b) => b.name)).toEqual(['Hair', 'Short Hair'])
     expect(set.brushes[0].rotation).toBe('follow')
-    expect(set.brushes[1].shape).toBe('fur')
+    expect(set.brushes[1].shape).toBe('hair')
     expect(set.brushes[1].shapeImage).toBeNull()
     expect(set.brushes[1].dual?.scatter).toBe(0.2)
     expect(set.notes?.[0]).toMatchObject({ brush: 'Short Hair' })
