@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronRight, Ellipsis, Eye, EyeOff, Folder, FolderPlus, Lock, Merge, Plus, Trash2 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Id } from '@/core/model'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { confirmDialog, promptDialog } from '../dialogs'
@@ -93,7 +93,7 @@ export interface LayerHost {
 }
 
 /** The layer list (Sketch Pro): groups, masks, multi-pick, drag to reorder or out to export, and every layer action. */
-export function LayersPanel({ host }: { host: LayerHost }) {
+export function LayersPanel({ host, headerExtra }: { host: LayerHost; headerExtra?: ReactNode }) {
   const { doc, update, engine } = host
   const [pickedRaw, setPicked] = useState<Set<Id>>(new Set())
   // Picks of layers that are gone are dropped.
@@ -308,6 +308,7 @@ export function LayersPanel({ host }: { host: LayerHost }) {
       <div className="sketch-layers-head">
         <h4>{UI.layers}</h4>
         <span className="sketch-spacer" />
+        {headerExtra}
         <button className="icon-btn sketch-tool" title={UI.addGroup} aria-label={UI.addGroup} onClick={addGroup}>
           <FolderPlus size={16} />
         </button>

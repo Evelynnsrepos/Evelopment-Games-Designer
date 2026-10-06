@@ -215,6 +215,7 @@ export function BrushStudio({ brushId, color, onClose }: { brushId: Id; color: s
               <>
                 {num('streamline', 'StreamLine', 0, 1, '%', 'Smooths the line as you draw')}
                 {num('stabilization', 'Stabilization', 0, 1, '%', 'Steadier lines that trail the pen a little')}
+                {num('tether', 'Tether', 0, 1, '%', 'Pulls the brush behind the pen on a string, for very calm lines')}
                 {num('motionFilter', 'Motion filtering', 0, 1, '%', 'Removes shaky wobbles')}
                 {num('motionExpression', 'Expression', 0, 1, '%', 'Keeps some of the wobble for lively lines')}
               </>

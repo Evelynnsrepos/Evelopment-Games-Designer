@@ -204,7 +204,8 @@
 .sketch-thumb {
   border: 1px solid var(--border);
   border-radius: 3px;
-  background: repeating-conic-gradient(#ccc 0 25%, #fff 0 50%) 0 0 / 8px 8px;
+  /* Plain white behind the layer, no checkerboard. */
+  background: #fff;
 }
 .sketch-layer-props {
   grid-column: 1 / -1;
@@ -553,4 +554,41 @@
 .modal:has(.shortcut-sheet) {
   width: auto;
   max-width: 90vw;
+}
+
+/* Panels floating over the canvas (layers, text). */
+.fp {
+  position: fixed;
+  z-index: 300;
+  max-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  font-size: 13px;
+}
+.fp-bar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 10px;
+  cursor: move;
+  background: var(--bg-hover);
+  border-radius: var(--radius) var(--radius) 0 0;
+  font-weight: 600;
+  user-select: none;
+}
+.fp-spacer {
+  flex: 1;
+}
+.fp-body {
+  padding: 6px 10px 10px;
+  overflow: auto;
+}
+/* The floating bar already names the panel. */
+.fp-body .sketch-layers-head h4,
+.fp-body > section > h4:first-child {
+  display: none;
 }

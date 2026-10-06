@@ -92,6 +92,8 @@ export interface BrushSettings {
   motionFilter: number
   /** 0..1, brings back part of the shakes so lines stay lively. */
   motionExpression: number
+  /** 0..1, pulls the brush behind the pen on a string (shown while drawing); 0 = off. */
+  tether: number
   // Taper
   /** Length in px over which the stroke grows / shrinks at its ends; 0 = off. Used for pens. */
   taperStart: number
@@ -281,6 +283,7 @@ export const BASE_BRUSH: BrushSettings = {
   falloff: 0,
   streamline: 0.3,
   stabilization: 0,
+  tether: 0,
   motionFilter: 0,
   motionExpression: 0,
   taperStart: 0,
