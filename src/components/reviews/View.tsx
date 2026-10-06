@@ -3,9 +3,8 @@ import { useMemo, useState } from 'react'
 import type { Entity } from '@/core/model'
 import { getManifest, type PanelProps } from '@/core/registry'
 import { useProjectStore } from '@/core/state'
-import { openEntity } from '@/shared/entityList/navigation'
+import { openDocument, openEntity } from '@/shared/entityList/navigation'
 import { needsReview, openComments, reviewKey, ReviewThread, STATUS_COLOR, STATUS_LABEL, STATUSES, useReviews, type ReviewEntry, type ReviewTarget } from '@/shared/reviews'
-import { openComponent } from '@/shell/editor/actions'
 import './reviews.css'
 
 const TYPE_LABEL = { item: 'Item', character: 'Character', town: 'Town', enemy: 'Enemy' } as const
@@ -28,7 +27,7 @@ function useLabel() {
   }
 }
 
-const open = (t: ReviewTarget) => (t.kind === 'entity' ? openEntity(t.type, t.id) : openComponent(t.type, t.kind === 'pin' ? t.doc : t.id))
+const open = (t: ReviewTarget) => (t.kind === 'entity' ? openEntity(t.type, t.id) : openDocument(t.type, t.kind === 'pin' ? t.doc : t.id))
 
 /** Reviews (v0.7): everything with a status or comments, as a board from Idea to Final. */
 export default function ReviewsView(_props: PanelProps) {

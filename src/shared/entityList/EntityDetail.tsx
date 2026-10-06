@@ -8,6 +8,7 @@ import { CategoryFields, NumberInput } from '@/shared/categories'
 import { ReviewButton } from '@/shared/reviews'
 import type { EntityActions } from './actions'
 import type { DetailContext, ListText } from './EntityList'
+import { JumpBar, UsedIn } from './JumpBar'
 import { TYPE_LABEL } from './links'
 import { nextStatName, renameStat } from './query'
 import { entityLook, frameStyle } from '../categories/styles'
@@ -87,6 +88,8 @@ export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, 
         </button>
       </div>
 
+      <JumpBar entity={entity} />
+
       <div className="elist-detail-head">
         <div className="elist-detail-frame" style={frameStyle(look?.style)}>
           <ImagePicker path={entity.image} alt={entity.name} onChange={(image) => update({ image })} />
@@ -132,6 +135,10 @@ export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, 
       </Section>
 
       {children}
+
+      <Section label="Used in">
+        <UsedIn id={entity.id} />
+      </Section>
 
       <Section label="Notes" htmlFor={`elist-notes-${entity.id}`}>
         <ProofTextarea

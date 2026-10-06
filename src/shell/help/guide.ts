@@ -99,6 +99,7 @@ export const BASICS: Record<string, GuideTopic> = {
     title: 'Search (Ctrl+K) and the Design Book',
     body: [
       'Press Ctrl+K (Cmd+K on a Mac) anywhere in a project to search tools, documents, items, characters, towns, enemies, wiki articles and commands like Settings. Enter opens the result alone, Shift+Enter opens it next to the open tools.',
+      'Every item, character, town and enemy page shows Jump to at the top (the things it points at, like the items an enemy drops) and Used in further down (every place in the project that mentions it). Click one to go there. The arrows under the project name, or Alt+Left and Alt+Right, take you back and forward through your jumps.',
       'Design Book at the bottom of the sidebar turns your project into one game design document with a cover, contents, images and info boxes. Pick the parts and entries to include, then save it as a web page or print it; choose Save as PDF as the printer for a PDF.',
     ],
   },

@@ -10,7 +10,7 @@ import '@/shared/listDetail/listDetail.css'
 import { combineRefProviders, rankRefItems, useEntityRefProvider, type RefItem } from '@/shared/richtext'
 import { ProofTextarea } from '@/shared/spell'
 import { useArticleRefProvider } from '@/shared/wiki'
-import { openComponent } from '@/shell/editor/actions'
+import { openDocument } from '@/shared/entityList'
 import './tasks.css'
 
 /** Task board (v0.10): to-dos linked to the items, characters, articles and documents they are about. */
@@ -97,7 +97,7 @@ export default function View({ active }: PanelProps) {
 
   const docItems: RefItem[] = documents.map((doc) => ({ kind: `doc:${doc.type}`, id: doc.id, label: doc.title, hint: getManifest(doc.type)?.name }))
   const label = (l: TaskLink): RefItem | undefined => (l.kind.startsWith('doc:') ? docItems.find((x) => x.id === l.id) : refs.resolve(l))
-  const open = (l: TaskLink) => (l.kind.startsWith('doc:') ? openComponent(l.kind.slice(4) as ComponentType, l.id) : refs.open?.(l))
+  const open = (l: TaskLink) => (l.kind.startsWith('doc:') ? openDocument(l.kind.slice(4) as ComponentType, l.id) : refs.open?.(l))
   const suggestions = query.trim() ? rankRefItems([...refs.search(query), ...docItems], query, 8) : []
   const shown = d.items
     .filter((x) => !filter || x.assignee.toLowerCase().includes(filter.toLowerCase()) || x.title.toLowerCase().includes(filter.toLowerCase()))

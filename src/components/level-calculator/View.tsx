@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from 'react'
 import { newId, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore, useUndoRedoKeys, type UseDocumentResult } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
+import { openDocument } from '@/shared/entityList'
 import {
   costAtLevel,
   createDamagePresetDoc,
@@ -438,7 +438,7 @@ function DamageSection({
               ))}
             </select>
             {preset && (
-              <button className="btn btn-ghost" onClick={() => openComponent('damage-calculator', preset.id)}>
+              <button className="btn btn-ghost" onClick={() => openDocument('damage-calculator', preset.id)}>
                 <ExternalLink size={14} /> {T.openPreset}
               </button>
             )}

@@ -2,7 +2,7 @@ import { ArrowLeft, BookOpen, Copy, Plus, Skull, Trash2, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import type { Category, Enemy, Id, Item } from '@/core/model'
 import { CategoryFields, entityLook, frameStyle, NumberInput } from '@/shared/categories'
-import { ImagePicker, openEntity } from '@/shared/entityList'
+import { ImagePicker, JumpBar, openEntity, UsedIn } from '@/shared/entityList'
 import { openWikiArticleForEntity } from '@/shared/wiki'
 import { duplicateItem, setCategories, setCategoryValue, updateItem } from './actions'
 import { droppedBy, formatDrop, nextStatName, renameStat } from './query'
@@ -81,6 +81,8 @@ export function ItemDetail({
         </button>
       </div>
 
+      <JumpBar entity={item} />
+
       <div className="item-detail-head">
         <div className="item-detail-image" style={frameStyle(entityLook(categories, 'item', item)?.style)}>
           <ImagePicker path={item.image} alt={item.name} onChange={(image) => updateItem(item.id, { image })} />
@@ -152,6 +154,11 @@ export function ItemDetail({
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="item-section">
+        <div className="item-label">Used in</div>
+        <UsedIn id={item.id} />
       </section>
 
       <section className="item-section">

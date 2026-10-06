@@ -1,4 +1,4 @@
-import { BookOpen, Boxes, ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Gem, Settings, Trash2, Users } from 'lucide-react'
+import { ArrowLeft, ArrowRight, BookOpen, Boxes, ChevronDown, ChevronRight, CircleHelp, House, PanelLeftClose, PanelLeftOpen, Palette, Plus, Gem, Settings, Trash2, Users } from 'lucide-react'
 import { useState } from 'react'
 import type { ComponentType, Id } from '@/core/model'
 import { allManifests, getManifest, type ComponentManifest } from '@/core/registry'
@@ -12,6 +12,7 @@ import { openSettings } from '../settings/open'
 import { openDesignBook } from '../designBook/open'
 import { useEngineExport } from '../engineExport/open'
 import { openRarities } from '@/shared/categories'
+import { jumpBack, jumpForward, useJumpHistory } from '@/shared/entityList/navigation'
 import { usePlugins } from '../plugins/plugins'
 import { ProjectThemeDialog } from './projectTheme'
 import { PresenceDots, ShareDialog, TeammateDots } from '../collab/CollabDialogs'
@@ -99,6 +100,7 @@ export function Sidebar() {
           {!collapsed && <span>Projects</span>}
         </button>
         {!collapsed && <div className="sidebar-project" title={meta.name}>{meta.name}</div>}
+        <JumpButtons />
       </div>
 
       <div className="sidebar-list" data-tour="sidebar-list">
@@ -255,3 +257,19 @@ export function Sidebar() {
   )
 }
 
+
+/** Back and forward through jumps between entries and tools (Alt+Left / Alt+Right). */
+function JumpButtons() {
+  const canBack = useJumpHistory((h) => h.back.length > 0)
+  const canForward = useJumpHistory((h) => h.forward.length > 0)
+  return (
+    <div className="sidebar-jump">
+      <button className="icon-btn" title="Back (Alt+Left)" aria-label="Back" disabled={!canBack} onClick={jumpBack}>
+        <ArrowLeft size={15} />
+      </button>
+      <button className="icon-btn" title="Forward (Alt+Right)" aria-label="Forward" disabled={!canForward} onClick={jumpForward}>
+        <ArrowRight size={15} />
+      </button>
+    </div>
+  )
+}

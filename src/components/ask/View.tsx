@@ -5,12 +5,11 @@ import { isTauri } from '@/core/fs'
 import { newId, type Entity, type EntityType, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { loadDocumentNow, useDocument, useProjectStore, useSettings } from '@/core/state'
-import { openEntity } from '@/shared/entityList'
+import { openDocument, openEntity } from '@/shared/entityList'
 import { richTextToPlainText, type RichTextDoc } from '@/shared/richtext'
 import { useAiHelper } from '@/shared/spell'
 import { Modal } from '@/shared/ui'
 import { articleTitle, openWikiArticle, WIKI_INDEX_ID, type WikiArticleDoc, type WikiIndex } from '@/shared/wiki'
-import { openComponent } from '@/shell/editor/actions'
 import { openSettings } from '@/shell/settings/open'
 import { asksToWrite, notesText, pick, type Note } from './retrieve'
 import './ask.css'
@@ -81,7 +80,7 @@ async function gatherNotes(root: string): Promise<Note[]> {
 const open = (n: Note) => {
   if (n.ref.kind in TYPE) openEntity(n.ref.kind as EntityType, n.ref.id)
   else if (n.ref.kind === 'article') openWikiArticle(n.ref.id)
-  else if (n.ref.type) openComponent(n.ref.type as never, n.ref.id || null)
+  else if (n.ref.type) openDocument(n.ref.type as never, n.ref.id || null)
 }
 
 const seenPrivacy = () => {

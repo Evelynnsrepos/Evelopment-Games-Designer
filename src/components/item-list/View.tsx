@@ -16,7 +16,7 @@ import { entityLook, frameStyle, StyleBadge, fieldLines, ratingText, StyleMark, 
 import { confirmDialog } from '@/shared/dialogs'
 import { AssetImage } from '@/shared/AssetImage'
 import { confirmEntityDelete } from '@/shared/entityDelete'
-import { takeEntityFocus, useEntityNavigation } from '@/shared/entityList'
+import { reportShownEntity, takeEntityFocus, useEntityNavigation } from '@/shared/entityList'
 import {
   addCategoryToItems,
   addItem,
@@ -126,6 +126,9 @@ export default function View({ active }: PanelProps) {
     take()
     return useEntityNavigation.subscribe((s) => s.focus?.type === 'item' && take())
   }, [])
+
+  useEffect(() => reportShownEntity('item', focusId), [focusId])
+  useEffect(() => () => reportShownEntity('item', null), [])
 
   const itemCategories = useMemo(() => categories.filter((c) => isUsedFor(c, 'item')), [categories])
   const query: ItemQuery = { ...DEFAULT_QUERY, search, filter, sort: prefs.sort, desc: prefs.desc }

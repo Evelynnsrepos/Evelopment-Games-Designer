@@ -17,7 +17,7 @@ import { confirmDialog } from '@/shared/dialogs'
 import { confirmEntityDelete } from '@/shared/entityDelete'
 import type { EntityActions } from './actions'
 import { isTyping } from './dom'
-import { takeEntityFocus, useEntityNavigation } from './navigation'
+import { reportShownEntity, takeEntityFocus, useEntityNavigation } from './navigation'
 import { DEFAULT_QUERY, queryEntities, rangeBetween, type EntityQuery, type SortKey, type StatFilter } from './query'
 import './entityList.css'
 import { entityLook, frameStyle, StyleBadge, fieldLines, ratingText, StyleMark, styleOf } from '../categories/styles'
@@ -147,6 +147,9 @@ export function EntityList<T extends EntityType>({ type, active, actions, text, 
     take()
     return useEntityNavigation.subscribe((s) => s.focus?.type === type && take())
   }, [type])
+
+  useEffect(() => reportShownEntity(type, focusId), [type, focusId])
+  useEffect(() => () => reportShownEntity(type, null), [type])
 
   const shownCategories = useMemo(() => categories.filter((c) => isUsedFor(c, type)), [categories, type])
   const statNames = useMemo(() => {

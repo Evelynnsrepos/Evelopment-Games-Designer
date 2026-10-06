@@ -3,7 +3,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { newId, type Id } from '@/core/model'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore, useUndoRedoKeys, type UseDocumentResult } from '@/core/state'
-import { openComponent } from '@/shell/editor/actions'
+import { openDocument } from '@/shared/entityList'
 import { createLevelPresetDoc, normalizeLevelPresetDoc, NumberInput, PresetHeader, useEditSession, type LevelPresetDoc } from '@/shared/calculators'
 import { formatNumber } from '@/shared/formulas'
 import {
@@ -195,7 +195,7 @@ function GoalSection({ data, update, preset, brokenCosts }: { data: ResourceDoc;
                 ))}
               </select>
               {goal.levelPresetId && !missing && (
-                <button className="btn btn-ghost" onClick={() => openComponent('level-calculator', goal.levelPresetId)}>
+                <button className="btn btn-ghost" onClick={() => openDocument('level-calculator', goal.levelPresetId)}>
                   <ExternalLink size={14} /> {T.openPreset}
                 </button>
               )}
