@@ -225,7 +225,8 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Draw and paint with pressure brushes, layers and a full set of pro painting tools. Pick a canvas size (up to 8K) when you start a new drawing; Canvas (top bar) resizes, crops, flips and turns it later and shows how many strokes and minutes went into it.',
       'Pen: pressure and tilt work with drawing tablets, the eraser end of the pen erases, and the pen buttons can do any action. Pen and keys (top bar) sets your pressure curve, smoothing, motion filtering, every keyboard shortcut, pen buttons and touch gestures, and has a tablet test page.',
       'QuickMenu: press Q (or a pen button) for a round menu of six actions you choose. Turn and mirror the view with , and . and Shift+H; this only changes the view, not the picture.',
-      'Each brush has its own Smoothing and Stabilization. Stabilization puts the brush on a string behind the pen (you see the string while drawing), for calm, clean lines. Press Shift+? (or the keyboard button) for a list of every shortcut.',
+      'Each brush has its own smoothing and stabilization. To use your own value for every brush, tick Smoothing, Stabilization or Tether in the side panel (unticked they show the setting of each brush). The tether pulls the brush behind the pen on a string you see while drawing. Press Shift+? (or the keyboard button) for a list of every shortcut.',
+      'The layers can float over the canvas: use the button in the layers header, drag them anywhere (they snap to the window edges), or hide them with the Layers button in the top bar. A brush with Height (Brush Studio, Rendering) paints thick, raised 3D paint; with the Smudge tool a brush can blur instead of smear.',
       'Under the colour wheel are your recent colours and a palette: + adds the current colour, the folder button makes a new palette, right-click a colour to remove it.',
       'Brushes: about 120 brushes in 14 sets, each fully editable in the Brush Studio (stroke, taper, shape, grain, rendering, wet mix, color dynamics, pressure and tilt curves, dual brush and more), with a drawing pad to try them. Import and export brushes as .egdbrush, and import .abr, .brush and .brushset files. Smudge (S) blends paint.',
       'Colors: disc, classic, harmony, value (HSB, RGB, hex) and palettes, with a second color and recent colors. Drag the color onto the canvas to fill an area (drag sideways while holding to change how far it spreads).',
@@ -237,7 +238,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Animation and pages: turn on Animation to treat each top-level layer as a frame with onion skin and playback, or Pages for a sketchbook. Send frames or pages to the Storyboard.',
       'Time-lapse records your drawing as you go and can be replayed or exported as video. Import and export PSD (with layers), PNG, JPEG, TIFF, GIF and WebM, or use Send to… to put the picture on a Moodboard, a Design Language board or into the Asset Pool.',
     ],
-    tips: ['Space or the middle mouse button pans, the mouse wheel zooms, 0 fits the canvas into view.', 'Undo goes back 250 steps. Everything saves by itself a moment after you stop drawing.', 'The Moodboard, Brainstorm and Map pens can use the same brushes.'],
+    tips: ['Space or the middle mouse button pans, the mouse wheel zooms, 0 fits the canvas into view.', 'Undo goes back 250 steps. Everything saves by itself a moment after you stop drawing.'],
   },
   'design-language': {
     title: 'Design Language',
