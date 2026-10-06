@@ -101,6 +101,10 @@ const UI = {
   importFailed: 'Some files could not be imported',
   license: 'Imported brushes are covered by their creator’s license and are for your own use.',
   unmapped: 'Settings from the file that have no match here (the brush works without them):',
+  replacedTitle: (n: number) => `${n} ${n === 1 ? 'brush looks' : 'brushes look'} different from the original`,
+  replacedText:
+    'Some brushes use a shape or grain from the original app’s own built-in library. That picture is not inside the file, so the closest shape or grain of ours is used instead. To get the exact look, give the brush its own shape picture in the original app before exporting, or import the picture in the Brush Studio.',
+  replacedList: (n: number) => `Which ${n === 1 ? 'brush' : 'brushes'} and what was replaced`,
   ok: 'OK',
 }
 
@@ -383,42 +387,54 @@ export function BrushLibrary({ mode, color, at, onClose }: { mode: 'brush' | 'er
 
 /** What was imported, what could not be used, and the license note (shown on every import). */
 function ImportReport({ report, onClose }: { report: { sets: ImportedSet[]; errors: string[] }; onClose: () => void }) {
+  const replaced = report.sets.reduce((n, s) => n + new Set((s.notes ?? []).map((x) => x.brush)).size, 0)
   return (
     <Modal onClose={onClose}>
       <h3>{report.sets.length ? UI.imported : UI.importFailed}</h3>
-      {report.sets.map((s, i) => (
-        <div key={i} className="brushlib-report">
-          <b>
-            {s.name}: {s.brushes.length} {s.brushes.length === 1 ? 'brush' : 'brushes'}
-          </b>
-          {s.notes?.length ? (
-            <ul className="brushlib-report-notes">
-              {s.notes.map((n, j) => (
-                <li key={j}>
-                  <b>{n.brush}</b>: {n.text}
-                </li>
-              ))}
-            </ul>
-          ) : null}
-          {s.unmapped.length > 0 && (
-            <details>
-              <summary className="muted">{UI.unmapped}</summary>
-              <ul>
-                {s.unmapped.map((u, j) => (
-                  <li key={j}>
-                    {u.brush}: <span className="muted">{u.keys.join(', ')}</span>
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
+      {replaced > 0 && (
+        <div className="brushlib-report-warning">
+          <b>{UI.replacedTitle(replaced)}</b>
+          <p>{UI.replacedText}</p>
         </div>
-      ))}
+      )}
+      <div className="brushlib-report-scroll">
+        {report.sets.map((s, i) => (
+          <div key={i} className="brushlib-report">
+            <b>
+              {s.name}: {s.brushes.length} {s.brushes.length === 1 ? 'brush' : 'brushes'}
+            </b>
+            {s.notes?.length ? (
+              <details>
+                <summary>{UI.replacedList(new Set(s.notes.map((x) => x.brush)).size)}</summary>
+                <ul className="brushlib-report-notes">
+                  {s.notes.map((n, j) => (
+                    <li key={j}>
+                      <b>{n.brush}</b>: {n.text}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+            {s.unmapped.length > 0 && (
+              <details>
+                <summary className="muted">{UI.unmapped}</summary>
+                <ul>
+                  {s.unmapped.map((u, j) => (
+                    <li key={j}>
+                      {u.brush}: <span className="muted">{u.keys.join(', ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+          </div>
+        ))}
       {report.errors.map((e) => (
         <p key={e} className="brushlib-report-error">
           {e}
         </p>
       ))}
+      </div>
       <p className="muted">{UI.license}</p>
       <div className="modal-actions">
         <button className="btn btn-primary" onClick={onClose}>

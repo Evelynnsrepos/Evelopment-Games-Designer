@@ -379,3 +379,28 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+
+/* Import report: a fixed size with its own scrolling, and a clear warning on top. */
+.modal:has(.brushlib-report-scroll) {
+  width: min(560px, 92vw);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+.brushlib-report-scroll {
+  min-height: 0;
+  max-height: 46vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+.brushlib-report-warning {
+  margin: 0 0 10px;
+  padding: 8px 12px;
+  border-left: 4px solid #f0a020;
+  border-radius: var(--radius);
+  background: color-mix(in srgb, #f0a020 14%, transparent);
+}
+.brushlib-report-warning p {
+  margin: 4px 0 0;
+  font-size: 12px;
+}
