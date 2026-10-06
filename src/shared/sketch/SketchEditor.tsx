@@ -1173,7 +1173,7 @@ function OverrideSlider(p: { label: string; own: number; value: number | null; o
     <label className={`sketch-slider sketch-override${on ? '' : ' is-off'}`} title={UI_PRO.overrideHint}>
       <input type="checkbox" checked={on} onChange={(e) => p.onChange(e.target.checked ? p.own : null)} />
       <span>{p.label}</span>
-      <input type="range" min={0} max={1} step={0.05} value={shown} disabled={!on} onChange={(e) => p.onChange(Number(e.target.value))} />
+      <input type="range" min={0} max={1} step={0.05} value={shown} disabled={!on} style={{ '--fill': `${shown * 100}%` } as React.CSSProperties} onChange={(e) => p.onChange(Number(e.target.value))} />
       <span className="sketch-slider-value">{Math.round(shown * 100)}%</span>
     </label>
   )
@@ -1193,6 +1193,7 @@ function Slider(p: { label: string; min: number; max: number; step?: number; val
         max={p.log ? 1 : p.max}
         step={p.log ? 0.001 : (p.step ?? 1)}
         value={toSlider(p.value)}
+        style={{ '--fill': `${(((toSlider(p.value) - (p.log ? 0 : p.min)) / ((p.log ? 1 : p.max) - (p.log ? 0 : p.min)) || 0) * 100).toFixed(1)}%` } as React.CSSProperties}
         onChange={(e) => p.onChange(fromSlider(Number(e.target.value)))}
       />
       <span className="sketch-slider-value">{shown}</span>
