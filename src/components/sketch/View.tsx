@@ -1,8 +1,10 @@
-import { Send } from 'lucide-react'
-import { useState } from 'react'
+import { Send, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import type { PanelProps } from '@/core/registry'
 import { useDocument, useProjectStore } from '@/core/state'
 import { CANVAS_PRESETS, createSketchDoc, SketchEditor, type SketchDoc } from '@/shared/sketch'
+import { useInputSettings } from '@/shared/sketch/inputSettings'
+import { promptDialog } from '@/shared/dialogs'
 import { IMAGE_TARGETS, sendImageTo } from '@/shell/editor/actions'
 import './sketch-tool.css'
 
@@ -12,6 +14,10 @@ const UI = {
   width: 'Width',
   height: 'Height',
   start: 'Start drawing',
+  savePreset: 'Save this size',
+  presetName: 'Name for this canvas size',
+  removePreset: 'Remove this size',
+  mine: 'My sizes',
   send: 'Send to…',
   sent: (to: string) => `Sent to ${to}`,
 }
@@ -44,6 +50,16 @@ function SizePicker({ onStart }: { onStart: (w: number, h: number) => void }) {
   const [w, setW] = useState(1920)
   const [h, setH] = useState(1080)
   const clamp = (v: number) => Math.max(16, Math.min(8192, Math.round(v) || 16))
+  const mine = useInputSettings((s) => s.canvasPresets)
+  useEffect(() => {
+    void useInputSettings.getState().load()
+  }, [])
+  const savePreset = async () => {
+    const name = (await promptDialog(UI.presetName, `${clamp(w)} × ${clamp(h)}`))?.trim()
+    if (!name) return
+    const list = useInputSettings.getState().canvasPresets.filter((c) => c.name !== name)
+    useInputSettings.getState().update({ canvasPresets: [...list, { name, width: clamp(w), height: clamp(h) }] })
+  }
   return (
     <div className="sketch-start">
       <h2>{UI.newTitle}</h2>
@@ -62,6 +78,33 @@ function SizePicker({ onStart }: { onStart: (w: number, h: number) => void }) {
           </button>
         ))}
       </div>
+      {mine.length > 0 && (
+        <>
+          <p className="muted sketch-start-mine">{UI.mine}</p>
+          <div className="sketch-start-presets">
+            {mine.map((p) => (
+              <span key={p.name} className="sketch-start-preset">
+                <button
+                  className={`btn${p.width === w && p.height === h ? ' btn-primary' : ''}`}
+                  onClick={() => {
+                    setW(p.width)
+                    setH(p.height)
+                  }}
+                >
+                  {p.name} <span className="muted">{p.width} × {p.height}</span>
+                </button>
+                <button
+                  className="icon-btn"
+                  title={UI.removePreset}
+                  onClick={() => useInputSettings.getState().update({ canvasPresets: mine.filter((x) => x.name !== p.name) })}
+                >
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+          </div>
+        </>
+      )}
       <div className="sketch-start-size">
         <label>
           {UI.width}
@@ -72,6 +115,9 @@ function SizePicker({ onStart }: { onStart: (w: number, h: number) => void }) {
           {UI.height}
           <input className="input" type="number" min={16} max={8192} value={h} onChange={(e) => setH(Number(e.target.value))} />
         </label>
+        <button className="btn" onClick={() => void savePreset()}>
+          {UI.savePreset}
+        </button>
       </div>
       <button className="btn btn-primary" onClick={() => onStart(clamp(w), clamp(h))}>
         {UI.start}

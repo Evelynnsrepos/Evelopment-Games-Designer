@@ -181,6 +181,8 @@ export interface BrushSettings {
   grade: number
   /** 0..1, blurs the colours that are picked up. */
   wetBlur: number
+  /** 0..1, paint thickness: strokes look raised and catch the light (3D paint); 0 = flat. */
+  height: number
   /** What the Smudge tool does with this brush: drag colour along, or soften (blur) what is under it. */
   smudgeMode: 'drag' | 'blur'
   /** 0..1, random change of the water per stamp. */
@@ -338,6 +340,7 @@ export const BASE_BRUSH: BrushSettings = {
   grade: 0,
   wetBlur: 0,
   smudgeMode: 'drag',
+  height: 0,
   wetJitter: 0,
   hueJitter: 0,
   satJitter: 0,

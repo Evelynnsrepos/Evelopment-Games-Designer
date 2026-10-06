@@ -5,6 +5,7 @@ import { WetStamper } from './brushWet'
 import { GlCompositor, parseHex, type GlLayer, type GlSource } from './gl'
 import { layerTree, type LayerNode } from './layers'
 import { mirrored, type InputPoint, type SketchDoc, type SketchLayer, type SymmetryMode } from './model'
+import { applyRelief } from './relief'
 import { TileHistory, tilesIn, type Rect } from './tiles'
 
 /**
@@ -262,6 +263,7 @@ export class SketchEngine {
       p.globalCompositeOperation = 'copy'
       p.drawImage(this.stamper.result, 0, 0)
       p.restore()
+      if (opts.brush.height > 0) applyRelief(p, this.stroke!.canvas, this.strokeArea(opts) ?? undefined, opts.brush.height)
       this.keepSelected(p)
       ctx.save()
       if (this.sel) {
@@ -284,6 +286,7 @@ export class SketchEngine {
     }
     const area = this.strokeArea(opts) ?? undefined
     colorStroke(mask, this.paint.ctx, opts.erase ? '#000' : opts.color, opts.brush, area)
+    if (opts.brush.height > 0 && !opts.erase) applyRelief(this.paint.ctx, mask, area, opts.brush.height)
     this.keepSelected(this.paint.ctx)
     compositeStroke(ctx, this.paint.canvas, opts.brush, { erase: opts.erase, alphaLock: opts.layer.alphaLock, selection: null, area })
   }

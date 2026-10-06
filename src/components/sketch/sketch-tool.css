@@ -47,3 +47,16 @@
   font-size: 12px;
   color: var(--accent);
 }
+
+/* Your own canvas sizes. */
+.sketch-start-mine {
+  margin: 10px 0 4px;
+}
+.sketch-start-preset {
+  display: inline-flex;
+  align-items: center;
+}
+.sketch-start-preset .btn-primary .muted {
+  color: inherit;
+  opacity: 0.75;
+}

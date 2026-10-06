@@ -55,8 +55,8 @@ async function libraryPath() {
 }
 
 const MAX_RECENT = 8
-/** Bumped for one-time library clean-ups (2: images scaled to 512 px, duplicates removed; 3: built-in bristle brushes turn with the stroke). */
-const IMAGES_VERSION = 3
+/** Bumped for one-time library clean-ups (2: images scaled to 512 px, duplicates removed; 3: built-in bristle brushes turn with the stroke; 4: built-in paints get their 3D height). */
+const IMAGES_VERSION = 4
 
 export const useBrushLibrary = create<LibraryState>()((set, get) => {
   // Sliders change brushes many times a second; write once things settle (one write at a time).
@@ -100,7 +100,13 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
         const shrunk = (saved.imagesVersion ?? 0) < 2 && hasBigImages(kept) ? await shrinkBrushImages(kept) : kept
         // Built-in brushes that now turn with the stroke, unless their angle was changed.
         const fresh = new Map(defaultLibrary().brushes.map((b) => [b.id, b]))
-        const brushes = shrunk.map((b) => (fresh.get(b.id)?.rotation === 'follow' && b.rotation === 0 ? { ...b, rotation: 'follow' as const } : b))
+        const brushes = shrunk.map((b) => {
+          const f = fresh.get(b.id)
+          let out = b
+          if (f?.rotation === 'follow' && out.rotation === 0) out = { ...out, rotation: 'follow' as const }
+          if (f && f.height > 0 && !out.height) out = { ...out, height: f.height }
+          return out
+        })
         // Saving writes the new version number, so this runs once.
         change((s) => ({ sets: s.sets.map((x) => ({ ...x, brushIds: x.brushIds.filter((id) => !drop.has(id)) })), brushes }))
       }

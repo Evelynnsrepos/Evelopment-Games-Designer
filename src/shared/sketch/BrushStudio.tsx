@@ -286,6 +286,7 @@ export function BrushStudio({ brushId, color, onClose }: { brushId: Id; color: s
             )}
             {page === 'Rendering' && (
               <>
+                {num('height', 'Height (3D paint)', 0, 1, '%', 'Thick paint: strokes look raised and catch the light')}
                 <div className="studio-modes">
                   {RENDER_MODES.map((m) => (
                     <label key={m.id} className={`studio-mode${s.renderMode === m.id ? ' is-active' : ''}`}>

@@ -31,6 +31,8 @@ export interface InputSettings {
    * while ticked (null = use the brush's own). Set in the side panel.
    */
   overrides: { streamline: number | null; stabilization: number | null; tether: number | null }
+  /** Your own canvas sizes for new drawings. */
+  canvasPresets: { name: string; width: number; height: number }[]
 }
 
 export const defaultInputSettings = (): InputSettings => ({
@@ -44,6 +46,7 @@ export const defaultInputSettings = (): InputSettings => ({
   touchGestures: true,
   fingerDraws: true,
   overrides: { streamline: null, stabilization: null, tether: null },
+  canvasPresets: [],
 })
 
 /** Fill in missing fields and fix broken ones, so older or hand-edited files keep working. */
@@ -57,6 +60,7 @@ export function normalizeInputSettings(saved: Partial<InputSettings>): InputSett
     pressureCurve: curve.length >= 2 && curve.length <= MAX_CURVE_POINTS ? curve : LINEAR,
     penButtons: { ...d.penButtons, ...s.penButtons },
     overrides: { ...d.overrides, ...s.overrides },
+    canvasPresets: Array.isArray(s.canvasPresets) ? s.canvasPresets.filter((c) => c && typeof c.name === 'string' && c.width > 0 && c.height > 0) : [],
     quickMenus,
     quickMenuId: quickMenus.some((q) => q.id === s.quickMenuId) ? s.quickMenuId : quickMenus[0].id,
   }

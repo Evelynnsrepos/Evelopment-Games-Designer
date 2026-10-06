@@ -1139,8 +1139,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           <LayersPanel host={layerHost} headerExtra={layersButtons} />
         </FloatingPanel>
       )}
-      {activeLayer?.text && (
-        <FloatingPanel title={UI_PRO.textOptions} at={textSpot} onMove={setTextSpot} width={290}>
+      {activeLayer?.text && tool === 'text' && (
+        <FloatingPanel title={UI_PRO.textOptions} at={textSpot} onMove={setTextSpot} onClose={() => setTool('move')} width={290}>
           <TextPanel host={layerHost} layer={activeLayer} />
         </FloatingPanel>
       )}
