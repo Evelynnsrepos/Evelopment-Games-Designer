@@ -1,4 +1,4 @@
-import { ArrowLeftRight, Check, Ellipsis, ImagePlus, LayoutGrid, Maximize2, Minimize2, Plus, Rows3, Upload, X } from 'lucide-react'
+import { ArrowLeftRight, Check, Ellipsis, FolderPlus, ImagePlus, LayoutGrid, Maximize2, Minimize2, Plus, Rows3, Upload, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { saveBinaryFile, safeFileName } from '@/core/export'
 import { promptDialog } from '../dialogs'
@@ -33,6 +33,12 @@ const UI = {
   secondary: 'Second colour: click to swap',
   swap: 'Swap colours',
   history: 'Recent colours',
+  historyEmpty: 'Colours you paint with show up here.',
+  choosePalette: 'Palette shown here',
+  addToPalette: 'Add the current colour to this palette',
+  newPaletteTitle: 'New palette',
+  newPaletteName: 'My palette',
+  removeHint: 'Right-click to remove it from the palette',
   float: 'Float the colour panel',
   dock: 'Put the colour panel back',
   floating: 'The colour panel is floating over the canvas.',
@@ -148,12 +154,17 @@ export function ColorPanel(p: ColorPanelProps) {
       {tab === 'harmony' && <HarmonyView color={p.color} setColor={p.setColor} />}
       {tab === 'value' && <Values color={p.color} setColor={p.setColor} />}
       {tab === 'palettes' && <Palettes color={p.color} setColor={p.setColor} />}
-      <div className="cp-row" title={UI.history}>
-        {pal.history.map((h) => (
-          <button key={h} className={`sketch-swatch${h === p.color ? ' is-active' : ''}`} style={{ background: h }} title={`${colorName(h)} ${h}`} onClick={() => p.setColor(h)} />
-        ))}
+      <div className="cp-label">{UI.history}</div>
+      <div className="cp-row">
+        {pal.history.length ? (
+          pal.history.map((h) => (
+            <button key={h} className={`sketch-swatch${h === p.color ? ' is-active' : ''}`} style={{ background: h }} title={`${colorName(h)} ${h}`} onClick={() => p.setColor(h)} />
+          ))
+        ) : (
+          <span className="muted cp-empty">{UI.historyEmpty}</span>
+        )}
       </div>
-      {tab !== 'palettes' && <PaletteRow palette={pal.palettes.find((x) => x.id === pal.defaultId) ?? pal.palettes[0]} extra={p.swatches} color={p.color} setColor={p.setColor} />}
+      {tab !== 'palettes' && <QuickPalette color={p.color} setColor={p.setColor} extra={p.swatches} />}
       <label className="sketch-row cp-space">
         <span>{UI.canvasColors}</span>
         <select className="input" value={p.colorSpace} disabled={!p3Supported && p.colorSpace === 'srgb'} title={p3Supported ? undefined : UI.p3Missing} onChange={(e) => p.onColorSpace(e.target.value as 'srgb' | 'display-p3')}>
@@ -350,14 +361,54 @@ function Values({ color, setColor }: PickerProps) {
   )
 }
 
-function PaletteRow({ palette, extra, color, setColor }: { palette: Palette | undefined; extra: string[]; color: string; setColor(c: string): void }) {
-  const list = [...new Set([...(palette?.colors.map((c) => c.hex) ?? []), ...extra])]
+/** The palette under the wheel: pick a palette, add the current colour with +, make a new one. Right-click a colour to remove it. */
+function QuickPalette({ color, setColor, extra }: { color: string; setColor(c: string): void; extra: string[] }) {
+  const pal = usePalettes()
+  const palette = pal.palettes.find((x) => x.id === pal.defaultId) ?? pal.palettes[0]
+  const addHere = () => {
+    if (!palette) {
+      pal.setDefault(pal.add(UI.newPaletteName, [{ hex: color }]))
+      return
+    }
+    if (!palette.colors.some((c) => c.hex.toLowerCase() === color.toLowerCase())) pal.update(palette.id, { colors: [...palette.colors, { hex: color }] })
+  }
+  const newPalette = async () => {
+    const name = (await promptDialog(UI.newPaletteTitle, UI.newPaletteName))?.trim()
+    if (name) pal.setDefault(pal.add(name, [{ hex: color }]))
+  }
   return (
-    <div className="cp-row">
-      {list.map((h) => (
-        <button key={h} className={`sketch-swatch${h === color ? ' is-active' : ''}`} style={{ background: h }} title={`${colorName(h)} ${h}`} onClick={() => setColor(h)} />
-      ))}
-    </div>
+    <>
+      <div className="cp-label cp-palette-head">
+        <select className="input" value={palette?.id ?? ''} onChange={(e) => pal.setDefault(e.target.value)} title={UI.choosePalette}>
+          {pal.palettes.map((x) => (
+            <option key={x.id} value={x.id}>
+              {x.name}
+            </option>
+          ))}
+        </select>
+        <button className="icon-btn" title={UI.addToPalette} onClick={addHere}>
+          <Plus size={14} />
+        </button>
+        <button className="icon-btn" title={UI.newPaletteTitle} onClick={() => void newPalette()}>
+          <FolderPlus size={14} />
+        </button>
+      </div>
+      <div className="cp-row">
+        {[...new Set([...(palette?.colors.map((c) => c.hex) ?? []), ...extra])].map((h) => (
+          <button
+            key={h}
+            className={`sketch-swatch${h === color ? ' is-active' : ''}`}
+            style={{ background: h }}
+            title={`${colorName(h)} ${h}. ${UI.removeHint}`}
+            onClick={() => setColor(h)}
+            onContextMenu={(e) => {
+              e.preventDefault()
+              if (palette) pal.update(palette.id, { colors: palette.colors.filter((c) => c.hex !== h) })
+            }}
+          />
+        ))}
+      </div>
+    </>
   )
 }
 

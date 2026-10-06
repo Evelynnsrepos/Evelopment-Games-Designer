@@ -199,6 +199,12 @@ export interface PipelineOptions {
   stabilization: number
   /** 0..1, app-wide motion filtering (removes jitter). */
   motionFilter: number
+  /**
+   * Tether length in canvas pixels (the brush's Stabilization): the brush tip
+   * only moves once the pen is farther away than this, and is pulled along
+   * behind it like on a string. 0 = off.
+   */
+  tether?: number
   constraint?: PointConstraint | null
 }
 
@@ -225,6 +231,7 @@ export class PenPipeline {
   private window: PenPoint[] = []
   private size: number
   private smooth: PenPoint | null = null
+  private tip: PenPoint | null = null
   private lastT: number | null = null
   private lastRaw: { p: PenPoint; t: number } | null = null
   private opts: PipelineOptions
@@ -245,7 +252,27 @@ export class PenPipeline {
     const k = followFor(this.opts.streamline, t - (this.lastT ?? t))
     this.smooth = prev ? { ...avg, x: prev.x + (avg.x - prev.x) * k, y: prev.y + (avg.y - prev.y) * k, pressure: prev.pressure + (avg.pressure - prev.pressure) * k } : avg
     if (commit) this.lastT = t
-    return this.opts.constraint ? this.opts.constraint.apply(this.smooth, commit) : this.smooth
+    let out: PenPoint = this.smooth
+    const len = this.opts.tether ?? 0
+    if (len > 0) {
+      if (!this.tip) this.tip = out
+      else {
+        const dx = out.x - this.tip.x
+        const dy = out.y - this.tip.y
+        const d = Math.hypot(dx, dy)
+        // Inside the tether nothing is drawn; the pen only pulls the tip once the string is tight.
+        if (d <= len) return null
+        const k = (d - len) / d
+        this.tip = { ...out, x: this.tip.x + dx * k, y: this.tip.y + dy * k }
+      }
+      out = this.tip
+    }
+    return this.opts.constraint ? this.opts.constraint.apply(out, commit) : out
+  }
+
+  /** Where the brush is while a tether is on (for drawing the string to the pen); null without one. */
+  get tetherTip(): PenPoint | null {
+    return (this.opts.tether ?? 0) > 0 ? this.tip : null
   }
 
   /** Feed one real input point (`t` in ms); returns 0 or 1 points to draw. */
@@ -257,7 +284,7 @@ export class PenPipeline {
 
   /** Predicted points to preview; nothing is remembered. */
   peek(raws: { p: PenPoint; t: number }[]): PenPoint[] {
-    const saved = { filter: this.filter, window: this.window, smooth: this.smooth, lastT: this.lastT }
+    const saved = { filter: this.filter, window: this.window, smooth: this.smooth, lastT: this.lastT, tip: this.tip }
     this.filter = this.filter.clone()
     const out: PenPoint[] = []
     for (const r of raws) {
@@ -268,12 +295,13 @@ export class PenPipeline {
     this.window = saved.window
     this.smooth = saved.smooth
     this.lastT = saved.lastT
+    this.tip = saved.tip
     return out
   }
 
   /** At pen up: let the smoothing catch up, so the stroke still ends where the pen was lifted. */
   flush(): PenPoint[] {
-    if (!this.lastRaw || (this.size <= 1 && this.opts.streamline <= 0)) return []
+    if (!this.lastRaw || (this.opts.tether ?? 0) > 0 || (this.size <= 1 && this.opts.streamline <= 0)) return []
     const out: PenPoint[] = []
     const end = this.lastRaw.p
     for (let i = 1; i <= 60; i++) {

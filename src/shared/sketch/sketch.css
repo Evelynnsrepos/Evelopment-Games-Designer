@@ -509,3 +509,48 @@
 .sketch-stage.see-through {
   background: transparent;
 }
+
+/* Stabilization string from the brush tip to the pen. */
+.sketch-tether line {
+  stroke: var(--accent);
+  stroke-dasharray: 4 3;
+  vector-effect: non-scaling-stroke;
+}
+.sketch-tether circle {
+  fill: var(--accent);
+  stroke: #fff;
+}
+
+/* Keyboard shortcut cheat sheet. */
+.shortcut-sheet {
+  width: min(720px, 80vw);
+  columns: 2 260px;
+  column-gap: 24px;
+  max-height: 60vh;
+  overflow: auto;
+}
+.shortcut-sheet section {
+  break-inside: avoid;
+  margin-bottom: 10px;
+}
+.shortcut-sheet h4 {
+  margin: 6px 0 4px;
+}
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 2px 0;
+  font-size: 13px;
+}
+.shortcut-keys kbd {
+  margin-left: 4px;
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+}
+.modal:has(.shortcut-sheet) {
+  width: auto;
+  max-width: 90vw;
+}

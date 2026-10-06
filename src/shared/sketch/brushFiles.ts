@@ -171,7 +171,8 @@ const KEYS: Record<string, Num> = {
   taperopacity: (v, o) => (o.taperOpacity = v),
   taperpressure: (v, o) => (o.taperPressure = v),
   shapescatter: (v, o) => (o.rotationJitter = v),
-  shaperotation: (v, o) => (o.rotation = Math.round(v * 360)),
+  // -100% … 100%: the shape turns with the stroke from about half way, otherwise it keeps its angle on the canvas.
+  shaperotation: (v, o) => (o.rotation = Math.abs(v) >= 0.5 ? 'follow' : 0),
   shapecount: (v, o) => (o.count = Math.max(1, Math.round(v))),
   shapecountjitter: (v, o) => (o.countJitter = v),
   shaperoundness: (v, o) => (o.roundness = Math.max(0.05, v)),

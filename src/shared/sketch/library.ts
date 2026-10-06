@@ -55,8 +55,8 @@ async function libraryPath() {
 }
 
 const MAX_RECENT = 8
-/** Bumped when stored brush images are cleaned up (2: scaled to 512 px, duplicates removed). */
-const IMAGES_VERSION = 2
+/** Bumped for one-time library clean-ups (2: images scaled to 512 px, duplicates removed; 3: built-in bristle brushes turn with the stroke). */
+const IMAGES_VERSION = 3
 
 export const useBrushLibrary = create<LibraryState>()((set, get) => {
   // Sliders change brushes many times a second; write once things settle (one write at a time).
@@ -96,7 +96,11 @@ export const useBrushLibrary = create<LibraryState>()((set, get) => {
       // One-time clean-up of libraries made by the first importer: brushes added twice, and huge images.
       if (saved && saved.imagesVersion !== IMAGES_VERSION) {
         const drop = duplicateIds(get().sets, get().brushes)
-        const brushes = hasBigImages(get().brushes) ? await shrinkBrushImages(get().brushes.filter((x) => !drop.has(x.id))) : get().brushes.filter((x) => !drop.has(x.id))
+        const kept = get().brushes.filter((x) => !drop.has(x.id))
+        const shrunk = (saved.imagesVersion ?? 0) < 2 && hasBigImages(kept) ? await shrinkBrushImages(kept) : kept
+        // Built-in brushes that now turn with the stroke, unless their angle was changed.
+        const fresh = new Map(defaultLibrary().brushes.map((b) => [b.id, b]))
+        const brushes = shrunk.map((b) => (fresh.get(b.id)?.rotation === 'follow' && b.rotation === 0 ? { ...b, rotation: 'follow' as const } : b))
         // Saving writes the new version number, so this runs once.
         change((s) => ({ sets: s.sets.map((x) => ({ ...x, brushIds: x.brushIds.filter((id) => !drop.has(id)) })), brushes }))
       }

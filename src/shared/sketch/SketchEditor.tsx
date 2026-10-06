@@ -32,7 +32,6 @@ import { saveBinaryFile, safeFileName } from '@/core/export'
 import { SketchEngine } from './engine'
 import { drawPreview } from './brushes'
 import { BrushLibrary } from './BrushLibrary'
-import { SizePresets } from './SizePresets'
 import { useBrushLibrary } from './library'
 import {
   newLayer,
@@ -43,6 +42,7 @@ import {
 } from './model'
 import { gentle, HOLD_MS, keys, outline as shapeOutline, perfect, recognize, resize, type Shape } from './quickshape'
 import { ReferencePicker } from './ReferencePicker'
+import { ShortcutSheet } from './ShortcutSheet'
 import { maxLayers } from './tiles'
 import './sketch.css'
 // Sketch Pro: layers, selections (feat/sketch-layers)
@@ -69,7 +69,7 @@ import { flipAbout, pinch, rotateAbout, toDocPoint, viewMatrix, zoomAbout, type 
 // Sketch Pro: canvas, time-lapse and files.
 import { useSketchFiles } from './files/SketchFiles'
 // Sketch Pro: text layers (feat/sketch-text)
-import { Type } from 'lucide-react'
+import { Keyboard, Type } from 'lucide-react'
 import { useImportedFonts } from './fonts'
 import { TextBoxes, TextPanel } from './TextPanel'
 import { useTextLayers, useTextTool } from './textLayers'
@@ -84,6 +84,7 @@ const UI_PRO = {
   rotateRight: 'Turn view right (.)',
   flipView: 'Mirror view (Shift+H): only the view, the picture stays as it is',
   input: 'Pen and keys: pressure curve, smoothing, shortcuts, QuickMenu, tablet test',
+  shortcuts: 'Keyboard shortcuts (Shift+?)',
   editShape: 'Edit shape',
   done: 'Done',
 }
@@ -124,6 +125,7 @@ const UI = {
   size: 'Size',
   opacity: 'Opacity',
   smoothing: 'Smoothing',
+  stabilization: 'Stabilization',
   symmetry: 'Mirror',
   symmetryModes: { off: 'Off', vertical: 'Left / right', horizontal: 'Top / bottom', quad: 'Four ways' } as Record<SymmetryMode, string>,
   layers: 'Layers',
@@ -214,6 +216,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
   const [activeLayerId, setActiveLayerId] = useState<Id>([...doc.layers].reverse().find((l) => !l.kind)?.id ?? doc.layers[doc.layers.length - 1]?.id ?? '')
   const [, setVersion] = useState(0)
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  /** The stabilization string from the brush tip to the pen while drawing. */
+  const [tether, setTether] = useState<{ tip: { x: number; y: number }; pen: { x: number; y: number } } | null>(null)
   const [saving, setSaving] = useState(false)
   const [pickingRef, setPickingRef] = useState(false)
   const spaceDown = useRef(false)
@@ -499,14 +504,17 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     } else if (t === 'brush' || t === 'eraser' || t === 'smudge') {
       if (!activeLayer.visible || isGroup(activeLayer) || activeLayer.text || lockedInTree(doc.layers, activeLayer.id)) return
       const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
+      // Smoothing, stabilization (a tether up to 150 screen pixels) and motion filtering belong to the brush.
       const pipeline = new PenPipeline({
         streamline: strokeBrush.streamline,
         stabilization: input.stabilization,
-        motionFilter: input.motionFilter,
+        motionFilter: Math.max(input.motionFilter, strokeBrush.motionFilter),
+        tether: (strokeBrush.stabilization * 150) / view.scale,
         constraint: assistFor(liveGuide, activeLayer.id, 8 / view.scale),
       })
       const pt = pipeline.push({ ...p, ...penData(e.nativeEvent, input.pressureCurve) }, e.timeStamp)[0] ?? { ...p, pressure: 1 }
-      const opts = { layer: activeLayer, brush: strokeBrush, color, symmetry: 'off' as const, erase: t === 'eraser', smudge: t === 'smudge', mirror: symmetryMirror(liveGuide, activeLayer.id) }
+      // The pipeline already smoothed the points; the brush must not do it a second time.
+      const opts = { layer: activeLayer, brush: { ...strokeBrush, stabilization: 0, motionFilter: 0 }, color, symmetry: 'off' as const, erase: t === 'eraser', smudge: t === 'smudge', mirror: symmetryMirror(liveGuide, activeLayer.id) }
       engine.beginStroke(opts, pt)
       gesture.current = { kind: 'paint', pipeline, last: pt, opts, pts: [pt], rest: pt }
       armHold()
@@ -552,6 +560,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           g.last = q
         }
       }
+      const tip = g.pipeline.tetherTip
+      setTether(tip ? { tip, pen: p } : null)
       // Predicted points ahead of the pen: shown in the live stroke only, replaced on the next move, never saved.
       const predicted = e.nativeEvent.getPredictedEvents?.() ?? []
       engine.predict(g.pipeline.peek(predicted.map((ev) => ({ p: { ...toDoc(ev), ...penData(ev, input.pressureCurve) }, t: ev.timeStamp }))), g.last)
@@ -575,6 +585,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     gesture.current = null
     if (!g) return
     if (g.kind === 'paint') {
+      setTether(null)
       clearTimeout(g.timer)
       // Let stabilization catch up with the pen (not for a snapped shape, which is redrawn whole).
       if (!g.snapped) for (const q of g.pipeline.flush()) engine.strokeTo(q)
@@ -696,6 +707,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     if (b) st.updateBrush(b.id, { size: Math.max(b.minSize, Math.min(b.maxSize, Math.round(b.size * k))) })
   }
   const sketchActions: Record<ActionId, () => void> = {
+    shortcuts: () => setSheetOpen(true),
     'tool.brush': () => setTool('brush'),
     'tool.eraser': () => setTool('eraser'),
     'tool.smudge': () => setTool('smudge'),
@@ -892,6 +904,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={RotateCw} label={UI_PRO.rotateRight} onClick={() => runAction('rotateRight')} />
         <ToolButton icon={FlipHorizontal} label={UI_PRO.flipView} active={!!view?.flip} onClick={() => runAction('flipView')} />
         <ToolButton icon={Settings2} label={UI_PRO.input} onClick={() => setInputOpen(true)} />
+        <ToolButton icon={Keyboard} label={UI_PRO.shortcuts} onClick={() => setSheetOpen(true)} />
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
         {files.buttons}
@@ -965,6 +978,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
                 <TextBoxes layers={doc.layers} activeId={activeLayer?.id} scale={view.scale} all={tool === 'text'} />
                 <TransformOverlay xf={xf} scale={view.scale} width={doc.width} height={doc.height} />
                 {shapeOffer?.editing && <ShapeNodes shape={shapeOffer.shape} scale={view.scale} toDoc={toDoc} onChange={changeShape} />}
+                {tether && (
+                  <g className="sketch-tether" style={{ strokeWidth: 1.5 / view.scale }}>
+                    <line x1={tether.tip.x} y1={tether.tip.y} x2={tether.pen.x} y2={tether.pen.y} />
+                    <circle cx={tether.tip.x} cy={tether.tip.y} r={4 / view.scale} />
+                  </g>
+                )}
                 {showBrushCursor && cursor && <BrushCursor at={cursor} brush={cursorBrush} scale={view.scale} erase={tool === 'eraser' || hoverEraser} />}
               </g>
             </svg>
@@ -1050,9 +1069,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
               {libraryOpen && <BrushLibrary mode={libraryOpen} color={color} at={libraryAt} onClose={() => setLibraryOpen(null)} />}
             </div>
             <Slider label={UI.size} min={brush.minSize} max={brush.maxSize} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
-            <SizePresets brush={brush} onChange={setBrush} />
             <Slider label={UI.opacity} min={brush.minOpacity} max={brush.maxOpacity} step={0.01} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
             <Slider label={UI.smoothing} min={0} max={1} step={0.05} value={brush.streamline} onChange={(streamline) => setBrush({ streamline })} percent />
+            <Slider label={UI.stabilization} min={0} max={1} step={0.05} value={brush.stabilization} onChange={(stabilization) => setBrush({ stabilization })} percent />
           </section>
 
           <GuidePanel guide={guide} layerId={activeLayer?.id} editing={editingGuide} onEditing={setEditingGuide} onChange={setGuide} />
@@ -1062,6 +1081,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       </div>
 
       {inputOpen && <InputSettingsDialog onClose={() => setInputOpen(false)} />}
+      {sheetOpen && <ShortcutSheet onClose={() => setSheetOpen(false)} />}
       {files.dialogs}
       {pickingRef && (
         <ReferencePicker

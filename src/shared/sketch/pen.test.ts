@@ -79,6 +79,16 @@ describe('reading the pen', () => {
 })
 
 describe('smoothing', () => {
+  it('a tether only pulls the brush once the pen is farther than its length', () => {
+    const pipe = new PenPipeline({ streamline: 0, stabilization: 0, motionFilter: 0, tether: 20 })
+    expect(pipe.push({ x: 0, y: 0, pressure: 1 }, 0)).toHaveLength(1)
+    expect(pipe.push({ x: 15, y: 0, pressure: 1 }, 16)).toEqual([]) // still slack
+    const [q] = pipe.push({ x: 50, y: 0, pressure: 1 }, 32)
+    expect(q.x).toBeCloseTo(30) // 20 px behind the pen
+    expect(pipe.tetherTip?.x).toBeCloseTo(30)
+    expect(pipe.flush()).toEqual([])
+  })
+
   it('smooths the same no matter how many points the pen sends', () => {
     const run = (hz: number) => {
       const pipe = new PenPipeline({ streamline: 0.6, stabilization: 0, motionFilter: 0 })
