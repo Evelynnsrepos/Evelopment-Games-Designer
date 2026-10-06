@@ -217,6 +217,8 @@ const SETS: [setId: string, name: string, icon: string, brushes: Def[]][] = [
       ['soft-blender', 'Soft Blender', { ...blender, size: 60, hardness: 0.1 }],
       ['bristle-blender', 'Bristle Blender', { rotation: 'follow', ...blender, size: 50, shape: 'bristle', pull: 0.8 }],
       ['water-brush', 'Water Brush', { ...blender, size: 50, pull: 0.6, wetBlur: 0.7, dilution: 0.5 }],
+      ['soft-blur', 'Soft Blur', { ...blender, size: 70, hardness: 0.05, smudgeMode: 'blur', wetBlur: 0.5, opacity: 0.8, pressureOpacity: 0.8 }],
+      ['detail-blur', 'Detail Blur', { ...blender, size: 24, hardness: 0.3, smudgeMode: 'blur', wetBlur: 0.25, opacity: 0.7 }],
       ['knife-blender', 'Knife Blender', { ...blender, size: 50, shape: 'square', roundness: 0.25, pull: 0.95, attack: 0.9 }],
     ],
   ],

@@ -181,6 +181,8 @@ export interface BrushSettings {
   grade: number
   /** 0..1, blurs the colours that are picked up. */
   wetBlur: number
+  /** What the Smudge tool does with this brush: drag colour along, or soften (blur) what is under it. */
+  smudgeMode: 'drag' | 'blur'
   /** 0..1, random change of the water per stamp. */
   wetJitter: number
   // Colour dynamics (-1..1 shifts; jitters 0..1)
@@ -335,6 +337,7 @@ export const BASE_BRUSH: BrushSettings = {
   pull: 0,
   grade: 0,
   wetBlur: 0,
+  smudgeMode: 'drag',
   wetJitter: 0,
   hueJitter: 0,
   satJitter: 0,
@@ -395,6 +398,7 @@ export function normalizeSettings(b: Partial<BrushSettings>): BrushSettings {
   s.grainFiltering = oneOf(FILTERINGS, s.grainFiltering, 'improved')
   if (!CANVAS_BLENDS.has(s.blend)) s.blend = 'source-over'
   if (s.grainMode !== 'moving') s.grainMode = 'texturized'
+  if (s.smudgeMode !== 'blur') s.smudgeMode = 'drag'
   if (s.rotation !== 'follow' && s.rotation !== 'random' && !(typeof s.rotation === 'number' && Number.isFinite(s.rotation))) s.rotation = 'follow'
   const presets = Array.isArray(s.sizePresets) ? s.sizePresets : []
   s.sizePresets = [0, 1, 2, 3].map((i) => (typeof presets[i] === 'number' && presets[i]! > 0 ? presets[i] : null))

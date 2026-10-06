@@ -316,6 +316,10 @@ export function BrushStudio({ brushId, color, onClose }: { brushId: Id; color: s
                 {num('pull', 'Pull', 0, 1, '%', 'Drags the colors underneath')}
                 {num('grade', 'Grade', 0, 1, '%', 'Deeper color where paint overlaps')}
                 {num('wetBlur', 'Blur', 0, 1)}
+                {choice('smudgeMode', 'With the Smudge tool', [
+                  { id: 'drag', label: 'Drag colour along' },
+                  { id: 'blur', label: 'Blur what is underneath' },
+                ])}
                 {num('wetJitter', 'Wetness jitter', 0, 1)}
               </>
             )}

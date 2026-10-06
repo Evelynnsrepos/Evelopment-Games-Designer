@@ -26,6 +26,11 @@ export interface InputSettings {
   touchGestures: boolean
   /** One finger draws; when off one finger pans. */
   fingerDraws: boolean
+  /**
+   * Values that replace every brush's own smoothing, stabilization and tether
+   * while ticked (null = use the brush's own). Set in the side panel.
+   */
+  overrides: { streamline: number | null; stabilization: number | null; tether: number | null }
 }
 
 export const defaultInputSettings = (): InputSettings => ({
@@ -38,6 +43,7 @@ export const defaultInputSettings = (): InputSettings => ({
   quickMenuId: DEFAULT_QUICK_MENU.id,
   touchGestures: true,
   fingerDraws: true,
+  overrides: { streamline: null, stabilization: null, tether: null },
 })
 
 /** Fill in missing fields and fix broken ones, so older or hand-edited files keep working. */
@@ -50,6 +56,7 @@ export function normalizeInputSettings(saved: Partial<InputSettings>): InputSett
     ...s,
     pressureCurve: curve.length >= 2 && curve.length <= MAX_CURVE_POINTS ? curve : LINEAR,
     penButtons: { ...d.penButtons, ...s.penButtons },
+    overrides: { ...d.overrides, ...s.overrides },
     quickMenus,
     quickMenuId: quickMenus.some((q) => q.id === s.quickMenuId) ? s.quickMenuId : quickMenus[0].id,
   }

@@ -592,3 +592,12 @@
 .fp-body > section > h4:first-child {
   display: none;
 }
+
+/* Smoothing, stabilization and tether: only used while ticked. */
+.sketch-override {
+  grid-template-columns: 16px 84px 1fr 40px;
+}
+.sketch-override.is-off span,
+.sketch-override.is-off input[type='range'] {
+  opacity: 0.45;
+}

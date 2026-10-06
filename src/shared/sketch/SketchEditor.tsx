@@ -86,6 +86,8 @@ const UI_PRO = {
   flipView: 'Mirror view (Shift+H): only the view, the picture stays as it is',
   input: 'Pen and keys: pressure curve, smoothing, shortcuts, QuickMenu, tablet test',
   shortcuts: 'Keyboard shortcuts (Shift+?)',
+  override: { streamline: 'Smoothing', stabilization: 'Stabilization', tether: 'Tether' },
+  overrideHint: "Tick to use your own value for every brush. Unticked, each brush uses its own setting (shown greyed out).",
   layers: 'Layers',
   textOptions: 'Text',
   showLayers: 'Show the layers',
@@ -541,9 +543,12 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       textTool.down(p)
     } else if (t === 'brush' || t === 'eraser' || t === 'smudge') {
       if (!activeLayer.visible || isGroup(activeLayer) || activeLayer.text || lockedInTree(doc.layers, activeLayer.id)) return
-      const strokeBrush = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
-      // Smoothing, stabilization and motion filtering are the brush's own (the brush applies the last two);
-      // the app-wide settings in Pen and keys add to them. The tether reaches up to 150 screen pixels.
+      const own = lib.brushes.find((b) => b.id === (t === 'eraser' ? lib.eraserId : lib.brushId)) ?? brush
+      // Smoothing, stabilization and tether are the brush's own, unless ticked in the side panel to use other values.
+      const ov = input.overrides
+      const strokeBrush = { ...own, streamline: ov.streamline ?? own.streamline, stabilization: ov.stabilization ?? own.stabilization, tether: ov.tether ?? own.tether }
+      // The brush applies stabilization and motion filtering; the app-wide ones in Pen and keys add to them.
+      // The tether reaches up to 150 screen pixels.
       const pipeline = new PenPipeline({
         streamline: strokeBrush.streamline,
         stabilization: input.stabilization,
@@ -1116,6 +1121,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             </div>
             <Slider label={UI.size} min={brush.minSize} max={brush.maxSize} value={brush.size} log onChange={(size) => setBrush({ size })} suffix="px" />
             <Slider label={UI.opacity} min={brush.minOpacity} max={brush.maxOpacity} step={0.01} value={brush.opacity} onChange={(opacity) => setBrush({ opacity })} percent />
+            {(['streamline', 'stabilization', 'tether'] as const).map((k) => (
+              <OverrideSlider key={k} label={UI_PRO.override[k]} own={brush[k]} value={input.overrides[k]} onChange={(v) => useInputSettings.getState().update({ overrides: { ...input.overrides, [k]: v } })} />
+            ))}
           </section>
 
           <GuidePanel guide={guide} layerId={activeLayer?.id} editing={editingGuide} onEditing={setEditingGuide} onChange={setGuide} />
@@ -1154,6 +1162,20 @@ function ToolButton(p: { icon: LucideIcon; label: string; onClick: () => void; a
     <button className={`icon-btn sketch-tool${p.active ? ' is-active' : ''}`} title={p.label} aria-label={p.label} aria-pressed={p.active} disabled={p.disabled} onClick={p.onClick}>
       <p.icon size={16} />
     </button>
+  )
+}
+
+/** A slider that only counts while its box is ticked; unticked it shows the brush's own value, greyed out. */
+function OverrideSlider(p: { label: string; own: number; value: number | null; onChange(v: number | null): void }) {
+  const on = p.value !== null
+  const shown = on ? p.value! : p.own
+  return (
+    <label className={`sketch-slider sketch-override${on ? '' : ' is-off'}`} title={UI_PRO.overrideHint}>
+      <input type="checkbox" checked={on} onChange={(e) => p.onChange(e.target.checked ? p.own : null)} />
+      <span>{p.label}</span>
+      <input type="range" min={0} max={1} step={0.05} value={shown} disabled={!on} onChange={(e) => p.onChange(Number(e.target.value))} />
+      <span className="sketch-slider-value">{Math.round(shown * 100)}%</span>
+    </label>
   )
 }
 

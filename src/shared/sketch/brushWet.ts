@@ -41,6 +41,7 @@ export class WetStamper extends StrokeStamper {
   private tipC = makeCtx(2, 2)
   private sample = makeCtx(2, 2)
   private paint = makeCtx(2, 2)
+  private blurC: Ctx | null = null
 
   constructor(ctx: Ctx, brush: BrushSettings, mirror: ((p: { x: number; y: number }) => { x: number; y: number }[]) | undefined, seed: number | undefined, color: string, layer: HTMLCanvasElement, smudge: boolean) {
     super(ctx, { ...brush, tipAnimation: false, dual: null }, mirror, seed, color)
@@ -101,7 +102,18 @@ export class WetStamper extends StrokeStamper {
       // The paint this stamp lays down, masked by the stamp shape.
       this.fit(this.paint, s)
       const p = this.paint
-      if (this.smudge) p.drawImage(carry.canvas, 0, 0)
+      if (this.smudge && b.smudgeMode === 'blur') {
+        // Blur: soften what is under the stamp instead of dragging colour; Blur sets how much.
+        // Sample a margin around the stamp, so the blur does not fade into empty space at its edges.
+        const r = Math.max(1, ((0.15 + b.wetBlur) * s) / 6)
+        const pad = Math.ceil(r * 3)
+        const big = (this.blurC ??= makeCtx(2, 2))
+        this.fit(big, s + pad * 2)
+        big.filter = `blur(${r}px)`
+        big.drawImage(this.work.canvas, x0 - pad, y0 - pad, s + pad * 2, s + pad * 2, 0, 0, s + pad * 2, s + pad * 2)
+        big.filter = 'none'
+        p.drawImage(big.canvas, pad, pad, s, s, 0, 0, s, s)
+      } else if (this.smudge) p.drawImage(carry.canvas, 0, 0)
       else {
         const left = b.charge >= 1 ? 1 : Math.exp(-d.at / (b.charge * 1500 + 20))
         const water = Math.min(1, b.dilution * (1 + (this.rand() - 0.5) * b.wetJitter))
