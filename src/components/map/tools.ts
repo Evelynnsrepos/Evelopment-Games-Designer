@@ -1,12 +1,13 @@
-import { Landmark, Route, Trees } from 'lucide-react'
+import { Hexagon, Landmark, Route, Trees } from 'lucide-react'
 import { addNodes, DRAG_THRESHOLD, deleteNodes, rectContainsPoint, startMove, type CanvasApi, type CanvasTool, type Point, type ToolPointerEvent } from '@/shared/canvas'
-import { brushPositions, dedupePoints, isCity, isStamp, makeStamp, makeStreet, type MapNode, type StreetStyle } from './model'
+import { brushPositions, dedupePoints, isCity, isStamp, makeStamp, makeStreet, makeZone, type MapNode, type StreetStyle } from './model'
 import type { StampKind } from './stamps'
 
 export const TOOL_UI = {
   city: 'City',
   street: 'Street (click points, double-click or Enter to finish)',
   stamp: 'Terrain stamp (drag to paint, Alt+drag to erase)',
+  zone: 'Zone, e.g. the land of a faction (click corners, double-click or Enter to close)',
 }
 
 /** What the tools need from the Map Creator view. */
@@ -17,6 +18,10 @@ export interface MapToolHost {
   cancelCity(): boolean
   streetStyle(): StreetStyle
   stamp(): { icon: StampKind; size: number }
+  /** Color for a new zone. */
+  zoneColor(): string
+  /** A zone was drawn: select it so its panel opens. */
+  zoneDrawn(id: string): void
 }
 
 type Api = CanvasApi<MapNode>
@@ -172,6 +177,62 @@ function eraseGesture(e: ToolPointerEvent, api: Api) {
     },
     cancel() {
       api.preview(null)
+    },
+  }
+}
+
+/** Zone (Z): click corners, double-click or Enter to close the shape, Backspace removes the last corner (v0.12). */
+export function zoneTool(host: MapToolHost): CanvasTool<MapNode> {
+  let points: Point[] = []
+  let hover: Point | null = null
+
+  const showDraft = (api: Api) => {
+    const all = hover ? [...points, hover] : points
+    const draft = all.length >= 3 ? makeZone(all, host.zoneColor()) : makeStreet(all, 'border')
+    api.setDraft(draft ? [draft] : null)
+  }
+  const reset = (api: Api) => {
+    points = []
+    hover = null
+    api.setDraft(null)
+  }
+  const finish = (api: Api) => {
+    const zone = makeZone(dedupePoints(points), host.zoneColor())
+    reset(api)
+    if (!zone) return
+    api.update((s) => addNodes(s, [{ ...zone, layerId: api.activeLayerId }]))
+    host.zoneDrawn(zone.id)
+  }
+
+  return {
+    id: 'zone',
+    label: TOOL_UI.zone,
+    icon: Hexagon,
+    shortcut: 'Z',
+    cursor: 'crosshair',
+    pointerDown(e, api) {
+      if (e.button !== 0) return
+      points.push(e.world)
+      if (e.clickCount === 2) finish(api)
+      else showDraft(api)
+    },
+    hover(e, api) {
+      if (points.length === 0) return
+      hover = e ? e.world : null
+      showDraft(api)
+    },
+    keyDown(e, api) {
+      if (points.length === 0) return false
+      if (e.key === 'Enter') finish(api)
+      else if (e.key === 'Escape') reset(api)
+      else if (e.key === 'Backspace' || e.key === 'Delete') {
+        points.pop()
+        showDraft(api)
+      } else return false
+      return true
+    },
+    deactivate(api) {
+      finish(api)
     },
   }
 }

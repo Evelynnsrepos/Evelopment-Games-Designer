@@ -1,5 +1,6 @@
 import { newId, type Id } from '@/core/model'
 import { addNodes, type Layer, type NodeBase, type Scene } from '@/shared/canvas'
+import type { JumpTarget } from '@/shared/entityList/navigation'
 import type { StampKind } from './stamps'
 
 /**
@@ -11,6 +12,7 @@ import type { StampKind } from './stamps'
 export const MAP_LAYERS = {
   background: 'background',
   terrain: 'terrain',
+  zones: 'zones',
   streets: 'streets',
   cities: 'cities',
   labels: 'labels',
@@ -20,6 +22,7 @@ export type MapLayerId = (typeof MAP_LAYERS)[keyof typeof MAP_LAYERS]
 export const LAYER_NAMES: Record<MapLayerId, string> = {
   background: 'Background image',
   terrain: 'Terrain',
+  zones: 'Zones',
   streets: 'Streets',
   cities: 'Cities',
   labels: 'Labels',
@@ -91,7 +94,44 @@ export interface MapLineNode extends NodeBase {
   smooth?: boolean
 }
 
-export type MapNode = CityNode | StreetNode | StampNode | BackdropNode | MapTextNode | MapLineNode
+/**
+ * A zone (v0.12): an area such as a faction's territory, a forest or a kingdom, drawn as a closed shape.
+ * It can belong to a faction (and take its color) and link to characters, towns, documents and more.
+ */
+export interface ZoneNode extends NodeBase {
+  kind: 'zone'
+  /** Corners relative to (x, y). */
+  points: number[]
+  name: string
+  color: string
+  factionId: Id | null
+  links: JumpTarget[]
+  notes?: string
+}
+
+export const ZONE_COLORS = ['#c0392b', '#2f5fa8', '#2f7d46', '#7b4bb0', '#c47a1d', '#0c8599', '#c2255c', '#5c5c5c']
+
+export function makeZone(world: { x: number; y: number }[], color: string): ZoneNode | null {
+  if (world.length < 3) return null
+  const [o] = world
+  return { id: newId(), kind: 'zone', layerId: MAP_LAYERS.zones, x: o.x, y: o.y, points: world.flatMap((p) => [p.x - o.x, p.y - o.y]), name: '', color, factionId: null, links: [] }
+}
+
+export const isZone = (n: NodeBase | undefined): n is ZoneNode => n?.kind === 'zone'
+
+/** The middle of a zone's corners (relative), where its name is shown. */
+export function zoneCenter(points: number[]): { x: number; y: number } {
+  let x = 0
+  let y = 0
+  const n = points.length / 2
+  for (let i = 0; i < points.length; i += 2) {
+    x += points[i]
+    y += points[i + 1]
+  }
+  return n ? { x: x / n, y: y / n } : { x: 0, y: 0 }
+}
+
+export type MapNode = CityNode | StreetNode | StampNode | BackdropNode | MapTextNode | MapLineNode | ZoneNode
 
 export interface MapDoc {
   scene: Scene<MapNode>
@@ -132,6 +172,8 @@ export function layerForTool(toolId: string): MapLayerId | null {
       return MAP_LAYERS.terrain
     case 'street':
       return MAP_LAYERS.streets
+    case 'zone':
+      return MAP_LAYERS.zones
     case 'city':
       return MAP_LAYERS.cities
     case 'text':

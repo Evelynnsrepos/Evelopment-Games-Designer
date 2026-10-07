@@ -24,12 +24,14 @@ import {
   type Point,
 } from '@/shared/canvas'
 import { CityPanel } from './CityPanel'
+import { ZonePanel, type ZoneFaction } from './ZonePanel'
 import {
   addCity,
   createDefaultMap,
   ensureMapLayers,
   INK,
   isCity,
+  isZone,
   LAYER_NAMES,
   layerForTool,
   makeCity,
@@ -37,16 +39,18 @@ import {
   PAPER_COLORS,
   STREET_STYLES,
   townsOnMap,
+  ZONE_COLORS,
   type BackdropNode,
   type CityNode,
   type MapLayerId,
   type MapNode,
   type StreetStyle,
+  type ZoneNode,
 } from './model'
 import { makeMapNodeTypes } from './nodeTypes'
 import { NewCityPopup } from './NewCityPopup'
 import { STAMPS, StampIcon, type StampKind } from './stamps'
-import { cityTool, stampTool, streetTool, type MapToolHost } from './tools'
+import { cityTool, stampTool, streetTool, zoneTool, type MapToolHost } from './tools'
 import './map.css'
 
 const UI = {
@@ -67,7 +71,7 @@ const UI = {
   stamps: 'Terrain stamps',
   stampSize: 'Stamp size',
   streetStyle: 'Street style',
-  emptyHint: 'A blank map. Press C and click to place a city, S to draw streets and rivers, B to paint terrain stamps.',
+  emptyHint: 'A blank map. Press C and click to place a city, S to draw streets and rivers, B to paint terrain stamps, Z to mark zones like the land of a faction.',
   dropHint: 'Drop an image to use it as the background',
   untitled: 'Map',
 }
@@ -76,6 +80,10 @@ const STAMP_SIZES = [20, 32, 48, 72]
 
 export default function View({ documentId, active }: PanelProps) {
   const doc = useDocument('map', documentId!, createDefaultMap)
+  // Factions are read through the project's documents (the Factions tool owns them).
+  // Same default as the Factions tool, as both share one cached document.
+  const factionsDoc = useDocument<{ items: ZoneFaction[]; relations: Record<string, number>; mutual: boolean }>('factions', 'factions', () => ({ items: [], relations: {}, mutual: true }))
+  const factions = useMemo(() => factionsDoc.data?.items ?? [], [factionsDoc.data])
   const root = useProjectStore((s) => s.root)
   const towns = useProjectStore((s) => s.entities.town)
   const categories = useProjectStore((s) => s.categories)
@@ -107,6 +115,11 @@ export default function View({ documentId, active }: PanelProps) {
       },
       streetStyle: () => live.current.streetStyle,
       stamp: () => live.current.stamp,
+      zoneColor: () => ZONE_COLORS[Math.floor(Math.random() * ZONE_COLORS.length)],
+      zoneDrawn: (id) => {
+        canvas.setToolId('select')
+        canvas.setSelection([id])
+      },
     }
     return [
       selectTool,
@@ -114,10 +127,12 @@ export default function View({ documentId, active }: PanelProps) {
       cityTool(host),
       streetTool(host),
       stampTool(host),
+      zoneTool(host),
       textTool({ defaults: () => ({ textColor: INK, fontSize: 22 }) }),
       penTool({ defaults: () => ({ strokeColor: INK, strokeWidth: 2 }) }),
       commentTool('map', documentId ?? null),
     ]
+    // oxlint-disable-next-line react-hooks/exhaustive-deps -- canvas setters are stable
   }, [documentId])
 
   // Each tool draws into its own layer (terrain under streets under cities under labels).
@@ -134,7 +149,14 @@ export default function View({ documentId, active }: PanelProps) {
   }, [scene, update])
 
   const townById = useMemo(() => new Map(towns.map((t) => [t.id, t])), [towns])
-  const nodeTypes = useMemo(() => makeMapNodeTypes({ townName: (id) => townById.get(id)?.name || null }), [townById])
+  const nodeTypes = useMemo(() => {
+    const factionById = new Map(factions.map((f) => [f.id, f]))
+    const zoneLook = (z: ZoneNode) => {
+      const f = z.factionId ? factionById.get(z.factionId) : undefined
+      return { name: z.name || f?.name || '', color: f?.color ?? z.color }
+    }
+    return makeMapNodeTypes({ townName: (id) => townById.get(id)?.name || null, zoneLook })
+  }, [townById, factions])
   const backdrop = scene?.nodes.find((n): n is BackdropNode => n.kind === 'backdrop')
   const resolveImageSrc = useAssetUrls([backdrop?.src])
 
@@ -157,6 +179,7 @@ export default function View({ documentId, active }: PanelProps) {
 
   const selected = canvas.selection.length === 1 ? scene.nodes.find((n) => n.id === canvas.selection[0]) : undefined
   const selectedCity = isCity(selected) && selected.id !== panelHiddenFor ? selected : undefined
+  const selectedZone = isZone(selected) && selected.id !== panelHiddenFor ? selected : undefined
   const patchCity = (id: Id, patch: Partial<CityNode>) => binding.onChange((s) => updateNode(s, id, patch as Partial<MapNode>))
 
   // ---- background image (MP-6) ----
@@ -369,6 +392,20 @@ export default function View({ documentId, active }: PanelProps) {
           onCreate={(name) => placeCity(addEntity('town', name).id)}
           onPlace={placeCity}
           onCancel={() => setPendingCity(null)}
+        />
+      )}
+
+      {selectedZone && !settingsOpen && (
+        <ZonePanel
+          key={selectedZone.id}
+          zone={selectedZone}
+          factions={factions}
+          onChange={(p) => binding.onChange((s) => updateNode(s, selectedZone.id, p as Partial<MapNode>))}
+          onRemove={() => {
+            binding.onChange((s) => deleteNodes(s, [selectedZone.id]))
+            canvas.setSelection([])
+          }}
+          onClose={() => setPanelHiddenFor(selectedZone.id)}
         />
       )}
 

@@ -1,17 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import { newId } from '@/core/model'
-import { brushPositions, addCity, createMapScene, dedupePoints, ensureMapLayers, layerForTool, makeCity, makeStreet, MAP_LAYERS, townsOnMap } from './model'
+import { brushPositions, addCity, createMapScene, dedupePoints, ensureMapLayers, layerForTool, makeCity, makeStreet, makeZone, MAP_LAYERS, townsOnMap, zoneCenter } from './model'
 
 describe('map scene', () => {
   it('has its layers bottom to top', () => {
-    expect(createMapScene().layers.map((l) => l.id)).toEqual(['background', 'terrain', 'streets', 'cities', 'labels'])
+    expect(createMapScene().layers.map((l) => l.id)).toEqual(['background', 'terrain', 'zones', 'streets', 'cities', 'labels'])
   })
 
   it('adds missing layers in the right order and leaves complete scenes alone', () => {
     const full = createMapScene()
     expect(ensureMapLayers(full)).toBe(full)
     const partial = { layers: [{ id: 'cities', name: 'Cities' }], nodes: [] }
-    expect(ensureMapLayers(partial).layers.map((l) => l.id)).toEqual(['background', 'terrain', 'streets', 'cities', 'labels'])
+    expect(ensureMapLayers(partial).layers.map((l) => l.id)).toEqual(['background', 'terrain', 'zones', 'streets', 'cities', 'labels'])
   })
 
   it('puts each tool on its own layer', () => {
@@ -84,5 +84,18 @@ describe('stamp brush (MP-3)', () => {
       expect(p.scale).toBeGreaterThanOrEqual(0.85)
       expect(p.scale).toBeLessThanOrEqual(1.15)
     }
+  })
+})
+
+describe('zones', () => {
+  it('needs three corners and stores them relative to the first', () => {
+    expect(makeZone([{ x: 0, y: 0 }, { x: 1, y: 1 }], '#000')).toBeNull()
+    const z = makeZone([{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 20, y: 40 }], '#000')!
+    expect(z.points).toEqual([0, 0, 20, 0, 10, 30])
+    expect(zoneCenter(z.points)).toEqual({ x: 10, y: 10 })
+  })
+  it('adds the zones layer to old maps, under the streets', () => {
+    const old = { layers: createMapScene().layers.filter((l) => l.id !== 'zones'), nodes: [] }
+    expect(ensureMapLayers(old).layers.map((l) => l.id)).toEqual(['background', 'terrain', 'zones', 'streets', 'cities', 'labels'])
   })
 })

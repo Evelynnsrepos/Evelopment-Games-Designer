@@ -1,7 +1,7 @@
 import { Circle, Group, Line, Rect, Star, Text } from 'react-konva'
 import { CanvasImage, expandRect, pointsBounds, type NodeType, type NodeTypes } from '@/shared/canvas'
 import type { Id } from '@/core/model'
-import { INK, type BackdropNode, type CityNode, type CitySize, type StampNode, type StreetNode } from './model'
+import { INK, zoneCenter, type BackdropNode, type CityNode, type CitySize, type StampNode, type StreetNode, type ZoneNode } from './model'
 import { StampShape } from './stamps'
 
 export const MAP_NODE_UI = {
@@ -10,6 +10,7 @@ export const MAP_NODE_UI = {
   street: 'Street',
   stamp: 'Stamp',
   backdrop: 'Background image',
+  zone: 'Zone',
 }
 
 const HALO = '#fbf6e9'
@@ -50,7 +51,7 @@ const STREET_STYLE: Record<StreetNode['mode'], { stroke: string; width: number; 
 }
 
 /** Node kinds of the Map Creator. City labels come from the Town List, so the types depend on `townName`. */
-export function makeMapNodeTypes(opts: { townName(id: Id): string | null }): NodeTypes {
+export function makeMapNodeTypes(opts: { townName(id: Id): string | null; zoneLook(n: ZoneNode): { name: string; color: string } }): NodeTypes {
   const label = (n: CityNode) => opts.townName(n.townId)
 
   const city: NodeType<CityNode> = {
@@ -124,5 +125,25 @@ export function makeMapNodeTypes(opts: { townName(id: Id): string | null }): Nod
     resize: (n, sx, sy) => ({ ...n, width: Math.max(8, n.width * sx), height: Math.max(8, n.height * sy) }),
   }
 
-  return { city, street, stamp, backdrop }
+  const zone: NodeType<ZoneNode> = {
+    label: MAP_NODE_UI.zone,
+    render: (n, ctx) => {
+      const { name, color } = opts.zoneLook(n)
+      const c = zoneCenter(n.points)
+      return (
+        <Group>
+          <Line points={n.points} closed fill={color} opacity={0.22} listening={false} />
+          <Line points={n.points} closed stroke={color} strokeWidth={2.5} dash={[10, 5]} lineJoin="round" hitStrokeWidth={14} fillEnabled />
+          {name ? (
+            <Text x={c.x - 150} y={c.y - 10} width={300} align="center" text={name} fontSize={18} fontStyle="italic bold" fontFamily={ctx.theme.font} fill={color} stroke={HALO} strokeWidth={0.6} listening={false} />
+          ) : null}
+        </Group>
+      )
+    },
+    bounds: (n) => expandRect(pointsBounds(n.points), 3),
+    // The name and color follow the faction.
+    memo: false,
+  }
+
+  return { city, street, stamp, backdrop, zone }
 }
