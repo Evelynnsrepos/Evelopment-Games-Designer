@@ -45,6 +45,8 @@ export interface ProjectMeta {
   sidebarCollapsed: boolean
   /** Per-project colors and wallpaper; missing means the app defaults. */
   theme?: ProjectTheme
+  /** v0.12: a font per tool (family name), chosen with Aa in the tool's header; missing = the app font. */
+  fonts?: Partial<Record<ComponentType, string>>
   createdAt: string
   updatedAt: string
 }

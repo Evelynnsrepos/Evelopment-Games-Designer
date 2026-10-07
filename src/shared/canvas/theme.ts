@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { usePanelContext, useProjectStore } from '@/core/state'
+import { cssFamily } from '@/shared/fontList'
 import type { CanvasTheme } from './types'
 
 /** Konva needs concrete colors, so read the CSS theme tokens and follow theme switches. */
@@ -19,7 +21,15 @@ export function readCanvasTheme(): CanvasTheme {
   }
 }
 
+/** The canvas theme, with the font chosen for this tool (v0.12) when there is one. */
 export function useCanvasTheme(): CanvasTheme {
+  const type = usePanelContext()?.type
+  const font = useProjectStore((s) => (type ? s.meta?.fonts?.[type] : undefined))
+  const theme = useDocumentTheme()
+  return font ? { ...theme, font: `${cssFamily(font)}, ${theme.font}` } : theme
+}
+
+function useDocumentTheme(): CanvasTheme {
   const [theme, setTheme] = useState(readCanvasTheme)
   useEffect(() => {
     const observer = new MutationObserver(() => setTheme(readCanvasTheme()))

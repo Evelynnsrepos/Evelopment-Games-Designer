@@ -7,6 +7,7 @@ import { ReviewButton } from '@/shared/reviews'
 import { closePanel, DRAG_MIME, movePanel, openComponent, type DragPayload } from '../editor/actions'
 import { neighbor, sideFromPoint, type Direction, type DropSide } from './layoutTree'
 import { startLayoutDrag, useLayoutDrag } from './layoutDrag'
+import { ToolFontButton, useToolFontStyle } from './ToolFont'
 
 /** One tile: slim "fake" window header (ED-4), the component view, drop zones and Layout Mode overlay. */
 export function PanelFrame({ panel }: { panel: Panel }) {
@@ -17,6 +18,7 @@ export function PanelFrame({ panel }: { panel: Panel }) {
   const active = useAppStore((s) => s.activePanelId === panel.id)
   const [drop, setDrop] = useState<DropSide | null>(null)
   const dragging = useLayoutDrag((s) => s.from === panel.id)
+  const fontStyle = useToolFontStyle(panel.type)
 
   const View = manifest?.View
   const title = manifest ? (docTitle ? `${manifest.name} · ${docTitle}` : manifest.name) : panel.type
@@ -48,9 +50,10 @@ export function PanelFrame({ panel }: { panel: Panel }) {
       <header className="panel-header">
         {manifest && <manifest.icon size={13} />}
         <span className="panel-title">{title}</span>
+        {manifest && <ToolFontButton type={panel.type} />}
         {manifest && panel.type !== 'reviews' && <ReviewButton target={{ kind: 'doc', type: panel.type, id: panel.documentId }} title={title} />}
       </header>
-      <div className="panel-body">
+      <div className="panel-body" style={fontStyle}>
         <PanelErrorBoundary name={title}>
           <Suspense fallback={<div className="panel-loading">Loading…</div>}>
             <PanelContext.Provider value={panel}>

@@ -47,3 +47,8 @@ export async function allLocalFonts(): Promise<string[]> {
     return []
   }
 }
+
+const GENERIC = new Set(['serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui'])
+
+/** A family name as CSS: generic families as they are, others quoted. */
+export const cssFamily = (f: string) => (GENERIC.has(f) || f.includes(',') || f.startsWith('"') ? f : `"${f.replace(/"/g, '')}"`)
