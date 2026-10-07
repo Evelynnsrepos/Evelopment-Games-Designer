@@ -76,11 +76,14 @@ and Qwen models, Apache-2.0). There is no closed part, no account and no trackin
 - **Guided tour** on first launch and a built-in **user guide** for every tool (press `F1`). The **Help** button also shows how to report a problem on GitHub.
 - **Click** a tool in the sidebar to show only that tool; **Shift-click** to open it next to the ones already open.
 - **Spell check** in English and German with suggestions on right-click, your own word list, and names from your project counted as correct.
-- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, with blue underlines and a card with up to 3 fixes. Pick Small (1.1 GB, fast) or Better (2.5 GB, catches more).
+- Optional **AI helper** (a small model that runs on your computer, downloaded from Settings) that checks grammar as you write, with blue underlines and a card with up to 3 fixes. Pick Small (1.1 GB, fast), Better (2.5 GB, catches more) or Best (4.7 GB, the most careful).
 - **Export a project as a zip** and **import** it again, for backups or to send a project to someone.
 - **Plugins** add new tools: install one from a GitHub link or a zip in Settings. See [docs/PLUGINS.md](docs/PLUGINS.md) to make your own.
 - **Pen size, opacity and smoothing** sliders on every drawing canvas.
 - **Search with `Ctrl+K`**: find any tool, document, item, character, town, enemy or wiki article, or run a command.
+- **Everything connected**: every entry shows what it points at and where it is used, one click away, with back and forward (`Alt+Left`, `Alt+Right`). Link any entry to any other entry, document or tool yourself.
+- **Your drawings everywhere**: wherever you add a picture, your drawings from Draw are offered first, like stickers.
+- **A font for every tool**, chosen per project.
 - **Design Book**: turn the project into one game design document with a cover, contents, images and info boxes, as a web page or PDF.
 - **Review status and comments** on every tool window and entry, from Idea to Final, with a Reviews board.
 - **Genre templates**: start a new project as an RPG, action game, roguelike, strategy game, visual novel, gacha or cozy game and get the right tools, a vision page with pillars and a starter task list.
@@ -95,18 +98,18 @@ and Qwen models, Apache-2.0). There is no closed part, no account and no trackin
 | **Town List** | Towns with nation, race, religion and links. Cities placed on a map are towns. |
 | **Enemy List** | Enemies with combat stats, growth per level, resistances, drop tables and where they are found. |
 | **Wiki** | Articles with `[[links]]`, articles made from any item, character, town or enemy (with a live info box), backlinks and a connection map. |
-| **Writer** | Rich text documents for design docs, scripts and dialogue, with live word count and Markdown/text export. |
+| **Writer** | Rich text documents for design docs, scripts and dialogue, with fonts and sizes, images you can size and let the text flow around, live word count and Markdown/text export. |
 | **Story Branch Writer** | Mind-map style branching stories: create, branch, connect and sever nodes. |
 | **Timeline** | Timelines with optional years, events with images, and branches for alternative histories (press `B`). |
 | **Moodboard** | Images, cutouts (shapes or freehand lasso), text, shapes and a layers panel, with an always-on-top layer for drawings. |
 | **Brainstorm Board** | Drawing, sticky notes, shapes, images, audio clips and voice recording, pins with string, and named colored areas. |
-| **Map Creator** | Cities, streets and terrain stamps on a blank map, with PNG export. Cities are linked to the Town List. |
+| **Map Creator** | Cities, streets, terrain stamps and zones (like the land of a faction) on a blank map, with PNG export. Cities are linked to the Town List; zones link to factions, characters, documents and more. |
 | **Damage Calculator** | A library of game damage formulas (elemental reactions, armor, crits, damage over time, resistances), plus your own formulas. |
 | **Level Calculator** | XP curves, stat growth, and damage per level against a fixed defense or an enemy from your Enemy List. |
 | **Resource Calculator** | How many resources and how much play time a goal takes, using level-up costs and enemy drop rates. |
 | **Cosmos Creator** | Universes, galaxies, solar systems, planets, moons and more in an isometric view: a node graph at the top level and orbits inside galaxies and solar systems, with moons around their planets and your own pictures for any body. |
-| **Sketch** | A full painting app: pen pressure and tilt, about 120 editable brushes (plus .abr, .brush and .brushset import), 26 blend modes, groups and masks, selections and transform, adjustments, liquify, guides and symmetry, text layers, animation, time-lapse, 250 undo steps, canvases up to 8K, and PSD import and export. |
-| **Design Language** | The look of your game on one board. Works like the Moodboard: images, cutouts, and your Sketch drawings as stickers. |
+| **Draw** | A full painting app: pen pressure and tilt, about 120 editable brushes (plus .abr, .brush and .brushset import), 26 blend modes, groups and masks, selections and transform, adjustments, liquify, guides and symmetry, text layers, animation, time-lapse, 250 undo steps, canvases up to 8K, and PSD import and export. |
+| **Design Language** | The look of your game on one board. Works like the Moodboard: images, cutouts, and your drawings from Draw as stickers. |
 | **Asset Pool** | Every asset the game still needs (icons, sprites, models, sounds, music…) with status and pictures. Add one for every item, character, town or enemy at once, or paste a checklist. |
 | **Wave Planner** | Waves of enemies with timing, health growth and drops, the damage per second each wave needs, and which weapons can keep up. |
 | **Quest Designer** | Quests with givers, places, objectives, rewards and chains shown as a graph, plus flags shared with the Dialogue Editor. |

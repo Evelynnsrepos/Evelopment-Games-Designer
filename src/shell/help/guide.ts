@@ -52,7 +52,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'Text editors underline misspelled words in English and German. Click an underlined word for a card with up to 3 fixes, Dismiss and Add to dictionary.',
       'Names of your items, characters, towns and enemies are always counted as correct, so your made-up names are not flagged.',
       'Settings (bottom of the sidebar, or the gear on the start screen) turns spell check on or off, picks the languages and lists your own words.',
-      'The AI helper is optional. Download it in Settings: Small (1.1 GB, fast) or Better (2.5 GB, catches more). It runs on your computer and checks grammar as you write: wrong words for the sentence, verb forms, missing commas. Its suggestions get a blue underline. Click one for a card with what is wrong and up to 3 fixes, or Dismiss it. Spell check and the AI helper work in the Writer, the Wiki and the description and notes boxes.',
+      'The AI helper is optional. Download it in Settings: Small (1.1 GB, fast), Better (2.5 GB, catches more) or Best (4.7 GB, the most careful, needs about 6 GB of free memory). It runs on your computer and checks grammar as you write: wrong words for the sentence, verb forms, missing commas. Its suggestions get a blue underline. Click one for a card with what is wrong and up to 3 fixes, or Dismiss it. Spell check and the AI helper work in the Writer, the Wiki and the description and notes boxes. The AI helper checks the paragraphs around where you are writing first, and looks at the sentences around a mistake for its suggestions.',
     ],
   },
   plugins: {
@@ -100,6 +100,7 @@ export const BASICS: Record<string, GuideTopic> = {
     body: [
       'Press Ctrl+K (Cmd+K on a Mac) anywhere in a project to search tools, documents, items, characters, towns, enemies, wiki articles and commands like Settings. Enter opens the result alone, Shift+Enter opens it next to the open tools.',
       'Every item, character, town and enemy page shows Jump to at the top (the things it points at, like the items an enemy drops) and Used in further down (every place in the project that mentions it). Click one to go there. The arrows under the project name, or Alt+Left and Alt+Right, take you back and forward through your jumps.',
+      'Link to… at the end of the Jump to bar links the entry to anything: another entry, a document or a tool. The link shows in the other side’s Used in too. Remove a link with its ×.',
       'Design Book at the bottom of the sidebar turns your project into one game design document with a cover, contents, images and info boxes. Pick the parts and entries to include, then save it as a web page or print it; choose Save as PDF as the printer for a PDF.',
     ],
   },
@@ -118,6 +119,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'Accent changes buttons and highlights. Background recolors every panel; text switches between light and dark automatically so it stays readable.',
       'Wallpaper puts an image behind the whole editor. Once one is set you can blur, dim and tint it, change its contrast, and lower Panel opacity to let it shine through.',
       'Default resets one color, Reset all removes the project theme. The light/dark switch on the start screen still sets the base theme for every project.',
+      'The small T in a tool’s header picks the font that tool shows its text in, for this project. Boards like the Brainstorm Board use it too.',
     ],
   },
 }
@@ -165,6 +167,8 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Rich text documents for design docs, scripts and dialogue, with headings, lists, images and [[links]].',
       'The word count updates as you type, and you can export a document as Markdown or plain text.',
+      'Pick a font and a size for selected text (or for what you type next) in the toolbar.',
+      'Click an image for its bar: left, center, right, or with the text flowing around it on the left or right, and 25 to 100% of the text width. Drag the blue corner to size it freely.',
     ],
   },
   'story-writer': {
@@ -207,6 +211,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Draw maps with cities, streets and terrain stamps such as mountains, forests, water and deserts.',
       'Every city is a town from the Town List. Export the finished map as a PNG.',
+      'Zones (Z) mark areas, like the land of a faction: click the corners, double-click or press Enter to close the shape. Pick a faction and the zone takes its name and color. Link the zone to characters, towns, documents and more, and click a link to go there.',
     ],
   },
   cosmos: {
@@ -226,7 +231,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Draw and paint with pressure brushes, layers and a full set of pro painting tools. Pick a canvas size (up to 8K) when you start a new drawing; Canvas (top bar) resizes, crops, flips and turns it later and shows how many strokes and minutes went into it.',
       'Pen: pressure and tilt work with drawing tablets, the eraser end of the pen erases, and the pen buttons can do any action. Pen and keys (top bar) sets your pressure curve, smoothing, motion filtering, every keyboard shortcut, pen buttons and touch gestures, and has a tablet test page.',
       'QuickMenu: press Q (or a pen button) for a round menu of six actions you choose. Turn and mirror the view with , and . and Shift+H; this only changes the view, not the picture.',
-      'Each brush has its own smoothing and stabilization. To use your own value for every brush, tick Smoothing, Stabilization or Tether in the side panel (unticked they show the setting of each brush). The tether pulls the brush behind the pen on a string you see while drawing. Press Shift+? (or the keyboard button) for a list of every shortcut.',
+      'Each brush has its own smoothing and stabilization. To use your own value for every brush, tick Smoothing, Stabilization or Tether in the side panel (unticked they show the setting of each brush). The tether pulls the brush behind the pen on a string you see while drawing. Press Shift+? (or Shortcuts in the corner of the canvas) for a list of every shortcut.',
       'The layers can float over the canvas: use the button in the layers header, drag them anywhere (they snap to the window edges), or hide them with the Layers button in the top bar. A brush with Height (Brush Studio, Rendering) paints thick, raised 3D paint; with the Smudge tool a brush can blur instead of smear.',
       'Under the colour wheel are your recent colours and a palette: + adds the current colour, the folder button makes a new palette, right-click a colour to remove it.',
       'Brushes: about 120 brushes in 14 sets, each fully editable in the Brush Studio (stroke, taper, shape, grain, rendering, wet mix, color dynamics, pressure and tilt curves, dual brush and more), with a drawing pad to try them. Import and export brushes as .egdbrush, and import .abr, .brush and .brushset files. Smudge (S) blends paint.',
@@ -238,6 +243,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'QuickShape: draw a rough line, circle, rectangle or triangle and keep holding at the end. It snaps to a clean shape; Edit shape lets you drag its points, and Shift gives a perfect one.',
       'Animation and pages: turn on Animation to treat each top-level layer as a frame with onion skin and playback, or Pages for a sketchbook. Send frames or pages to the Storyboard.',
       'Time-lapse records your drawing as you go and can be replayed or exported as video. Import and export PSD (with layers), PNG, JPEG, TIFF, GIF and WebM, or use Send to… to put the picture on a Moodboard, a Design Language board or into the Asset Pool.',
+      'Every drawing stays in the project. Wherever you can add a picture (an entry, the Writer, the Pitch Deck, the Storyboard and more), a window first shows your drawings to pick from; Choose a file… opens the file picker as before.',
     ],
     tips: ['Space or the middle mouse button pans, the mouse wheel zooms, 0 fits the canvas into view.', 'Undo goes back 250 steps. Everything saves by itself a moment after you stop drawing.'],
   },
