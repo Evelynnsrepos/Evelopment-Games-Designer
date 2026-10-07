@@ -654,3 +654,26 @@
 .sketch-slider-value {
   font-variant-numeric: tabular-nums;
 }
+
+/* v0.12: the shortcut sheet button, floating in the canvas corner. */
+.sketch-shortcuts {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.sketch-shortcuts:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}

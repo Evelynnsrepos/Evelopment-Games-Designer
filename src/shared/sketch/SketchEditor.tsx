@@ -969,9 +969,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
         })}
         <span className="sketch-spacer" />
-        <button className="btn btn-ghost sketch-shortcuts" title={UI_PRO.shortcuts} onClick={() => setSheetOpen(true)}>
-          <Keyboard size={14} /> Shortcuts
-        </button>
         {saving && <span className="sketch-saving">{UI.saving}</span>}
       </div>
 
@@ -999,6 +996,10 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
             onContextMenu={(e) => e.preventDefault()}
           />
           {view && <SelectionMaskView sel={sel} engine={engine} view={view} />}
+          {/* v0.12: in plain sight on the canvas, so it is easy to find and never pushes the canvas around. */}
+          <button className="sketch-shortcuts" title={UI_PRO.shortcuts} onPointerDown={(e) => e.stopPropagation()} onClick={() => setSheetOpen(true)}>
+            <Keyboard size={14} /> Shortcuts
+          </button>
           <ColorDropView drop={drop} view={view} />
           <div className="sketch-floatbars">
             <ColorDropBar drop={drop} color={color} />
