@@ -259,10 +259,14 @@
 .richtext-image {
   position: relative;
 }
+/* The box hugs the picture, so the bar and the corner handle sit on the picture itself. */
 .richtext-image-box {
   position: relative;
+  width: fit-content;
+  max-width: 100%;
 }
-.richtext-image-box img {
+.richtext-image[data-sized] .richtext-image-box,
+.richtext-image[data-sized] .richtext-image-box img {
   width: 100%;
 }
 .richtext-image-handle {
@@ -278,8 +282,8 @@
   cursor: nwse-resize;
   touch-action: none;
 }
-.richtext-image[style*='float:right'] .richtext-image-handle,
-.richtext-image[style*='margin-left:auto;'][style*='width'] .richtext-image-handle {
+.richtext-image[data-align='right'] .richtext-image-handle,
+.richtext-image[data-align='wrap-right'] .richtext-image-handle {
   right: auto;
   left: -5px;
   cursor: nesw-resize;

@@ -63,7 +63,7 @@ export const RichImage = Image.extend<ImageOptions & RichImageOptions>({
       const bar = document.createElement('div')
       bar.className = 'richtext-image-bar'
       bar.contentEditable = 'false'
-      dom.append(box, bar)
+      dom.append(box)
 
       const set = (attrs: Record<string, unknown>) => {
         const pos = getPos()
@@ -100,6 +100,7 @@ export const RichImage = Image.extend<ImageOptions & RichImageOptions>({
           const px = fromRight ? start.right - ev.clientX : ev.clientX - start.left
           width = Math.max(10, Math.min(100, Math.round((px / column) * 100)))
           dom.style.cssText = imageStyle(width, node.attrs.align)
+          dom.toggleAttribute('data-sized', true)
         }
         const up = () => {
           handle.removeEventListener('pointermove', move)
@@ -111,7 +112,7 @@ export const RichImage = Image.extend<ImageOptions & RichImageOptions>({
       })
 
       const show = (ok: boolean) => {
-        box.replaceChildren(ok ? img : placeholder, handle)
+        box.replaceChildren(ok ? img : placeholder, handle, bar)
       }
       img.addEventListener('error', () => show(false))
       img.addEventListener('load', () => show(true))
@@ -122,6 +123,8 @@ export const RichImage = Image.extend<ImageOptions & RichImageOptions>({
         img.alt = alt
         placeholder.setAttribute('aria-label', `${alt || 'Image'} (missing)`)
         dom.style.cssText = imageStyle(node.attrs.width, node.attrs.align)
+        dom.toggleAttribute('data-sized', !!node.attrs.width)
+        dom.dataset.align = node.attrs.align ?? 'center'
         alignButtons.forEach((b, i) => b.classList.toggle('is-active', (node.attrs.align ?? 'center') === IMAGE_ALIGNS[i].id))
         sizeButtons.forEach((b, i) => b.classList.toggle('is-active', node.attrs.width === SIZES[i]))
         if (!src) return show(false)

@@ -3,7 +3,8 @@ import { cssFamily } from '../fontList'
 
 /** Inline style for an image block, also used by the HTML export. */
 export function imageStyle(width: number | null | undefined, align: string | null | undefined): string {
-  const w = width ? `width:${width}%;` : ''
+  // Without a width the block hugs the picture, so left, center and right still apply.
+  const w = width ? `width:${width}%;` : 'width:fit-content;max-width:100%;'
   switch (align) {
     case 'left':
       return `${w}margin-right:auto;`

@@ -252,3 +252,15 @@
   flex-direction: column;
   align-items: center;
 }
+
+/* Search field at the top of the Add tool menu; it stays put while the list scrolls. */
+.sidebar-add-search {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  width: 100%;
+  margin-bottom: 4px;
+}
+.sidebar-add-menu {
+  min-width: 220px;
+}

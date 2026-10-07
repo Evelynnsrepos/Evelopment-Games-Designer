@@ -181,14 +181,7 @@ export function Sidebar() {
         </button>
         {addOpen && (
           <div className="menu-backdrop" onMouseDown={() => setAddOpen(null)}>
-            <div className="menu" style={{ position: 'fixed', overflowY: 'auto', ...addOpen }} onMouseDown={(e) => e.stopPropagation()}>
-              {available.map((m) => (
-                <button key={m.type} onClick={() => void addTool(m)}>
-                  {m.name}
-                </button>
-              ))}
-              {available.length === 0 && <div className="sidebar-menu-note">Every tool is already added.</div>}
-            </div>
+            <AddToolMenu style={addOpen} available={available} onAdd={(m) => void addTool(m)} onClose={() => setAddOpen(null)} />
           </div>
         )}
       </div>
@@ -270,6 +263,41 @@ function JumpButtons() {
       <button className="icon-btn" title="Forward (Alt+Right)" aria-label="Forward" disabled={!canForward} onClick={jumpForward}>
         <ArrowRight size={15} />
       </button>
+    </div>
+  )
+}
+
+/** The Add tool menu, with a search field: type to filter by name or description, Enter adds the first match. */
+function AddToolMenu({ style, available, onAdd, onClose }: { style: React.CSSProperties; available: ComponentManifest[]; onAdd(m: ComponentManifest): void; onClose(): void }) {
+  const [query, setQuery] = useState('')
+  const q = query.trim().toLowerCase()
+  const shown = q ? available.filter((m) => `${m.name} ${m.description}`.toLowerCase().includes(q)) : available
+  return (
+    <div className="menu sidebar-add-menu" style={{ position: 'fixed', overflowY: 'auto', ...style }} onMouseDown={(e) => e.stopPropagation()}>
+      {available.length > 0 && (
+        <input
+          className="input sidebar-add-search"
+          placeholder="Search tools…"
+          aria-label="Search tools"
+          autoFocus
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && shown[0]) onAdd(shown[0])
+            else if (e.key === 'Escape') {
+              e.preventDefault()
+              onClose()
+            }
+          }}
+        />
+      )}
+      {shown.map((m) => (
+        <button key={m.type} title={m.description} onClick={() => onAdd(m)}>
+          {m.name}
+        </button>
+      ))}
+      {available.length === 0 && <div className="sidebar-menu-note">Every tool is already added.</div>}
+      {available.length > 0 && shown.length === 0 && <div className="sidebar-menu-note">No tool matches.</div>}
     </div>
   )
 }
