@@ -1,4 +1,5 @@
 import type { Id } from './ids'
+import type { ComponentType } from './components'
 
 /**
  * Entities (spec 3.3): records that live once per project in
@@ -31,9 +32,14 @@ export interface EntityBase {
   image: AssetPath | null
   /** Keyed by Category id. */
   categories: Record<Id, CategoryValue>
+  /** v0.12: links made by hand on the entry page ("Link to…"), to any entry or tool document. */
+  connections?: LinkTarget[]
   createdAt: string
   updatedAt: string
 }
+
+/** Something a link or a jump can point at: an entry, or a tool with one of its documents (null = the tool's only one). */
+export type LinkTarget = { kind: 'entity'; type: EntityType; id: Id } | { kind: 'document'; type: ComponentType; documentId: Id | null }
 
 /** Named numbers that calculators can read (IT-9, EN-3). */
 export type StatBlock = Record<string, number>

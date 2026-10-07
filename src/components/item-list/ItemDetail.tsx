@@ -81,7 +81,7 @@ export function ItemDetail({
         </button>
       </div>
 
-      <JumpBar entity={item} />
+      <JumpBar type="item" entity={item} onConnect={(connections) => updateItem(item.id, { connections })} />
 
       <div className="item-detail-head">
         <div className="item-detail-image" style={frameStyle(entityLook(categories, 'item', item)?.style)}>

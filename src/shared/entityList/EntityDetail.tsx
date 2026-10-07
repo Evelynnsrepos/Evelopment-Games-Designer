@@ -9,7 +9,7 @@ import { ReviewButton } from '@/shared/reviews'
 import type { EntityActions } from './actions'
 import type { DetailContext, ListText } from './EntityList'
 import { JumpBar, UsedIn } from './JumpBar'
-import { TYPE_LABEL } from './links'
+import { TYPE_LABEL, TYPE_PLURAL } from './links'
 import { nextStatName, renameStat } from './query'
 import { entityLook, frameStyle } from '../categories/styles'
 import { ProofTextarea } from '@/shared/spell'
@@ -88,7 +88,7 @@ export function DetailFrame<T extends EntityType>({ type, entity, actions, ctx, 
         </button>
       </div>
 
-      <JumpBar entity={entity} />
+      <JumpBar type={type} entity={entity} onConnect={(connections) => update({ connections })} />
 
       <div className="elist-detail-head">
         <div className="elist-detail-frame" style={frameStyle(look?.style)}>
@@ -325,7 +325,7 @@ export function EntityPicker({
             </option>
           ))
         return types.length > 1 ? (
-          <optgroup key={t} label={`${TYPE_LABEL[t]}s`}>
+          <optgroup key={t} label={TYPE_PLURAL[t]}>
             {options}
           </optgroup>
         ) : (

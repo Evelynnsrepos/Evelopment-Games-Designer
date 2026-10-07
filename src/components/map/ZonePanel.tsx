@@ -1,8 +1,6 @@
 import { ExternalLink, Trash2, X } from 'lucide-react'
-import { ENTITY_TYPES, type Entity, type Id } from '@/core/model'
-import { getManifest } from '@/core/registry'
-import { useProjectStore } from '@/core/state'
-import { jumpTo, TYPE_LABEL, type JumpTarget } from '@/shared/entityList'
+import type { Id } from '@/core/model'
+import { jumpTo, LinkPicker, targetKey as keyOf, useTargetName } from '@/shared/entityList'
 import { ProofTextarea } from '@/shared/spell'
 import { ZONE_COLORS, type ZoneNode } from './model'
 
@@ -29,32 +27,11 @@ const UI = {
   close: 'Close',
 }
 
-const keyOf = (t: JumpTarget) => (t.kind === 'entity' ? `e:${t.type}:${t.id}` : `d:${t.type}:${t.documentId ?? ''}`)
-
 /** The selected zone: name, faction, color, links you can jump along, notes (v0.12). */
 export function ZonePanel(p: { zone: ZoneNode; factions: ZoneFaction[]; onChange(patch: Partial<ZoneNode>): void; onRemove(): void; onClose(): void }) {
   const { zone } = p
-  const entities = useProjectStore((s) => s.entities)
-  const documents = useProjectStore((s) => s.meta?.documents ?? [])
+  const nameOf = useTargetName()
   const faction = p.factions.find((f) => f.id === zone.factionId)
-
-  const nameOf = (t: JumpTarget): string => {
-    if (t.kind === 'entity') return (entities[t.type] as Entity[]).find((e) => e.id === t.id)?.name || `Missing ${TYPE_LABEL[t.type].toLowerCase()}`
-    const tool = getManifest(t.type)?.name ?? t.type
-    const title = documents.find((d) => d.id === t.documentId)?.title
-    return title ? `${tool}: ${title}` : tool
-  }
-  const options: { group: string; items: { key: string; label: string; target: JumpTarget }[] }[] = [
-    ...ENTITY_TYPES.map((type) => ({
-      group: `${TYPE_LABEL[type]}s`,
-      items: (entities[type] as Entity[]).map((e) => ({ key: keyOf({ kind: 'entity', type, id: e.id }), label: e.name || 'Untitled', target: { kind: 'entity', type, id: e.id } as JumpTarget })),
-    })),
-    {
-      group: 'Documents',
-      items: documents.map((d) => ({ key: keyOf({ kind: 'document', type: d.type, documentId: d.id }), label: `${getManifest(d.type)?.name ?? d.type}: ${d.title}`, target: { kind: 'document', type: d.type, documentId: d.id } as JumpTarget })),
-    },
-  ].filter((g) => g.items.length)
-  const linked = new Set(zone.links.map(keyOf))
 
   return (
     <aside className="map-panel" aria-label={UI.title} onPointerDown={(e) => e.stopPropagation()}>
@@ -113,28 +90,7 @@ export function ZonePanel(p: { zone: ZoneNode; factions: ZoneFaction[]; onChange
             </button>
           </div>
         ))}
-        <select
-          className="input"
-          value=""
-          aria-label={UI.addLink}
-          onChange={(e) => {
-            const hit = options.flatMap((g) => g.items).find((i) => i.key === e.target.value)
-            if (hit) p.onChange({ links: [...zone.links, hit.target] })
-          }}
-        >
-          <option value="">{UI.addLink}</option>
-          {options.map((g) => (
-            <optgroup key={g.group} label={g.group}>
-              {g.items
-                .filter((i) => !linked.has(i.key))
-                .map((i) => (
-                  <option key={i.key} value={i.key}>
-                    {i.label}
-                  </option>
-                ))}
-            </optgroup>
-          ))}
-        </select>
+        <LinkPicker exclude={zone.links} onPick={(t) => p.onChange({ links: [...zone.links, t] })} label={UI.addLink} />
       </div>
 
       <label className="map-field">

@@ -454,3 +454,34 @@
   border-color: var(--accent);
   color: var(--accent);
 }
+.jump-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 8px;
+}
+.jump-chip > button {
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.jump-chip.own {
+  border-style: dashed;
+}
+.jump-chip .jump-chip-x {
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+}
+.jump-picker {
+  width: auto;
+  max-width: 170px;
+  height: 24px;
+  padding: 0 6px;
+  font-size: 12px;
+}

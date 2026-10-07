@@ -8,6 +8,7 @@ export const LINK_SUGGESTIONS: Record<'character' | 'town', string[]> = {
 }
 
 export const TYPE_LABEL: Record<EntityType, string> = { item: 'Item', character: 'Character', town: 'Town', enemy: 'Enemy' }
+export const TYPE_PLURAL: Record<EntityType, string> = { item: 'Items', character: 'Characters', town: 'Towns', enemy: 'Enemies' }
 
 /** A link from some entity to the one being viewed ("Linked from"). */
 export interface Backlink {

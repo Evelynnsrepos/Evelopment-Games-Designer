@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { ComponentType, EntityType, Id } from '@/core/model'
+import type { ComponentType, EntityType, Id, LinkTarget } from '@/core/model'
 import { useAppStore, useProjectStore } from '@/core/state'
 import { openComponent } from '@/shell/editor/actions'
 import { leaves } from '@/shell/workspace/layoutTree'
@@ -49,7 +49,7 @@ export function takeEntityFocus(type: EntityType): EntityRequest | null {
 }
 
 /** A place the user can jump to: an entity's page, or a tool with one of its documents. */
-export type JumpTarget = { kind: 'entity'; type: EntityType; id: Id } | { kind: 'document'; type: ComponentType; documentId: Id | null }
+export type JumpTarget = LinkTarget
 
 interface JumpHistory {
   back: JumpTarget[]
