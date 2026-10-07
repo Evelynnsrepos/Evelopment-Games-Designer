@@ -47,7 +47,7 @@ const TEXT = {
   pickImage: 'Select an image first, then draw the cutout over it.',
   dropHere: 'Drop images to add them',
   importFailed: 'Only images can be added to a moodboard.',
-  drawings: 'Add a drawing (from the Sketch tool) as a sticker',
+  drawings: 'Add a drawing (from the Draw tool) as a sticker',
 }
 
 /** Drawing colors (user content colors). */

@@ -1,0 +1,47 @@
+/* The drawings shelf: your drawings as stickers to pick from. */
+.modal:has(.shelf-grid) {
+  width: min(640px, 92vw);
+}
+.shelf-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 10px;
+  max-height: 55vh;
+  overflow: auto;
+  margin: 8px 0;
+}
+.shelf-item {
+  display: grid;
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-sunken);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.shelf-item:hover {
+  border-color: var(--accent);
+}
+.shelf-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.shelf-thumb {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  /* A checkerboard, so see-through parts show as such. */
+  background: repeating-conic-gradient(#8883 0 25%, transparent 0 50%) 0 0 / 12px 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.shelf-thumb img {
+  max-width: 100%;
+  max-height: 100%;
+  transform: rotate(-3deg);
+  filter: drop-shadow(0 2px 3px #0006);
+}

@@ -240,3 +240,111 @@
   white-space: nowrap;
   user-select: none;
 }
+
+/* v0.12: font and size menus */
+.richtext-font {
+  width: 150px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+.richtext-size {
+  width: 64px;
+  height: 28px;
+  padding: 0 6px;
+  font-size: 12px;
+}
+
+/* v0.12: image size and placement. Floating images let the text flow around them. */
+.richtext-image {
+  position: relative;
+}
+.richtext-image-box {
+  position: relative;
+}
+.richtext-image-box img {
+  width: 100%;
+}
+.richtext-image-handle {
+  display: none;
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: var(--focus);
+  border: 2px solid var(--bg);
+  cursor: nwse-resize;
+  touch-action: none;
+}
+.richtext-image[style*='float:right'] .richtext-image-handle,
+.richtext-image[style*='margin-left:auto;'][style*='width'] .richtext-image-handle {
+  right: auto;
+  left: -5px;
+  cursor: nesw-resize;
+}
+.richtext-image-bar {
+  display: none;
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+.ProseMirror[contenteditable='true'] .richtext-image.ProseMirror-selectednode .richtext-image-bar {
+  display: flex;
+}
+.ProseMirror[contenteditable='true'] .richtext-image.ProseMirror-selectednode .richtext-image-handle {
+  display: block;
+}
+.richtext-image-btn {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.richtext-image-btn:hover {
+  background: var(--bg-hover);
+}
+.richtext-image-btn.is-active {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+.richtext-image-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+}
+.richtext-image-btn svg rect {
+  fill: currentColor;
+  fill-opacity: 0.35;
+}
+.richtext-image-sep {
+  width: 1px;
+  margin: 2px 3px;
+  background: var(--border);
+}
+/* Text after a floating image wraps; the end of the text clears it. */
+.ProseMirror::after {
+  content: '';
+  display: block;
+  clear: both;
+}

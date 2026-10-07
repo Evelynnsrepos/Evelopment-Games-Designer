@@ -1,4 +1,5 @@
 import { countWords } from '@/core/project/stats'
+import { fontStyle, imageStyle } from './styles'
 import type { RefTarget, RichTextDoc } from './types'
 
 /** Pure helpers for stored rich text. They need no DOM, so writers, exporters and tests can run anywhere. */
@@ -175,6 +176,7 @@ export function richTextToHtml(doc: RichTextDoc, resolve?: LabelResolver, image:
           else if (m.type === 'strike') html = `<s>${html}</s>`
           else if (m.type === 'code') html = `<code>${html}</code>`
           else if (m.type === 'link' && /^https?:/i.test(m.attrs?.href ?? '')) html = `<a href="${escapeHtml(m.attrs!.href)}">${html}</a>`
+          else if (m.type === 'font') html = `<span style="${escapeHtml(fontStyle(m.attrs?.family, m.attrs?.size))}">${html}</span>`
         }
         return html
       })
@@ -202,7 +204,9 @@ export function richTextToHtml(doc: RichTextDoc, resolve?: LabelResolver, image:
       case 'horizontalRule':
         return '<hr>'
       case 'image':
-        return n.attrs?.src ? `<img src="${escapeHtml(image(n.attrs.src))}" alt="${escapeHtml(n.attrs?.alt ?? '')}">` : ''
+        if (!n.attrs?.src) return ''
+        if (!n.attrs.width && !n.attrs.align) return `<img src="${escapeHtml(image(n.attrs.src))}" alt="${escapeHtml(n.attrs?.alt ?? '')}">`
+        return `<div style="${imageStyle(n.attrs.width, n.attrs.align)}"><img style="width:100%" src="${escapeHtml(image(n.attrs.src))}" alt="${escapeHtml(n.attrs?.alt ?? '')}"></div>`
       default:
         return `<p>${inline(n.content)}</p>`
     }

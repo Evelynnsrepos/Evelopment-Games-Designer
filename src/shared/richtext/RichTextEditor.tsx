@@ -28,6 +28,9 @@ import '../spell/spell.css'
 import { liveTextExtensions, openLiveText } from './collab'
 import { normalizeRichText } from './doc'
 import { RichImage } from './imageExtension'
+import { FontMark } from './fontExtension'
+import { FONT_SIZES } from './styles'
+import { allLocalFonts, GENERIC_FONTS, systemFonts } from '../fontList'
 import { RefExtension } from './refExtension'
 import { useEntityRefProvider } from './refs'
 import type { ImagePicker, RefProvider, RichTextDoc } from './types'
@@ -77,6 +80,11 @@ const UI = {
   link: 'Link an article or entity ([[)',
   undo: 'Undo (Ctrl+Z)',
   redo: 'Redo (Ctrl+Y)',
+  font: 'Font',
+  defaultFont: 'Default font',
+  moreFonts: 'All installed fonts…',
+  size: 'Text size (pt)',
+  defaultSize: 'Size',
   toolbar: 'Formatting',
 }
 
@@ -105,6 +113,7 @@ function buildExtensions(live: RefObject<LiveProps>, onMisspelling: (hit: ProofH
     }),
     Placeholder.configure({ placeholder: () => live.current.placeholder }),
     RichImage.configure({ getResolveSrc: () => live.current.resolveImageSrc }),
+    FontMark,
     RefExtension.configure({ getProvider: () => live.current.provider }),
     SpellCheck.configure({ onMisspelling }),
   ]
@@ -210,7 +219,10 @@ export function RichTextEditor({
 
   const insertImage = async () => {
     const picked = await pickImage()
-    if (picked && editor) editor.chain().focus().setImage({ src: picked.src, alt: picked.alt }).run()
+    if (!picked || !editor) return
+    editor.chain().focus().setImage({ src: picked.src, alt: picked.alt }).run()
+    // Keep writing after the picture, instead of typing over it while it is selected.
+    if (editor.state.selection.empty === false) editor.commands.setTextSelection(editor.state.selection.to)
   }
 
   return (
@@ -242,6 +254,8 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
       bullet: e.isActive('bulletList'),
       ordered: e.isActive('orderedList'),
       quote: e.isActive('blockquote'),
+      family: (e.getAttributes('font').family as string | null) ?? '',
+      size: (e.getAttributes('font').size as number | null) ?? 0,
       canUndo: e.can().undo(),
       canRedo: e.can().redo(),
     }),
@@ -271,6 +285,8 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
       {button(Heading2, UI.h2, () => chain().toggleHeading({ level: 2 }).run(), state.h2)}
       {button(Heading3, UI.h3, () => chain().toggleHeading({ level: 3 }).run(), state.h3)}
       <span className="richtext-toolbar-sep" />
+      <FontControls editor={editor} family={state.family} size={state.size} />
+      <span className="richtext-toolbar-sep" />
       {button(Bold, UI.bold, () => chain().toggleBold().run(), state.bold)}
       {button(Italic, UI.italic, () => chain().toggleItalic().run(), state.italic)}
       {button(Underline, UI.underline, () => chain().toggleUnderline().run(), state.underline)}
@@ -285,5 +301,44 @@ function Toolbar({ editor, onImage }: { editor: Editor; onImage: () => void }) {
       {button(Undo2, UI.undo, () => chain().undo().run(), false, !state.canUndo)}
       {button(Redo2, UI.redo, () => chain().redo().run(), false, !state.canRedo)}
     </div>
+  )
+}
+
+/** Font and size for the selected text, or for what you type next. */
+function FontControls({ editor, family, size }: { editor: Editor; family: string; size: number }) {
+  const [local, setLocal] = useState<string[]>([])
+  const families = [...new Set([...GENERIC_FONTS, ...systemFonts(), ...local, ...(family ? [family] : [])])]
+  const apply = (patch: { family?: string | null; size?: number | null }) => {
+    const next = { family: family || null, size: size || null, ...patch }
+    const chain = editor.chain().focus()
+    if (!next.family && !next.size) chain.unsetMark('font').run()
+    else chain.setMark('font', next).run()
+  }
+  return (
+    <>
+      <select
+        className="input richtext-font"
+        title={UI.font}
+        aria-label={UI.font}
+        value={family}
+        onChange={(e) => (e.target.value === ' more' ? void allLocalFonts().then(setLocal) : apply({ family: e.target.value || null }))}
+      >
+        <option value="">{UI.defaultFont}</option>
+        {families.map((f) => (
+          <option key={f} value={f} style={{ fontFamily: f }}>
+            {f}
+          </option>
+        ))}
+        {!local.length && <option value={' more'}>{UI.moreFonts}</option>}
+      </select>
+      <select className="input richtext-size" title={UI.size} aria-label={UI.size} value={size || ''} onChange={(e) => apply({ size: Number(e.target.value) || null })}>
+        <option value="">{UI.defaultSize}</option>
+        {FONT_SIZES.map((s) => (
+          <option key={s} value={s}>
+            {s}
+          </option>
+        ))}
+      </select>
+    </>
   )
 }

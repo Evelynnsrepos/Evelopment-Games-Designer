@@ -1,25 +1,17 @@
 import { Plus, X } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { importAssetFromBlob, resolveAssetPath, useAssetUrls, type ImportedAsset } from '@/core/assets'
-import { getFs } from '@/core/fs'
-import { readDocument } from '@/core/project'
-import { flushAll, useProjectStore } from '@/core/state'
-import type { SketchDoc } from '@/shared/sketch'
+import { useAssetUrls, type ImportedAsset } from '@/core/assets'
+import { useProjectStore } from '@/core/state'
+import { copyDrawing, loadDrawings, type Drawing as Item } from '@/shared/drawingShelf'
 import { newDocument, openComponent } from '@/shell/editor/actions'
 
 const UI = {
   title: 'Drawings',
   hint: 'Click a drawing to place it as a sticker. Transparent parts stay see-through.',
-  none: 'No drawings yet. Make one in the Sketch tool.',
+  none: 'No drawings yet. Make one in the Draw tool.',
   newDrawing: 'New drawing',
-  open: 'Double-click to edit it in Sketch',
+  open: 'Double-click to edit it in Draw',
   close: 'Close',
-}
-
-interface Item {
-  id: string
-  title: string
-  sticker: string | null
 }
 
 /** Side drawer listing the project's Sketch drawings to place on the board as stickers (v0.5). */
@@ -33,26 +25,15 @@ export function DrawingDrawer({ onPlace, onClose }: { onPlace: (asset: ImportedA
   useEffect(() => {
     if (!root) return
     let gone = false
-    // Saved drawings only; write pending edits first so the newest strokes are in.
-    void flushAll(root).then(async () => {
-      const list: Item[] = []
-      for (const d of useProjectStore.getState().meta?.documents.filter((x) => x.type === 'sketch') ?? []) {
-        const data = await readDocument<Partial<SketchDoc> | null>(root, 'sketch', d.id, () => null).catch(() => null)
-        list.push({ id: d.id, title: d.title, sticker: data?.sticker ?? null })
-      }
-      if (!gone) setItems(list)
-    })
+    void loadDrawings(root).then((list) => !gone && setItems(list))
     return () => {
       gone = true
     }
   }, [root, key])
 
   const place = async (item: Item) => {
-    if (!root || !item.sticker) return
-    // A copy, so later edits to the drawing don't change (or remove) the sticker.
-    const bytes = await getFs().readBinary(await resolveAssetPath(root, item.sticker))
-    const asset = await importAssetFromBlob(root, new Blob([bytes as BlobPart], { type: 'image/png' }), 'image', `${item.title}.png`)
-    if (asset) onPlace({ ...asset, name: item.title })
+    const asset = root && (await copyDrawing(root, item))
+    if (asset) onPlace(asset)
   }
 
   return (

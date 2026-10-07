@@ -81,7 +81,7 @@ export const BASICS: Record<string, GuideTopic> = {
       'Your teammate clicks Join project on their start screen, pastes the code and picks a folder. You are asked to let them in. After that, the project is copied to their computer and changes show up for both of you within a moment.',
       'You see where the others are: colored dots in the sidebar show who is in which tool, canvases show their pointer and what they selected, and in the Writer and Wiki you type in the same text live and see their cursor.',
       'Everyone keeps a full copy. If you work offline, your changes are saved as usual and merge automatically the next time you are both online. Undo only takes back your own changes.',
-      'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared, except Sketch drawings: those stay on each computer. Pictures made from them, like stickers on a Moodboard, are shared.',
+      'Each person keeps their own panel layout and sidebar. The tools, documents and everything in them are shared, except drawings from Draw: those stay on each computer. Pictures made from them, like stickers on a Moodboard, are shared.',
       'The person who shared the project is the host. When the host closes the project or stops sharing, everyone else is disconnected and asked whether to keep their copy as a normal project or delete it.',
       'Only the host can remove people. Everyone else can Leave project, keeping or deleting their copy.',
       'Privacy: computers connect directly, so the people you work with can see your IP address. When a direct connection is not possible, the encrypted traffic goes through public relay servers run by n0, a US company (the makers of iroh). The project contents stay end-to-end encrypted on the way.',
@@ -190,7 +190,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Collect images, cutouts, text and shapes. Cutouts can be shapes or a freehand lasso.',
       'The layers panel (button in the bottom toolbar) lets you reorder everything, and an always-on-top layer keeps your drawings above the images.',
-      'The brush button opens your drawings from the Sketch tool. Click one to place it as a sticker; transparent parts stay see-through. Double-click to edit it in Sketch.',
+      'The brush button opens your drawings from the Draw tool. Click one to place it as a sticker; transparent parts stay see-through. Double-click to edit it in Draw.',
     ],
     tips: ['Drop image files straight onto the board.', 'Design Language works exactly the same way, for pinning down the look of your game.'],
   },
@@ -221,7 +221,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     tips: ['Each cosmos is its own document, so you can keep several (for example one per game or era).', 'Ctrl+Z undoes, including deletes.'],
   },
   sketch: {
-    title: 'Sketch',
+    title: 'Draw',
     body: [
       'Draw and paint with pressure brushes, layers and a full set of pro painting tools. Pick a canvas size (up to 8K) when you start a new drawing; Canvas (top bar) resizes, crops, flips and turns it later and shows how many strokes and minutes went into it.',
       'Pen: pressure and tilt work with drawing tablets, the eraser end of the pen erases, and the pen buttons can do any action. Pen and keys (top bar) sets your pressure curve, smoothing, motion filtering, every keyboard shortcut, pen buttons and touch gestures, and has a tablet test page.',
@@ -246,7 +246,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
     body: [
       'Pin down the look of your game: style references, color swatches, shapes and examples of what fits and what does not.',
       'It works exactly like a Moodboard: add images, cut them out, draw, write notes, and use layers.',
-      'The brush button opens your drawings from the Sketch tool; click one to place it as a sticker. Pictures sent from Sketch land here too.',
+      'The brush button opens your drawings from the Draw tool; click one to place it as a sticker. Pictures sent from Draw land here too.',
     ],
   },
   'asset-pool': {
@@ -257,7 +257,7 @@ export const TOOL_GUIDE: Record<ComponentType, GuideTopic> = {
       'Click the status to move an asset from Needed to In progress, Review and Done; the bar at the top shows how much is done.',
       'Select an asset to add notes and pictures. Assets made from an item or character keep its name when you rename it, and Open jumps to it.',
     ],
-    tips: ['Send a drawing from the Sketch tool to the Asset Pool: it is attached to the selected asset, or becomes a new one.'],
+    tips: ['Send a drawing from the Draw tool to the Asset Pool: it is attached to the selected asset, or becomes a new one.'],
   },
   'damage-calculator': {
     title: 'Damage Calculator',

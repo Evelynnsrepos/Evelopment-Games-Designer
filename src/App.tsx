@@ -8,6 +8,7 @@ import { NewProjectWizard } from '@/shell/launcher/NewProjectWizard'
 import { useAiHelper } from '@/shared/spell'
 import { RaritiesHost } from '@/shared/categories'
 import { DialogHost } from '@/shared/ui'
+import { DrawingShelfHost } from '@/shared/drawingShelf'
 import { HelpHost } from '@/shell/help/HelpHost'
 import { SettingsHost } from '@/shell/settings/SettingsDialog'
 import { loadAllPlugins } from '@/shell/plugins/plugins'
@@ -41,6 +42,7 @@ export default function App() {
       {screen === 'new-project' && <NewProjectWizard />}
       {screen === 'editor' && <EditorScreen />}
       <DialogHost />
+      <DrawingShelfHost />
       <HelpHost />
       <SharingEndedHost />
       <ServerPluginOffer />

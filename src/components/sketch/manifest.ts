@@ -4,7 +4,7 @@ import type { ComponentManifest } from '@/core/registry'
 
 export const manifest: ComponentManifest = {
   type: 'sketch',
-  name: 'Sketch',
+  name: 'Draw',
   description: 'Draw and paint with pressure brushes, layers, selection and mirror.',
   icon: Brush,
   specSection: 'v0.5',

@@ -117,10 +117,25 @@ export async function importAssetFromBlob(root: string, blob: Blob, accept: Acce
   return { path, kind, name: fileName || `${kind === 'image' ? 'Image' : 'Audio'}.${ext}` }
 }
 
-/** Open the file picker and import every chosen file (MB-7). */
+/**
+ * Asked before the file picker whenever images are wanted (v0.12, the drawings shelf in shared/drawingShelf):
+ * resolves to the picked pictures, 'file' to open the file picker, or null when the user cancelled.
+ */
+export type ImageChooser = (root: string, title: string) => Promise<ImportedAsset[] | 'file' | null>
+let imageChooser: ImageChooser | null = null
+export function setImageChooser(chooser: ImageChooser | null) {
+  imageChooser = chooser
+}
+
+/** Open the file picker and import every chosen file (MB-7). For images, your drawings are offered first. */
 export async function pickAndImportAssets(root: string, accept: AcceptKind, title?: string): Promise<ImportedAsset[]> {
   const extensions = accept === 'any' ? [...ASSET_EXTENSIONS.image, ...ASSET_EXTENSIONS.audio] : [...ASSET_EXTENSIONS[accept]]
   const defaultTitle = accept === 'audio' ? 'Choose audio files' : accept === 'image' ? 'Choose images' : 'Choose images or audio'
+  if (accept !== 'audio' && imageChooser) {
+    const chosen = await imageChooser(root, title ?? defaultTitle)
+    if (chosen === null) return []
+    if (chosen !== 'file') return chosen
+  }
   const paths = await getFs().pickFiles(title ?? defaultTitle, extensions)
   const out: ImportedAsset[] = []
   for (const p of paths) {

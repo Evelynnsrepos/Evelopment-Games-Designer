@@ -32,7 +32,7 @@ const createDoc = (): SketchToolDoc => ({ ...createSketchDoc(), started: false }
 /** Sketch (v0.5): a drawing tool with pressure brushes, layers, selection and mirror. */
 export default function View({ documentId, active }: PanelProps) {
   const doc = useDocument<SketchToolDoc>('sketch', documentId!, createDoc)
-  const title = useProjectStore((s) => s.meta?.documents.find((d) => d.id === documentId)?.title ?? 'Sketch')
+  const title = useProjectStore((s) => s.meta?.documents.find((d) => d.id === documentId)?.title ?? 'Draw')
   if (!doc.data) return null
   if (!doc.data.started) return <SizePicker onStart={(width, height) => doc.update((d) => ({ ...d, ...createSketchDoc(width, height), started: true }))} />
   return (
