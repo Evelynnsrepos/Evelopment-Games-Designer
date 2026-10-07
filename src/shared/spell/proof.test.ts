@@ -33,7 +33,8 @@ describe('diffEdits', () => {
 
 describe('fix options', () => {
   it('marks the sentence around the spot', () => {
-    expect(markedSentence('It rained. The hero walk in. Then he sat.', 20, 24)).toBe('The hero [[walk]] in.')
+    expect(markedSentence('It rained. The hero walk in. Then he sat.', 20, 24)).toBe('It rained. The hero [[walk]] in. Then he sat.')
+    expect(markedSentence('A. B. The hero walk in. C. D.', 15, 19)).toBe('B. The hero [[walk]] in. C.')
     expect(markedSentence('No end walk here', 7, 11)).toBe('No end [[walk]] here')
   })
   it('cleans model lines', () => {

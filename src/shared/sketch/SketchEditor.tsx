@@ -481,8 +481,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
     ctx.restore()
   })
 
-  const toDoc = (e: { clientX: number; clientY: number }) => {
-    const r = viewCanvas.current!.getBoundingClientRect()
+  const toDoc = (e: { clientX: number; clientY: number }, r = viewCanvas.current!.getBoundingClientRect()) => {
     return toDocPoint(viewRef.current!, { x: e.clientX - r.left, y: e.clientY - r.top })
   }
 
@@ -494,6 +493,8 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         /** Motion filter, stabilization, StreamLine and Drawing Assist for this stroke. */
         pipeline: PenPipeline
         last: PenPoint
+        /** Where the canvas was when the stroke began: if anything moves the layout mid-stroke, the line still doesn't jump. */
+        rect: DOMRect
         opts: Parameters<SketchEngine['beginStroke']>[0]
         /** Every point so far, for QuickShape. */
         pts: InputPoint[]
@@ -559,7 +560,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       const pt = pipeline.push({ ...p, ...penData(e.nativeEvent, input.pressureCurve) }, e.timeStamp)[0] ?? { ...p, pressure: 1 }
       const opts = { layer: activeLayer, brush: strokeBrush, color, symmetry: 'off' as const, erase: t === 'eraser', smudge: t === 'smudge', mirror: symmetryMirror(liveGuide, activeLayer.id) }
       engine.beginStroke(opts, pt)
-      gesture.current = { kind: 'paint', pipeline, last: pt, opts, pts: [pt], rest: pt }
+      gesture.current = { kind: 'paint', pipeline, last: pt, rect: e.currentTarget.getBoundingClientRect(), opts, pts: [pt], rest: pt }
       armHold()
       setVersion(engine.version)
     } else if (t === 'lasso' || t === 'rect') {
@@ -597,7 +598,7 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       }
       const events = e.nativeEvent.getCoalescedEvents?.() ?? [e.nativeEvent]
       for (const ev of events.length ? events : [e.nativeEvent]) {
-        for (const q of g.pipeline.push({ ...toDoc(ev), ...penData(ev, input.pressureCurve) }, ev.timeStamp)) {
+        for (const q of g.pipeline.push({ ...toDoc(ev, g.rect), ...penData(ev, input.pressureCurve) }, ev.timeStamp)) {
           engine.strokeTo(q)
           g.pts.push(q)
           g.last = q
@@ -606,8 +607,11 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
       const tip = g.pipeline.tetherTip
       setTether(tip ? { tip, pen: p } : null)
       // Predicted points ahead of the pen: shown in the live stroke only, replaced on the next move, never saved.
-      const predicted = e.nativeEvent.getPredictedEvents?.() ?? []
-      engine.predict(g.pipeline.peek(predicted.map((ev) => ({ p: { ...toDoc(ev), ...penData(ev, input.pressureCurve) }, t: ev.timeStamp }))), g.last)
+      // Not with smoothing: the drawn line trails the pen then, and a guess drawn from the pen floats loose ahead of it.
+      const b = g.opts.brush
+      const smoothed = b.streamline > 0 || b.stabilization > 0 || b.motionFilter > 0 || b.tether > 0 || input.stabilization > 0 || input.motionFilter > 0
+      const predicted = smoothed ? [] : (e.nativeEvent.getPredictedEvents?.() ?? [])
+      engine.predict(g.pipeline.peek(predicted.map((ev) => ({ p: { ...toDoc(ev, g.rect), ...penData(ev, input.pressureCurve) }, t: ev.timeStamp }))), g.last)
       // QuickShape: the hold timer restarts whenever the pointer really moves.
       if (Math.hypot(p.x - g.rest.x, p.y - g.rest.y) * (view?.scale ?? 1) > 4) {
         g.rest = p
@@ -955,7 +959,6 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
         <ToolButton icon={RotateCw} label={UI_PRO.rotateRight} onClick={() => runAction('rotateRight')} />
         <ToolButton icon={FlipHorizontal} label={UI_PRO.flipView} active={!!view?.flip} onClick={() => runAction('flipView')} />
         <ToolButton icon={Settings2} label={UI_PRO.input} onClick={() => setInputOpen(true)} />
-        <ToolButton icon={Keyboard} label={UI_PRO.shortcuts} onClick={() => setSheetOpen(true)} />
         <ToolButton icon={LayersIcon} label={layersShown ? UI_PRO.hideLayers : UI_PRO.showLayers} active={layersShown} onClick={() => setLayersShown(!layersShown)} />
         <ToolButton icon={ImageIcon} label={UI.insertImage} onClick={() => void insertFromFile()} />
         <ToolButton icon={ImagePlus} label={UI.reference} onClick={() => setPickingRef(true)} />
@@ -966,6 +969,9 @@ export function SketchEditor({ doc, update, active, title, actions, swatches = S
           return engine.flattenedPng({ ...doc, layers: exportLayers(doc.layers) })
         })}
         <span className="sketch-spacer" />
+        <button className="btn btn-ghost sketch-shortcuts" title={UI_PRO.shortcuts} onClick={() => setSheetOpen(true)}>
+          <Keyboard size={14} /> Shortcuts
+        </button>
         {saving && <span className="sketch-saving">{UI.saving}</span>}
       </div>
 

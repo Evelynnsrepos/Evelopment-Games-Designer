@@ -6,6 +6,7 @@
   background: var(--bg);
 }
 .sketch-topbar {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -26,9 +27,14 @@
 .sketch-spacer {
   flex: 1;
 }
+/* Floats over the bar, so showing it never adds a row and moves the canvas under the pen. */
 .sketch-saving {
-  font-size: 12px;
+  position: absolute;
+  right: 8px;
+  bottom: 2px;
+  font-size: 11px;
   color: var(--text-muted);
+  pointer-events: none;
 }
 .sketch-body {
   display: flex;

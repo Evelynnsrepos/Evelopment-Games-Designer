@@ -9,6 +9,7 @@ type ModelId = AppSettings['aiModel']
 export const AI_MODELS: { id: ModelId; name: string; size: string; about: string }[] = [
   { id: 'small', name: 'Small', size: '1.1 GB', about: 'Fast, catches the common mistakes.' },
   { id: 'better', name: 'Better', size: '2.5 GB', about: 'Catches more and gives better options. About 2 to 3 times slower.' },
+  { id: 'best', name: 'Best', size: '4.7 GB', about: 'The most careful checks and options. Needs about 6 GB of free memory and is slower again.' },
 ]
 
 export interface AiProgress {
@@ -33,14 +34,14 @@ interface AiState {
 
 export const useAiHelper = create<AiState>()((set, get) => ({
   installed: null,
-  models: { small: false, better: false },
+  models: { small: false, better: false, best: false },
   downloading: null,
   progress: null,
   error: null,
   async check() {
     if (!isTauri()) return set({ installed: false })
-    const [small, better] = await Promise.all(AI_MODELS.map((m) => invoke<boolean>('llm_status', { model: m.id })))
-    const models = { small, better }
+    const [small, better, best] = await Promise.all(AI_MODELS.map((m) => invoke<boolean>('llm_status', { model: m.id })))
+    const models = { small, better, best }
     set({ models, installed: models[useSettings.getState().aiModel] })
   },
   async install(model) {
@@ -60,7 +61,7 @@ export const useAiHelper = create<AiState>()((set, get) => ({
   },
   async remove() {
     await invoke('llm_remove')
-    set({ installed: false, models: { small: false, better: false } })
+    set({ installed: false, models: { small: false, better: false, best: false } })
   },
 }))
 

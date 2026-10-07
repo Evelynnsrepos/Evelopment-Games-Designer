@@ -17,7 +17,7 @@ export interface AppSettings {
   /** Use the downloaded AI helper for suggestions when it is installed. */
   aiHelper: boolean
   /** Which downloaded AI model checks grammar: see AI_MODELS in shared/spell/ai.ts. */
-  aiModel: 'small' | 'better'
+  aiModel: 'small' | 'better' | 'best'
   /** Show the optional Ask your project tool (v0.10); off until turned on in Settings. */
   askProject: boolean
   /** Pen tool on every canvas: line width in pixels and stabilizer strength 0..1. */

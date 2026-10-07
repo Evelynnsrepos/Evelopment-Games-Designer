@@ -18,9 +18,10 @@ use tauri::{AppHandle, Manager};
 const LLAMA_TAG: &str = "b11347";
 /// The models Settings offers: id, download URL, file name in `<app data>/llm/`.
 /// "small" keeps the v0.4 file name so existing downloads still count.
-const MODELS: [(&str, &str, &str); 2] = [
+const MODELS: [(&str, &str, &str); 3] = [
   ("small", "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/main/qwen2.5-1.5b-instruct-q4_k_m.gguf", "model.gguf"),
   ("better", "https://huggingface.co/unsloth/Qwen3-4B-Instruct-2507-GGUF/resolve/main/Qwen3-4B-Instruct-2507-Q4_K_M.gguf", "model-better.gguf"),
+  ("best", "https://huggingface.co/bartowski/Qwen2.5-7B-Instruct-GGUF/resolve/main/Qwen2.5-7B-Instruct-Q4_K_M.gguf", "model-best.gguf"),
 ];
 
 fn model_entry(model: &str) -> Result<(&'static str, &'static str), String> {

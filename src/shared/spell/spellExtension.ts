@@ -78,7 +78,12 @@ export const SpellCheck = Extension.create<SpellOptions>({
         const doc = view.state.doc
         const paragraphs = docParagraphs(doc)
         // ponytail: whole-document rescan per pause; check only changed paragraphs if long chapters lag.
-        const issues = await findIssues(paragraphs.map((p) => p.text))
+        const at = view.state.selection.head
+        const focus = Math.max(0, paragraphs.findIndex((p) => p.pos.length > 0 && at <= p.pos[p.pos.length - 1] + 1))
+        const issues = await findIssues(
+          paragraphs.map((p) => p.text),
+          focus,
+        )
         if (mine !== run || view.isDestroyed || view.state.doc !== doc) return
         const decos = paragraphs.flatMap((p, i) =>
           issues[i]

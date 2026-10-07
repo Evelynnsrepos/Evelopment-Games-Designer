@@ -144,7 +144,7 @@ function SettingsDialog({ onClose }: { onClose: () => void }) {
                 )}
               </div>
             ))}
-            {(ai.models.small || ai.models.better) && !ai.progress && (
+            {Object.values(ai.models).some(Boolean) && !ai.progress && (
               <button className="btn" onClick={() => void removeAi()}>
                 {UI.aiRemove}
               </button>

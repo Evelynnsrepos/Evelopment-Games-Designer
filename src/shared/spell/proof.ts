@@ -119,10 +119,21 @@ export function onAiResult(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-/** Queue paragraphs for the AI helper; the newest request goes first. One paragraph at a time. */
-function want(texts: string[]) {
-  const fresh = texts.filter((t) => !fixes.has(fixKey(t)) && t.split(/\s+/).length >= 3)
-  queue = [...new Set([...fresh, ...queue])]
+/** Paragraphs around the cursor the AI helper looks at per pause; the rest waits until you work there. */
+const NEAR = 6
+
+/**
+ * Queue paragraphs for the AI helper, nearest to where the user is writing first. The queue is replaced,
+ * not added to: older versions of edited paragraphs and far-away ones used to pile up, so the helper
+ * spent its time on stale text and the paragraph being written got its suggestions later and later.
+ */
+function want(texts: string[], focus: number) {
+  queue = texts
+    .map((t, i) => ({ t, d: Math.abs(i - focus) }))
+    .filter(({ t }) => !fixes.has(fixKey(t)) && t.split(/\s+/).length >= 3)
+    .sort((a, b) => a.d - b.d)
+    .slice(0, NEAR)
+    .map(({ t }) => t)
   void pump()
 }
 
@@ -156,14 +167,14 @@ export function ignoreFix(bad: string, fix: string) {
   listeners.forEach((l) => l())
 }
 
-/** Spelling and grammar issues for each paragraph. AI results arrive later through `onAiResult`. */
-export async function findIssues(paragraphs: string[]): Promise<Issue[][]> {
+/** Spelling and grammar issues for each paragraph (`focus` = the one with the cursor). AI results arrive later through `onAiResult`. */
+export async function findIssues(paragraphs: string[], focus = 0): Promise<Issue[][]> {
   const words = paragraphs.map(tokenize)
   const bad = useSettings.getState().spellCheck
     ? await findMisspelled(words.flat().map((w) => w.word)).catch(() => new Set<string>())
     : new Set<string>()
   const ai = aiReady()
-  if (ai) want(paragraphs)
+  if (ai) want(paragraphs, focus)
   const known = knownWords()
   return paragraphs.map((text, p) => {
     const out: Issue[] = words[p].filter((w) => bad.has(w.word) && !ignored.has(`${w.word}\u0000`)).map((w) => ({ from: w.from, to: w.to, word: w.word }))
@@ -177,12 +188,13 @@ export async function findIssues(paragraphs: string[]): Promise<Issue[][]> {
   })
 }
 
-/** The sentence around text[from..to], with that spot marked `[[like this]]` for the AI helper. */
+/** The sentence around text[from..to] and one sentence on each side (so the helper knows the context), with that spot marked `[[like this]]`. */
 export function markedSentence(text: string, from: number, to: number): string {
-  const start = Math.max(0, ...[...text.slice(0, from).matchAll(/[.!?]\s+/g)].map((m) => m.index + m[0].length))
-  const after = /[.!?](\s|$)/.exec(text.slice(to))
-  const end = after ? to + after.index + 1 : text.length
-  return `${text.slice(start, from)}[[${text.slice(from, to)}]]${text.slice(to, end)}`
+  const ends = [...text.slice(0, from).matchAll(/[.!?]\s+/g)].map((m) => m.index + m[0].length)
+  const start = ends.length > 1 ? ends[ends.length - 2] : 0
+  const after = [...text.slice(to).matchAll(/[.!?](\s|$)/g)]
+  const end = after.length > 1 ? to + after[1].index + 1 : after.length ? to + after[0].index + 1 : text.length
+  return `${text.slice(start, from)}[[${text.slice(from, to)}]]${text.slice(to, end)}`.trim()
 }
 
 /** Model lines → replacement options: no numbering or quotes, no repeats, nothing that rewrites the whole sentence. */
